@@ -33,40 +33,8 @@
 
 #include "tabs/AES.tab"
 #include "AES_decrypt.cu"
-#if defined HYBRID
-#include "AES_encrypt_hybrid.cu"
-const char *g_mode = "hybrid";
-#elif defined SECURE
-#include "AES_encrypt_secure.cu"
-const char *g_mode = "secure";
-#elif defined LASTROUND
-#include "AES_encrypt_lastround.cu"
-const char *g_mode = "lastround";
-#elif defined BASELINE
 #include "AES_encrypt.cu"
 const char *g_mode = "base";
-#elif defined SBOX
-#include "sbox_encrypt.cu"
-const char *g_mode = "sbox";
-#elif defined SHYBRID
-#include "sbox_encrypt_hybrid.cu"
-const char *g_mode = "sbox_hybrid";
-#elif defined SLASTROUND
-#include "sbox_encrypt_lastround.cu"
-const char *g_mode = "sbox_lastround";
-#elif defined SFTL
-#include "AES_encrypt_sftl.cu"
-const char *g_mode = "sftl";
-#elif defined SBM_L
-#include "sbm_lastround.cu"
-const char *g_mode = "sbm_lastround";
-#elif defined SBM_FL
-#include "sbm_firstlast.cu"
-const char *g_mode = "sbm_firstlast";
-#elif defined SBM_SFTL
-#include "sbm_sftl.cu"
-const char *g_mode = "sbm_sftl";
-#endif
 
 
 #define FULL_UNROLL
