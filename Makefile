@@ -5,7 +5,7 @@ EXECUTABLES=gbench sbench # aes aes_ecb benchmark benchmark_async benchmark_con 
 #GENCODE = -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_75,code=sm_75
 GENCODE = -gencode=arch=compute_60,code=sm_60
 AES_FILES=AES.cu AES.h  BlockCipher.h AES_encrypt.cu
-CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -Xcompiler -fPIC -rdc=true
+CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp
 TT?=128
 MODE?=HYBRID
 
