@@ -154,6 +154,9 @@ private:
     // Pointers to GPU key schedules
     uint *ce_sched;
     uint *cd_sched;
+
+    // condensed as opposed to expanded
+    uint *dev_key_condensed;
 };
 
 #endif /* __AES_H */
