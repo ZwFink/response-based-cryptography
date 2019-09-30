@@ -19,13 +19,13 @@
 #endif
 
 #define NUM_THREADS 1024
-
 #define MAX_RK_SIZE 182
-__device__ void expand_key( const uchar *cipherKey,
-                            uint *e_sched,
-                            uint Nr,
-                            uint keyBits
-                          )
+
+__forceinline__ __device__ void expand_key( const uchar *cipherKey,
+                                            uint *e_sched,
+                                            uint Nr,
+                                            uint keyBits
+                                          )
 {
     uint *rek = e_sched;
     uint i = 0;
@@ -109,6 +109,18 @@ __device__ void expand_key( const uchar *cipherKey,
     Nr = 0; // this should never happen
 }
 
+__global__ void expand_key_kernel( const uchar *cipherKey,
+                                   uint *e_sched,
+                                   uint *Nr,
+                                   uint *keyBits
+                          )
+{
+    expand_key( cipherKey,
+                e_sched,
+                *Nr,
+                *keyBits
+              );
+}
 
 __device__ void load_roundkey(uint *s, uint *rk) {
     int tid = threadIdx.x;
