@@ -228,6 +228,16 @@ void AES::makeKey(const uchar *cipherKey, uint keySize, uint dir) {
     default:
         throw "Invalid AES key size";
     }
+
+    checkCudaErrors( cudaMalloc( (void**) &dev_key_condensed, keySize ) );
+
+    checkCudaErrors( cudaMemcpy( dev_key_condensed,
+                                 cipherKey,
+                                 keySize,
+                                 cudaMemcpyHostToDevice
+                               )
+                   );
+
     // assert(dir >= DIR_NONE && dir <= DIR_BOTH);
     assert(dir <= DIR_BOTH);
     if (dir != DIR_NONE) {
