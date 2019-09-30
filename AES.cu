@@ -229,11 +229,30 @@ void AES::makeKey(const uchar *cipherKey, uint keySize, uint dir) {
         throw "Invalid AES key size";
     }
 
-    checkCudaErrors( cudaMalloc( (void**) &dev_key_condensed, keySize ) );
+    uint *dev_key_size;
+    uint *dev_nr;
 
+    checkCudaErrors( cudaMalloc( (void**) &dev_nr, sizeof( uint ) ) );
+    checkCudaErrors( cudaMemcpy( dev_nr,
+                                 &Nr,
+                                 sizeof( uint ),
+                                 cudaMemcpyHostToDevice
+                               )
+                   );
+
+    checkCudaErrors( cudaMalloc( (void**) &dev_key_size, sizeof( uint ) ) );
+    checkCudaErrors( cudaMemcpy( dev_key_size,
+                                 &keySize,
+                                 sizeof( uint ),
+                                 cudaMemcpyHostToDevice
+                               )
+                   );
+
+
+    checkCudaErrors( cudaMalloc( (void**) &dev_key_condensed, keySize ) );
     checkCudaErrors( cudaMemcpy( dev_key_condensed,
                                  cipherKey,
-                                 keySize,
+                                 sizeof( uchar ) * keySize,
                                  cudaMemcpyHostToDevice
                                )
                    );
@@ -241,14 +260,14 @@ void AES::makeKey(const uchar *cipherKey, uint keySize, uint dir) {
     // assert(dir >= DIR_NONE && dir <= DIR_BOTH);
     assert(dir <= DIR_BOTH);
     if (dir != DIR_NONE) {
-        ExpandKey(cipherKey, keySize);
+        // ExpandKey(cipherKey, keySize);
         checkCudaErrors(cudaMemcpy(ce_sched, e_sched, sizeof(e_sched), cudaMemcpyHostToDevice));
 
-        expand_key<<<1,1>>>(
+        expand_key_kernel<<<1,1>>>(
                             dev_key_condensed,
                             ce_sched,
-                            Nr,
-                            keySize
+                            dev_nr,
+                            dev_key_size
                            );
 
 	//printHexArray(e_sched, 44);
