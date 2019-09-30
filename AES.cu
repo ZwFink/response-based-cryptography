@@ -242,9 +242,16 @@ void AES::makeKey(const uchar *cipherKey, uint keySize, uint dir) {
     assert(dir <= DIR_BOTH);
     if (dir != DIR_NONE) {
         ExpandKey(cipherKey, keySize);
+        checkCudaErrors(cudaMemcpy(ce_sched, e_sched, sizeof(e_sched), cudaMemcpyHostToDevice));
+
+        expand_key<<<1,1>>>(
+                            dev_key_condensed,
+                            ce_sched,
+                            Nr,
+                            keySize
+                           );
 
 	//printHexArray(e_sched, 44);
-        checkCudaErrors(cudaMemcpy(ce_sched, e_sched, sizeof(e_sched), cudaMemcpyHostToDevice));
         if (dir & DIR_DECRYPT) {
             InvertKey();
             checkCudaErrors(cudaMemcpy(cd_sched, d_sched, sizeof(e_sched), cudaMemcpyHostToDevice));

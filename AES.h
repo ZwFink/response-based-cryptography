@@ -156,7 +156,7 @@ private:
     uint *cd_sched;
 
     // condensed as opposed to expanded
-    uint *dev_key_condensed;
+    uchar *dev_key_condensed;
 };
 
 #endif /* __AES_H */
