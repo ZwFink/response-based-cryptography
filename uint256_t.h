@@ -1,11 +1,11 @@
-#ifndef UINT246_T_HH_INCLUDED
-#define UINT246_T_HH_INCLUDED
+#ifndef UINT256_T_HH_INCLUDED
+#define UINT256_T_HH_INCLUDED
 #define UINT256_SIZE_IN_BYTES 32
 #include <cstddef>
 #include <string>
 #include <x86intrin.h>
+#include <cstdint>
 #include <iostream>
-#include "uint256_t.h"
 
 
 #ifdef __CUDACC__
@@ -18,13 +18,16 @@ class uint256_t
 {
  public:
     CUDA_CALLABLE_MEMBER uint256_t();
-    CUDA_CALLABLE_MEMBER ~uint256_t();
-    CUDA_CALLABLE_MEMBER uint256_t operator&( const uint256_t comp );
+    CUDA_CALLABLE_MEMBER ~uint256_t() = default;
+
+    CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
+    CUDA_CALLABLE_MEMBER uint256_t operator|( uint256_t comp );
+    CUDA_CALLABLE_MEMBER std::uint8_t& operator[]( std::uint8_t idx );
 
 
  private:
-    CUDA_CALLABLE_MEMBER uint8_t[ UINT256_SIZE_IN_BYTES ] data;
-}
+    std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
+};
 
 
-#endif // UINT246_T_HH_INCLUDED
+#endif // UINT256_T_HH_INCLUDED
