@@ -12,3 +12,8 @@ CUDA_CALLABLE_MEMBER uint256_t::uint256_t()
              0x00, 0x00, 0x00, 0x00
            };
 }
+
+CUDA_CALLABLE_MEMBER uint8_t uint256_t::operator[]( std::size_t idx )
+{
+    return data[ idx ];
+}
