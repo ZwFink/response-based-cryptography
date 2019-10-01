@@ -19,6 +19,7 @@ class uint256_t
  public:
     CUDA_CALLABLE_MEMBER uint256_t();
     CUDA_CALLABLE_MEMBER ~uint256_t();
+    CUDA_CALLABLE_MEMBER uint256_t operator&( const uint256_t comp );
 
 
  private:
