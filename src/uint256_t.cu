@@ -11,7 +11,7 @@ CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
 }
 
 
-uint256_t uint256_t::operator&( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator&( uint256_t comp )
 {
     uint256_t ret;
 
@@ -26,7 +26,7 @@ uint256_t uint256_t::operator&( uint256_t comp )
     return ret;
 }
 
-uint256_t uint256_t::operator|( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( uint256_t comp )
 {
     uint256_t ret;
 
