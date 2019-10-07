@@ -5,8 +5,6 @@
 #include <string>
 #include <x86intrin.h>
 #include <cstdint>
-#include <iostream>
-
 
 #ifdef __CUDACC__
 #define CUDA_CALLABLE_MEMBER __host__ __device__
@@ -30,6 +28,8 @@ class uint256_t
     CUDA_CALLABLE_MEMBER bool operator!=( uint256_t comp );
 
     CUDA_CALLABLE_MEMBER uint256_data_t& get_data();
+
+    __host__ void dump();
 
 
  private:

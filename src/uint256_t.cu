@@ -1,4 +1,5 @@
-#include "uint256_t.h"
+#include <iostream>
+#include <iomanip>
 
 #include "uint256_t.h"
 uint256_t::uint256_t()
@@ -61,4 +62,19 @@ CUDA_CALLABLE_MEMBER uint256_data_t& uint256_t::get_data()
 CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
 {
     return !( *this == comp );
+}
+
+__host__ void uint256_t::dump()
+{
+    for( const auto& x : data )
+        {
+            std::cout
+                << "0x"
+                << std::setfill('0')
+                << std::setw(2)
+                << std::hex
+                << unsigned( x )
+                << " ";
+        }
+    std::cout << "\n"; 
 }
