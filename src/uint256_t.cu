@@ -51,3 +51,8 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator==( uint256_t comp )
         }
     return true;
 }
+
+CUDA_CALLABLE_MEMBER uint256_data_t& uint256_t::get_data()
+{
+    return data;
+}
