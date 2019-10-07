@@ -1,5 +1,6 @@
 #include "uint256_t.h"
 
+#include "uint256_t.h"
 uint256_t::uint256_t()
 {
     memset( data, 0, UINT256_SIZE_IN_BYTES );
@@ -43,13 +44,13 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( uint256_t comp )
 
 CUDA_CALLABLE_MEMBER bool uint256_t::operator==( uint256_t comp )
 {
-    bool ret = true;
+    uint8_t ret = 0xFF;
     for( uint8_t byte = 0; byte < UINT256_SIZE_IN_BYTES; ++byte )
         {
             // we want this branchless because CUDA
-            ret = ret && ( data[ byte ] == comp[ byte ] );
+            ret = ret & ( ~data[ byte ] ^ comp[ byte ] );
         }
-    return true;
+    return ret == 0xFF;
 }
 
 CUDA_CALLABLE_MEMBER uint256_data_t& uint256_t::get_data()
