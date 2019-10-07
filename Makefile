@@ -18,13 +18,19 @@ MODE?=HYBRID
 
 all: $(EXECUTABLES)
 
-test_rbc: $(AES_FILES) $(UINT_FILES) lib/catch.hpp test/test.cu
-	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -DTTABLE=$(TT) -D$(MODE) -o $@ $<
-
-gbench: AES_gmem.o benchmark.o
+test_rbc: AES_smem.o catch.o uint.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
-sbench: AES_smem.o benchmark.o
+test.o: catch.hpp test.cu
+	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
+
+uint.o: $(UINT_FILES) 
+	$(NVCC) $(CCFLAGS) -c -o $@ $<
+
+gbench: AES_gmem.o benchmark.o uint.o
+	$(NVCC) $(CCFLAGS) -o $@ $^
+
+sbench: AES_smem.o benchmark.o uint.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
 AES_gmem.o: $(AES_FILES) $(UINT_FILES)
@@ -32,6 +38,9 @@ AES_gmem.o: $(AES_FILES) $(UINT_FILES)
 
 AES_smem.o: $(AES_FILES) $(UINT_FILES) 
 	$(NVCC) $(CCFLAGS) -DTTABLE=$(TT) -D$(MODE) -DUSE_SMEM -c -o $@ $<
+
+catch.o: test.cu catch.hpp
+	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -c -o $@ $<
 
 benchmark.o: benchmark.cu main.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
