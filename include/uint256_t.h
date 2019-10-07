@@ -25,7 +25,10 @@ class uint256_t
     CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
     CUDA_CALLABLE_MEMBER uint256_t operator|( uint256_t comp );
     CUDA_CALLABLE_MEMBER std::uint8_t& operator[]( std::uint8_t idx );
+
     CUDA_CALLABLE_MEMBER bool operator==( uint256_t comp );
+    CUDA_CALLABLE_MEMBER bool operator!=( uint256_t comp );
+
     CUDA_CALLABLE_MEMBER uint256_data_t& get_data();
 
 
