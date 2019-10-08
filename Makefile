@@ -21,7 +21,7 @@ all: $(EXECUTABLES)
 test_rbc: AES_smem.o catch.o uint.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
-test.o: catch.hpp test.cu
+test.o: catch.hpp test_utils.h test.cu
 	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
 
 uint.o: $(UINT_FILES) 
