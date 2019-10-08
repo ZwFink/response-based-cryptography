@@ -12,6 +12,8 @@
 #define CUDA_CALLABLE_MEMBER 
 #endif
 
+#define INLINE __forceinline__
+
 typedef std::uint8_t uint256_data_t[ UINT256_SIZE_IN_BYTES ];
 
 class uint256_t
@@ -22,6 +24,10 @@ class uint256_t
 
     CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
     CUDA_CALLABLE_MEMBER uint256_t operator|( uint256_t comp );
+    CUDA_CALLABLE_MEMBER uint256_t operator^( uint256_t comp );
+
+    CUDA_CALLABLE_MEMBER uint256_t operator~();
+
     CUDA_CALLABLE_MEMBER std::uint8_t& operator[]( std::uint8_t idx );
 
     CUDA_CALLABLE_MEMBER bool operator==( uint256_t comp );
