@@ -31,7 +31,8 @@
 #include "helper_cuda.h"
 #include <sys/time.h>
 
-#include "tabs/AES.tab"
+// #include "tabs/AES.tab" // JAW - this wasn't compiling for me
+#include "AES.tab"
 #include "AES_decrypt.cu"
 #include "AES_encrypt.cu"
 const char *g_mode = "base";
