@@ -2,9 +2,15 @@
 #include <iomanip>
 
 #include "uint256_t.h"
+
 uint256_t::uint256_t()
 {
-    memset( data, 0, UINT256_SIZE_IN_BYTES );
+    set_all( 0 );
+}
+
+CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint8_t val )
+{
+    memset( data, val, UINT256_SIZE_IN_BYTES );
 }
 
 CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
@@ -73,13 +79,12 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( uint256_t comp )
 
 CUDA_CALLABLE_MEMBER bool uint256_t::operator==( uint256_t comp )
 {
-    uint8_t ret = 0xFF;
+    bool ret = true;
     for( uint8_t byte = 0; byte < UINT256_SIZE_IN_BYTES; ++byte )
         {
-            // we want this branchless because CUDA
-            ret = ret & ( ~data[ byte ] ^ comp[ byte ] );
+            ret = ret && ( data[ byte ] == comp[ byte ] );
         }
-    return ret == 0xFF;
+    return ret;
 }
 
 CUDA_CALLABLE_MEMBER uint256_data_t& uint256_t::get_data()
