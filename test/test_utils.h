@@ -26,14 +26,22 @@ namespace test_utils
             return *one == *two;
         }
 
-    template<class T, class B >
-    __global__ void eq_kernel( T *one, T *two,
-                               B *dest
-                             )
+        
+        template<typename Type, bool (Type::*func)( Type )>
+            __device__ bool op_dev( Type *one, Type *two )
+        {
+            return (one->*func)( *two );
+        }
+
+
+        template<class Type, bool (Type::*func)( Type )>
+    __global__ void binary_op_kernel( Type *one, Type *two,
+                                      bool *dest
+                                    )
     {
         bool comp = false;
 
-        comp = eq_dev( one, two );
+        comp = op_dev<Type, func>( one, two );
         *dest = comp;
     }
 
