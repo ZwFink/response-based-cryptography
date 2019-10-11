@@ -117,20 +117,21 @@ __device__ int uint256_t::popc()
     int total_ones = 0;
     uint32_t current = 0;
 
-    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES / 32; ++index )
+    for( std::uint8_t index = 0; index < 32; index += 4 )
         {
-            current = data[ index ];
+            current |= data[ index ];
             current = current << 8;
 
-            current = data[ index + 1 ];
+            current |= data[ index + 1 ];
             current = current << 8;
 
-            current = data[ index + 2 ];
+            current |= data[ index + 2 ];
             current = current << 8;
 
-            current = data[ index + 3 ];
+            current |= data[ index + 3 ];
 
             total_ones += __popc( current );
+            current = 0;
         }
 
     return total_ones;
