@@ -39,6 +39,9 @@ class uint256_t
 
     __host__ void dump();
 
+    __device__ int ctz();
+    __device__ int popc();
+
 
  private:
     std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
