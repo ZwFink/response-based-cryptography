@@ -111,3 +111,32 @@ __host__ void uint256_t::dump()
         }
     std::cout << "\n"; 
 }
+
+__device__ int uint256_t::popc()
+{
+    int total_ones = 0;
+    uint32_t current = 0;
+
+    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES / 32; ++index )
+        {
+            current = data[ index ];
+            current = current << 8;
+
+            current = data[ index + 1 ];
+            current = current << 8;
+
+            current = data[ index + 2 ];
+            current = current << 8;
+
+            current = data[ index + 3 ];
+
+            total_ones += __popc( current );
+        }
+
+    return total_ones;
+}
+
+__device__ int uint256_t::ctz()
+{
+    return 256 - popc();
+}
