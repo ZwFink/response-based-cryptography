@@ -196,3 +196,75 @@ TEST_CASE( "uint256_t_negation_gpu", "[uint256_t]" )
     cudaFree( a1_dev );
     cudaFree( a2_dev );
 }
+
+TEST_CASE( "uint256_t_ctz_popc", "[uint256_t]" )
+{
+    uint256_t my_int;
+    uint256_t my_int_2;
+    int z_count = 0;
+
+    uint256_t *my_int_dev;
+    uint256_t *my_int_dev_2;
+    int *z_count_dev;
+
+    cudaMalloc( (void**) &my_int_dev, sizeof( uint256_t ) );
+    cudaMalloc( (void**) &my_int_dev_2, sizeof( uint256_t ) );
+    cudaMalloc( (void**) &z_count_dev, sizeof( int ) );
+
+    bool result_code = false;
+
+    if( test_utils::HtoD( my_int_dev, &my_int, sizeof( uint256_t ) ) != cudaSuccess )
+        {
+            std::cout << "Failure to transfer a1 to device\n";
+        }
+
+    if( test_utils::HtoD( z_count_dev, &z_count, sizeof( int ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer a2 to device\n";
+        }
+
+    test_utils::popc<<<1,1>>>( my_int_dev, z_count_dev );
+
+    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer a2 to device\n";
+        }
+
+    REQUIRE( z_count == 0 );
+
+    test_utils::ctz<<<1,1>>>( my_int_dev, z_count_dev );
+
+    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer a2 to device\n";
+        }
+
+    REQUIRE( z_count == 256 );
+
+    test_utils::unary_op_kernel<uint256_t, &uint256_t::operator~><<<1,1>>>
+        ( my_int_dev,
+          my_int_dev_2
+        );
+
+    test_utils::popc<<<1,1>>>( my_int_dev_2, z_count_dev );
+
+    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer a2 to device\n";
+        }
+
+    REQUIRE( z_count == 256 );
+
+    test_utils::ctz<<<1,1>>>( my_int_dev_2, z_count_dev );
+
+    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer a2 to device\n";
+        }
+
+    REQUIRE( z_count == 0 );
+
+    cudaFree( my_int_dev );
+    cudaFree( my_int_dev_2 );
+    cudaFree( z_count_dev );
+}
