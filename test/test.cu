@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 #include <cuda.h>
+#include <algorithm>
+#include <cstdlib>
 
 #include "test_utils.h"
 
@@ -114,4 +116,48 @@ TEST_CASE( "uint256_t_eq_dev", "[uint256_t]" )
     cudaFree( a2_dev );
     cudaFree( result_code_dev );
 
+}
+
+TEST_CASE( "uint256_t_negation_cpu", "[uint256_t]" )
+{
+
+    uint256_t a1;
+    uint256_t a2;
+
+    bool cond = false;
+
+    auto check_reqs = [&]()
+        {
+            cond = a1 == ~a2;
+            REQUIRE( cond );
+
+            cond = ~a1 == a2;
+            REQUIRE( cond );
+
+        };
+
+
+    for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; ++idx )
+        {
+            a1[ idx ] = 0xFF; // a1 == ~a2
+            a2[ idx ] = 0x00;
+        }
+
+    check_reqs();
+
+    for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; idx += 2 )
+        {
+            a1[ idx ] = 0x00; // a1 == ~a2
+            a2[ idx ] = 0xFF;
+        }
+
+    check_reqs();
+
+    for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; idx += 2 )
+        {
+            a1[ idx ] = ( rand() % 256 );
+            a2[ idx ] = ~(a1[idx]);
+        }
+
+    check_reqs();
 }
