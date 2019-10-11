@@ -28,11 +28,16 @@ namespace test_utils
 
         
         template<typename Type, bool (Type::*func)( Type )>
-            __device__ bool op_dev( Type *one, Type *two )
+            __device__ bool bin_op_dev( Type *one, Type *two )
         {
             return (one->*func)( *two );
         }
 
+        template<typename Type, Type (Type::*func)()>
+            __device__ Type unary_op_dev( Type *one )
+        {
+            return (one->*func)();
+        }
 
         template<class Type, bool (Type::*func)( Type )>
     __global__ void binary_op_kernel( Type *one, Type *two,
@@ -41,9 +46,20 @@ namespace test_utils
     {
         bool comp = false;
 
-        comp = op_dev<Type, func>( one, two );
+        comp = bin_op_dev<Type, func>( one, two );
         *dest = comp;
     }
+
+        template<class Type, Type (Type::*func)()>
+            __global__ void unary_op_kernel( Type *one,
+                                             Type *dest
+                                           )
+    {
+        Type ret = unary_op_dev<Type, func>( one );
+
+        *dest = ret;
+    }
+
 
 
 };
