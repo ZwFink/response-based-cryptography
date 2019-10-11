@@ -73,10 +73,7 @@ TEST_CASE( "uint256_t_eq_dev", "[uint256_t]" )
             std::cout << "Failure to transfer result_code to device\n";
         }
 
-    test_utils::eq_kernel<<<1,1>>>( a1_dev,
-                                    a2_dev,
-                                    result_code_dev
-                                  );
+    test_utils::binary_op_kernel<uint256_t, &uint256_t::operator==><<<1,1>>>( a1_dev, a2_dev, result_code_dev );
 
     if( test_utils::DtoH( &result_code, result_code_dev, sizeof( bool ) ) != cudaSuccess)
         {
@@ -99,10 +96,7 @@ TEST_CASE( "uint256_t_eq_dev", "[uint256_t]" )
             std::cout << "Failure to transfer result_code to device\n";
         }
 
-    test_utils::eq_kernel<<<1,1>>>( a1_dev,
-                                    a2_dev,
-                                    result_code_dev
-                                  );
+    test_utils::binary_op_kernel<uint256_t, &uint256_t::operator==><<<1,1>>>( a1_dev, a2_dev, result_code_dev );
 
     if( test_utils::DtoH( &result_code, result_code_dev, sizeof( bool ) ) != cudaSuccess)
         {
@@ -110,7 +104,6 @@ TEST_CASE( "uint256_t_eq_dev", "[uint256_t]" )
         }
 
     REQUIRE( !result_code );
-
 
     cudaFree( a1_dev );
     cudaFree( a2_dev );
@@ -160,4 +153,46 @@ TEST_CASE( "uint256_t_negation_cpu", "[uint256_t]" )
         }
 
     check_reqs();
+}
+
+TEST_CASE( "uint256_t_negation_gpu", "[uint256_t]" )
+{
+
+    uint256_t a1;
+    uint256_t a2;
+
+    uint256_t *a1_dev = nullptr;
+    uint256_t *a2_dev = nullptr;
+
+    cudaMalloc( (void**) &a1_dev, sizeof( uint256_t ) );
+    cudaMalloc( (void**) &a2_dev, sizeof( uint256_t ) );
+
+    bool result_code = false;
+
+    if( test_utils::HtoD( a1_dev, &a1, sizeof( uint256_t ) ) != cudaSuccess )
+        {
+            std::cout << "Failure to transfer a1 to device\n";
+        }
+
+    if( test_utils::HtoD( a2_dev, &a2, sizeof( uint256_t ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer a2 to device\n";
+        }
+
+    test_utils::unary_op_kernel<uint256_t, &uint256_t::operator~><<<1,1>>>
+        ( a1_dev,
+          a2_dev
+        );
+
+    if( test_utils::DtoH( &a2, a2_dev, sizeof( uint256_t ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer to host \n";
+        }
+
+    result_code = a2 == ~a1;
+
+    REQUIRE( result_code );
+
+    cudaFree( a1_dev );
+    cudaFree( a2_dev );
 }
