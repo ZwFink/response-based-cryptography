@@ -99,6 +99,21 @@ namespace test_utils
 
                 *dest = ret;
             }
+
+        __global__ void popc( uint256_t *to_pop,
+                              int *dest
+                            )
+        {
+            *dest = to_pop->popc();
+        }
+
+        __global__ void ctz( uint256_t *to_pop,
+                              int *dest
+                            )
+        {
+            *dest = to_pop->ctz();
+        }
+
 };
 
 #endif
