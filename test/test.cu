@@ -268,3 +268,52 @@ TEST_CASE( "uint256_t_ctz_popc", "[uint256_t]" )
     cudaFree( my_int_dev_2 );
     cudaFree( z_count_dev );
 }
+
+TEST_CASE( "uint256_t_<<", "[uint256_t]" )
+{
+
+    uint256_t large = UINT256_MAX_INT;
+
+    uint256_t shifted = large << 256;
+
+    bool success = shifted == UINT256_ZERO;
+
+    REQUIRE( success );
+
+    // reset it
+    large.set_all( 0xFF );
+
+    // check first bytes = 16 = 0xFF, last 16 = 0x00
+    shifted = large << 128;
+
+
+    for( int x = 0; x < UINT256_SIZE_IN_BYTES / 2; ++x )
+        {
+            REQUIRE( shifted[ x ] == 0x00 );
+        }
+    for( int x = UINT256_SIZE_IN_BYTES / 2; x < UINT256_SIZE_IN_BYTES; ++x )
+        {
+            REQUIRE( shifted[ x ] == 0xFF );
+        }
+
+    large.set_all( 0xFF );
+    shifted = large << 2;
+
+    for( int x = 31; x > 0; --x )
+        {
+            REQUIRE( shifted[ x ] == 0xFF );
+        }
+
+    REQUIRE( shifted[ 0 ] == 0xFC );
+
+    large.set_all( 0xFF );
+
+    shifted = large << 1;
+
+    for( int x = 31; x > 0; --x )
+        {
+            REQUIRE( shifted[ x ] == 0xFF );
+        }
+
+    REQUIRE( shifted[ 0 ] == 0xFE );
+}
