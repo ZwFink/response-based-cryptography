@@ -7,6 +7,10 @@ uint256_t::uint256_t()
 {
     set_all( 0 );
 }
+CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set )
+{
+    set_all( set );
+}
 
 CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint8_t val )
 {
