@@ -141,6 +141,11 @@ __device__ int uint256_t::popc()
     return total_ones;
 }
 
+CUDA_CALLABLE_MEMBER std::uint8_t uint256_t::at( int loc )
+{
+    return data[ loc ];
+}
+
 __device__ int uint256_t::ctz()
 {
     return 256 - popc();
