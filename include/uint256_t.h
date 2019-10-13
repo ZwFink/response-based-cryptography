@@ -1,6 +1,11 @@
 #ifndef UINT256_T_HH_INCLUDED
 #define UINT256_T_HH_INCLUDED
 #define UINT256_SIZE_IN_BYTES 32
+#define UINT256_SIZE_IN_BITS 256
+#define UINT256_LIMB_SIZE 8
+#define UINT256_MAX_INT uint256_t( 0xFF );
+#define UINT256_ZERO uint256_t( 0x00 );
+
 #include <cstddef>
 #include <string>
 #include <x86intrin.h>
