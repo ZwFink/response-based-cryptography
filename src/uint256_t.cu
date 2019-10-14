@@ -177,3 +177,50 @@ __device__ int uint256_t::ctz()
 {
     return 256 - popc();
 }
+
+CUDA_CALLABLE_MEMBER void uint256_t::to_32_bit_arr( std::uint32_t* dest )
+{
+    memcpy( dest, &(data), 32 );
+}
+
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::add( uint256_t augend )
+{
+    uint256_t ret;
+
+    std::uint32_t self_32[ 8 ];
+    std::uint32_t augend_32[ 8 ];
+    std::uint32_t ret_32[ 8 ];
+
+    to_32_bit_arr( self_32 );
+    augend.to_32_bit_arr( augend_32 );
+
+    // asm ("add.cc.u32      %0, %8, %16;\n\t"
+    //      "addc.cc.u32     %1, %9, %17;\n\t"
+    //      "addc.cc.u32     %2, %10, %18;\n\t"
+    //      "addc.cc.u32     %3, %11, %19;\n\t"
+    //      "addc.cc.u32     %4, %12, %20;\n\t"
+    //      "addc.cc.u32     %5, %13, %21;\n\t"
+    //      "addc.cc.u32     %6, %14, %22;\n\t"
+    //      "addc.u32        %7, %15, %23;\n\t"
+    //      : "=r"(ret_32[ 0 ]), "=r"(ret_32[ 1 ]), "=r"(ret_32[ 2 ]),   
+    //        "=r"(ret_32[ 3 ]), "=r"(ret_32[ 4 ]), "=r"(ret_32[ 5 ]),   
+    //        "=r"(ret_32[ 6 ]), "=r"(ret_32[ 7 ])
+    //      : "r"(self_32[ 0 ]), "r"(self_32[ 1 ]), "r"(self_32[ 2 ]),   
+    //        "r"(self_32[ 3 ]), "r"(self_32[ 4 ]), "r"(self_32[ 5 ]),   
+    //        "r"(self_32[ 6 ]), "r"(self_32[ 7 ]),
+    //        "r"(augend_32[ 0 ]), "r"(augend_32[ 1 ]), "r"(augend_32[ 2 ]),   
+    //        "r"(augend_32[ 3 ]), "r"(augend_32[ 4 ]), "r"(augend_32[ 5 ]),   
+    //        "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
+    //    );
+    asm ("add.cc.u32      %0, %4, %8;\n\t"
+         "addc.cc.u32     %1, %5, %9;\n\t"
+         "addc.cc.u32     %2, %6, %10;\n\t"
+         "addc.u32        %3, %7, %11;\n\t"
+         : "=r"(ret_32[0]), "=r"(ret_32[1]), "=r"(ret_32[2]), "=r"(ret_32[3])
+         : "r"(self_32[0]), "r"(self_32[1]), "r"(self_32[2]), "r"(self_32[3]),
+           "r"(augend_32[0]), "r"(augend_32[1]), "r"(augend_32[2]), "r"(augend_32[3]));
+
+
+    return ret;
+
+}
