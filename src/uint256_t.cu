@@ -116,6 +116,34 @@ __host__ void uint256_t::dump()
     std::cout << "\n"; 
 }
 
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift )
+{
+    uint256_t ret;
+
+    std::uint8_t limb_shifts  = shift / UINT256_LIMB_SIZE;
+    std::uint8_t shift_length = shift % UINT256_LIMB_SIZE;
+
+    std::uint8_t byte = 0;
+
+    for( byte = limb_shifts; byte < UINT256_SIZE_IN_BYTES; ++byte )
+        {
+            ret[ byte - limb_shifts ] = data[ byte ];
+        }
+
+    // leading limbs are alread zero
+
+    for( byte = 0; byte < UINT256_SIZE_IN_BYTES - 1; ++byte )
+        {
+            ret[ byte ] = ( ret.at( byte ) >> shift_length
+                            | ( ret.at( byte + 1 ) << ( UINT256_LIMB_SIZE - shift_length ) )
+                          );
+        }
+
+    ret[ UINT256_SIZE_IN_BYTES - 1 ] >>= shift;
+
+    return ret;
+}
+
 CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator<<( int shift )
 {
     uint256_t ret;
