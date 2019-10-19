@@ -58,7 +58,20 @@ class uint256_t
 
  private:
     std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
+
 };
 
+
+struct uint256_t_casted
+{
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+    uint32_t e;
+    uint32_t f;
+    uint32_t g;
+    uint32_t h;
+};
 
 #endif // UINT256_T_HH_INCLUDED

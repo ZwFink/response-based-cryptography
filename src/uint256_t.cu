@@ -7,6 +7,7 @@ uint256_t::uint256_t()
 {
     set_all( 0 );
 }
+
 CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set )
 {
     set_all( set );
@@ -215,40 +216,28 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::add( uint256_t augend )
 {
     uint256_t ret;
 
-    std::uint32_t self_32[ 8 ];
-    std::uint32_t augend_32[ 8 ];
-    std::uint32_t ret_32[ 8 ];
+    uint256_t_casted *self_32   = (uint256_t_casted*) ((void*) &data );
+    uint256_t_casted *augend_32 = (uint256_t_casted*) ((void*) &augend.data );
+    uint256_t_casted *ret_32    = (uint256_t_casted*) ((void*) &ret.data );
 
-    to_32_bit_arr( self_32 );
-    augend.to_32_bit_arr( augend_32 );
-
-    // asm ("add.cc.u32      %0, %8, %16;\n\t"
-    //      "addc.cc.u32     %1, %9, %17;\n\t"
-    //      "addc.cc.u32     %2, %10, %18;\n\t"
-    //      "addc.cc.u32     %3, %11, %19;\n\t"
-    //      "addc.cc.u32     %4, %12, %20;\n\t"
-    //      "addc.cc.u32     %5, %13, %21;\n\t"
-    //      "addc.cc.u32     %6, %14, %22;\n\t"
-    //      "addc.u32        %7, %15, %23;\n\t"
-    //      : "=r"(ret_32[ 0 ]), "=r"(ret_32[ 1 ]), "=r"(ret_32[ 2 ]),   
-    //        "=r"(ret_32[ 3 ]), "=r"(ret_32[ 4 ]), "=r"(ret_32[ 5 ]),   
-    //        "=r"(ret_32[ 6 ]), "=r"(ret_32[ 7 ])
-    //      : "r"(self_32[ 0 ]), "r"(self_32[ 1 ]), "r"(self_32[ 2 ]),   
-    //        "r"(self_32[ 3 ]), "r"(self_32[ 4 ]), "r"(self_32[ 5 ]),   
-    //        "r"(self_32[ 6 ]), "r"(self_32[ 7 ]),
-    //        "r"(augend_32[ 0 ]), "r"(augend_32[ 1 ]), "r"(augend_32[ 2 ]),   
-    //        "r"(augend_32[ 3 ]), "r"(augend_32[ 4 ]), "r"(augend_32[ 5 ]),   
-    //        "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
-    //    );
-    asm ("add.cc.u32      %0, %4, %8;\n\t"
-         "addc.cc.u32     %1, %5, %9;\n\t"
-         "addc.cc.u32     %2, %6, %10;\n\t"
-         "addc.u32        %3, %7, %11;\n\t"
-         : "=r"(ret_32[0]), "=r"(ret_32[1]), "=r"(ret_32[2]), "=r"(ret_32[3])
-         : "r"(self_32[0]), "r"(self_32[1]), "r"(self_32[2]), "r"(self_32[3]),
-           "r"(augend_32[0]), "r"(augend_32[1]), "r"(augend_32[2]), "r"(augend_32[3]));
-
+    asm ("add.cc.u32      %0, %8, %16;\n\t"
+         "addc.cc.u32     %1, %9, %17;\n\t"
+         "addc.cc.u32     %2, %10, %18;\n\t"
+         "addc.cc.u32     %3, %11, %19;\n\t"
+         "addc.cc.u32     %4, %12, %20;\n\t"
+         "addc.cc.u32     %5, %13, %21;\n\t"
+         "addc.cc.u32     %6, %14, %22;\n\t"
+         "addc.u32        %7, %15, %23;\n\t"
+         : "=r"(ret_32->a), "=r"(ret_32->b), "=r"(ret_32->c),   
+           "=r"(ret_32->d), "=r"(ret_32->e), "=r"(ret_32->f),   
+           "=r"(ret_32->g), "=r"(ret_32->h)
+         : "r"(self_32->a), "r"(self_32->b), "r"(self_32->c),   
+           "r"(self_32->d), "r"(self_32->e), "r"(self_32->f),   
+           "r"(self_32->g), "r"(self_32->h),
+           "r"(augend_32->a), "r"(augend_32->b), "r"(augend_32->c),   
+           "r"(augend_32->d), "r"(augend_32->e), "r"(augend_32->f),   
+           "r"(augend_32->g), "r"(augend_32->h)
+       );
 
     return ret;
-
 }
