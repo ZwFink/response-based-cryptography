@@ -114,6 +114,14 @@ namespace test_utils
             *dest = to_pop->ctz();
         }
 
+        __global__ void add_knl( uint256_t *a,
+                                 uint256_t *b,
+                                 uint256_t *res
+                               )
+        {
+            *res = a->add( *b );
+        }
+
 };
 
 #endif
