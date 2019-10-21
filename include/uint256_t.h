@@ -26,6 +26,9 @@ class uint256_t
  public:
     CUDA_CALLABLE_MEMBER uint256_t();
     CUDA_CALLABLE_MEMBER uint256_t( std::uint8_t set );
+
+    // set the member at index to set
+    CUDA_CALLABLE_MEMBER uint256_t( std::uint8_t set, std::uint8_t index );
     CUDA_CALLABLE_MEMBER ~uint256_t() = default;
 
     CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
