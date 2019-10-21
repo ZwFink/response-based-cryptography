@@ -43,6 +43,10 @@ class uint256_t
     CUDA_CALLABLE_MEMBER bool operator==( uint256_t comp );
     CUDA_CALLABLE_MEMBER bool operator!=( uint256_t comp );
 
+    CUDA_CALLABLE_MEMBER int compare( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER bool operator<( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER bool operator>( const uint256_t& comp ) const;
+
     CUDA_CALLABLE_MEMBER uint256_data_t& get_data();
 
     CUDA_CALLABLE_MEMBER void set_all( std::uint8_t value );
