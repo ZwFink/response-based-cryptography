@@ -3,8 +3,9 @@
 #define UINT256_SIZE_IN_BYTES 32
 #define UINT256_SIZE_IN_BITS 256
 #define UINT256_LIMB_SIZE 8
-#define UINT256_MAX_INT uint256_t( 0xFF );
-#define UINT256_ZERO uint256_t( 0x00 );
+#define UINT256_MAX_INT uint256_t( 0xFF )
+#define UINT256_ZERO uint256_t( 0x00 )
+#define UINT256_ONE uint256_t( 0x01, 0 )
 
 #include <cstddef>
 #include <string>
