@@ -123,6 +123,13 @@ namespace test_utils
             *res = result;
         }
 
+        __global__ void neg_knl( uint256_t *a,
+                                 uint256_t *dest
+                               )
+        {
+            a->neg( *dest );
+        }
+
 };
 
 #endif
