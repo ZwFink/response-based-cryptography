@@ -119,7 +119,8 @@ namespace test_utils
                                  uint256_t *res
                                )
         {
-            *res = a->add( *b );
+            uint256_t result = a->add( *b );
+            *res = result;
         }
 
 };
