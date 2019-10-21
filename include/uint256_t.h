@@ -53,25 +53,12 @@ class uint256_t
     __device__ int popc();
 
     CUDA_CALLABLE_MEMBER void to_32_bit_arr( std::uint32_t* dest );
-    CUDA_CALLABLE_MEMBER uint256_t add( uint256_t augend );
+    __device__ uint256_t add( uint256_t augend );
 
 
  private:
     std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
 
-};
-
-
-struct uint256_t_casted
-{
-    uint32_t a;
-    uint32_t b;
-    uint32_t c;
-    uint32_t d;
-    uint32_t e;
-    uint32_t f;
-    uint32_t g;
-    uint32_t h;
 };
 
 #endif // UINT256_T_HH_INCLUDED
