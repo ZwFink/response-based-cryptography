@@ -265,3 +265,12 @@ __device__ uint256_t uint256_t::add( uint256_t augend )
 
     return ret;
 }
+
+__device__ void uint256_t::neg( uint256_t& dest )
+{
+    uint256_t complement = ~(*this);
+    uint256_t one( 0x00 );
+    one[ 0 ] = 0x01;
+
+    dest = complement.add( one );
+}

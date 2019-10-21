@@ -561,3 +561,37 @@ TEST_CASE( "uint256_t>", "[uint256_t]" )
         }
 
 }
+
+TEST_CASE( "uint256_t::neg", "[uint256_t]" )
+{
+    uint256_t a( 0xFF );
+    uint256_t b( 0x01, 0 );
+    uint256_t c( 0x00 );
+
+    uint256_t *a_dev = nullptr;
+    uint256_t *c_dev = nullptr;
+
+    cudaMalloc( (void**) &a_dev, sizeof( uint256_t ) );
+    cudaMalloc( (void**) &c_dev, sizeof( uint256_t ) );
+
+    if( test_utils::HtoD( a_dev, &a, sizeof( uint256_t ) ) != cudaSuccess )
+        {
+            std::cout << "Failure to transfer a to device\n";
+        }
+    if( test_utils::HtoD( c_dev, &c, sizeof( uint256_t ) ) != cudaSuccess )
+        {
+            std::cout << "Failure to transfer c to device\n";
+        }
+
+    test_utils::neg_knl<<<1,1>>>( a_dev, c_dev );
+
+
+    if( test_utils::DtoH( &c, c_dev, sizeof( uint256_t ) ) != cudaSuccess )
+        {
+            std::cout << "Failure to transfer c to device\n";
+        }
+
+    bool result = c == b;
+    REQUIRE( result );
+}
+

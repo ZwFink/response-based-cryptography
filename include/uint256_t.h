@@ -61,7 +61,11 @@ class uint256_t
     __device__ int popc();
 
     CUDA_CALLABLE_MEMBER void to_32_bit_arr( std::uint32_t* dest );
+
     __device__ uint256_t add( uint256_t augend );
+
+    // this must be device-only because uint256_t::add is used
+    __device__ void neg( uint256_t& dest );
 
 
  private:
