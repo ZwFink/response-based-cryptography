@@ -509,3 +509,55 @@ TEST_CASE( "uint256_t<", "[uint256_t]" )
         }
 
 }
+
+TEST_CASE( "uint256_t>", "[uint256_t]" )
+{
+    uint256_t a1( 0x00 );
+    uint256_t a2( 0x00 );
+    bool result = false;
+
+    SECTION( "255>0" )
+        {
+            a2.set_all( 0xFF );
+
+            result = a2 > a1;
+
+            REQUIRE( result );
+        }
+    SECTION( "n>n-n" )
+        {
+            a1.set_all( 0x43 );
+            a2.set_all( 0x43 );
+
+            a2[ 0 ] = 0x44;
+            result = a2 > a1;
+
+            REQUIRE( result );
+        }
+    SECTION( "x > n, x way bigger than n" )
+        {
+            a1.set_all( 0x43 );
+            a2.set_all( 0x43 );
+            a2[ 31 ] = 0x44;
+
+            result = a2 > a1;
+
+            REQUIRE( result );
+
+
+        }
+    SECTION( "!(n > n)" )
+        {
+            a1.set_all( 0xFF );
+            a2.set_all( 0xFF );
+
+            result = a1 > a2;
+
+            REQUIRE( !result );
+
+            result = a2 > a1;
+
+            REQUIRE( !result );
+        }
+
+}
