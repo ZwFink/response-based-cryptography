@@ -383,37 +383,75 @@ TEST_CASE( "uint256_t_add", "[uint256_t]" )
 
     bool result_code = false;
 
-    a1.set_all( 0xFF );
-    a2.set_all( 0x00 );
-    result.set_all( 0x00 );
-
-    if( test_utils::HtoD( a1_dev, &a1, sizeof( uint256_t ) ) != cudaSuccess )
+    SECTION( "0+255=0" )
         {
-            std::cout << "Failure to transfer a1 to device\n";
+            a1.set_all( 0xFF );
+            a2.set_all( 0x00 );
+            result.set_all( 0x00 );
+
+            if( test_utils::HtoD( a1_dev, &a1, sizeof( uint256_t ) ) != cudaSuccess )
+                {
+                    std::cout << "Failure to transfer a1 to device\n";
+                }
+
+            if( test_utils::HtoD( a2_dev, &a2, sizeof( uint256_t ) ) != cudaSuccess)
+                {
+                    std::cout << "Failure to transfer a2 to device\n";
+                }
+
+            if( test_utils::HtoD( result_dev, &result, sizeof( uint256_t ) ) != cudaSuccess)
+                {
+                    std::cout << "Failure to transfer result to device\n";
+                }
+
+            test_utils::add_knl<<<1,1>>>( a1_dev, a2_dev, result_dev );
+            cudaDeviceSynchronize();
+
+            if( test_utils::DtoH( &result, result_dev, sizeof( uint256_t ) ) != cudaSuccess)
+                {
+                    std::cout << "Failure to transfer to host \n";
+                }
+
+            result_code = result == UINT256_MAX_INT;
+            REQUIRE( result_code );
         }
 
-    if( test_utils::HtoD( a2_dev, &a2, sizeof( uint256_t ) ) != cudaSuccess)
+    SECTION( "188+67=255" )
         {
-            std::cout << "Failure to transfer a2 to device\n";
+            // 188 + 67 = 255
+
+            // 188
+            a1.set_all( 0xBC );
+
+            // 67
+            a2.set_all( 0x43 );
+
+            if( test_utils::HtoD( a1_dev, &a1, sizeof( uint256_t ) ) != cudaSuccess )
+                {
+                    std::cout << "Failure to transfer a1 to device\n";
+                }
+
+            if( test_utils::HtoD( a2_dev, &a2, sizeof( uint256_t ) ) != cudaSuccess)
+                {
+                    std::cout << "Failure to transfer a2 to device\n";
+                }
+
+            if( test_utils::HtoD( result_dev, &result, sizeof( uint256_t ) ) != cudaSuccess)
+                {
+                    std::cout << "Failure to transfer result to device\n";
+                }
+
+            test_utils::add_knl<<<1,1>>>( a1_dev, a2_dev, result_dev );
+            cudaDeviceSynchronize();
+
+            if( test_utils::DtoH( &result, result_dev, sizeof( uint256_t ) ) != cudaSuccess)
+                {
+                    std::cout << "Failure to transfer to host \n";
+                }
+
+            result_code = result == UINT256_MAX_INT;
+            REQUIRE( result_code );
         }
-
-    if( test_utils::HtoD( result_dev, &result, sizeof( uint256_t ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer result to device\n";
-        }
-
-    test_utils::add_knl<<<1,1>>>( a1_dev, a2_dev, result_dev );
-    cudaDeviceSynchronize();
-
-    if( test_utils::DtoH( &result, result_dev, sizeof( uint256_t ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer to host \n";
-        }
-
-    result.dump();
-    result_code = result == UINT256_MAX_INT;
-    REQUIRE( result_code );
-
 
     cudaFree( a1_dev );
     cudaFree( a2_dev );
