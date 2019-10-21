@@ -175,23 +175,12 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator<<( int shift )
 __device__ int uint256_t::popc()
 {
     int total_ones = 0;
-    uint32_t current = 0;
+    std::uint32_t *current = nullptr;
 
-    for( std::uint8_t index = 0; index < 32; index += 4 )
+    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES / 4; ++index )
         {
-            current |= data[ index ];
-            current = current << 8;
-
-            current |= data[ index + 1 ];
-            current = current << 8;
-
-            current |= data[ index + 2 ];
-            current = current << 8;
-
-            current |= data[ index + 3 ];
-
-            total_ones += __popc( current );
-            current = 0;
+            current = (std::uint32_t*) data + index;
+            total_ones += __popc( *current );
         }
 
     return total_ones;
