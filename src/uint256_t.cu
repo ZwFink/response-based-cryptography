@@ -236,13 +236,13 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator>( const uint256_t& comp ) const
 }
 
 
-__device__ uint256_t uint256_t::add( uint256_t augend )
+__device__ bool uint256_t::add( uint256_t& dest, uint256_t augend )
 {
     uint256_t ret;
 
     std::uint32_t *self_32   = (uint32_t*) &data;
     std::uint32_t *augend_32 = (uint32_t*) &augend.data;
-    std::uint32_t *ret_32    = (uint32_t*) &ret.data;
+    std::uint32_t *dest_32   = (uint32_t*) &dest.data;
 
     asm ("add.cc.u32      %0, %8, %16;\n\t"
          "addc.cc.u32     %1, %9, %17;\n\t"
@@ -252,9 +252,9 @@ __device__ uint256_t uint256_t::add( uint256_t augend )
          "addc.cc.u32     %5, %13, %21;\n\t"
          "addc.cc.u32     %6, %14, %22;\n\t"
          "addc.u32        %7, %15, %23;\n\t"
-         : "=r"(ret_32[ 0 ]), "=r"(ret_32[ 1 ]), "=r"(ret_32[ 2 ]),   
-           "=r"(ret_32[ 3 ]), "=r"(ret_32[ 4 ]), "=r"(ret_32[ 5 ]),   
-           "=r"(ret_32[ 6 ]), "=r"(ret_32[ 7 ])
+         : "=r"(dest_32[ 0 ]), "=r"(dest_32[ 1 ]), "=r"(dest_32[ 2 ]),   
+           "=r"(dest_32[ 3 ]), "=r"(dest_32[ 4 ]), "=r"(dest_32[ 5 ]),   
+           "=r"(dest_32[ 6 ]), "=r"(dest_32[ 7 ])
          : "r"(self_32[ 0 ]), "r"(self_32[ 1 ]), "r"(self_32[ 2 ]),   
            "r"(self_32[ 3 ]), "r"(self_32[ 4 ]), "r"(self_32[ 5 ]),   
            "r"(self_32[ 6 ]), "r"(self_32[ 7 ]),
@@ -262,8 +262,7 @@ __device__ uint256_t uint256_t::add( uint256_t augend )
            "r"(augend_32[ 3 ]), "r"(augend_32[ 4 ]), "r"(augend_32[ 5 ]),   
            "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
          );
-
-    return ret;
+    return false;
 }
 
 __device__ void uint256_t::neg( uint256_t& dest )
@@ -272,5 +271,5 @@ __device__ void uint256_t::neg( uint256_t& dest )
     uint256_t one( 0x00 );
     one[ 0 ] = 0x01;
 
-    dest = complement.add( one );
+    complement.add( dest, one );
 }
