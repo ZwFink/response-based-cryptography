@@ -236,7 +236,7 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator>( const uint256_t& comp ) const
 }
 
 
-__device__ bool uint256_t::add( uint256_t& dest, uint256_t augend )
+__device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
 {
     uint256_t ret;
 
