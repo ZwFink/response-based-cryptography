@@ -119,8 +119,7 @@ namespace test_utils
                                  uint256_t *res
                                )
         {
-            uint256_t result = a->add( *b );
-            *res = result;
+            a->add( *res, *b );
         }
 
         __global__ void neg_knl( uint256_t *a,
