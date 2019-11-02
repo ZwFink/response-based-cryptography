@@ -24,6 +24,15 @@ CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint8_t val )
     memset( data, val, UINT256_SIZE_IN_BYTES );
 }
 
+// copy constructor
+CUDA_CALLABLE_MEMBER void uint256_t::copy( uint256_t copied )
+{
+   for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; ++idx )
+   {
+      data[ idx ] = copied[ idx ];
+   }
+}
+
 CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
 {
     return data[ idx ];
