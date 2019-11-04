@@ -8,6 +8,13 @@ uint256_t::uint256_t()
     set_all( 0 );
 }
 
+CUDA_CALLABLE_MEMBER void uint256_t::from_string( const unsigned char *string )
+{
+    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES; ++index )
+        {
+            data[ index ] = string[ index ];
+        }
+}
 
 CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set, std::uint8_t index )
 {

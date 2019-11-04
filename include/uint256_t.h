@@ -34,6 +34,8 @@ class uint256_t
     CUDA_CALLABLE_MEMBER ~uint256_t() = default;
 	CUDA_CALLABLE_MEMBER void copy( uint256_t copied );
 
+    CUDA_CALLABLE_MEMBER void from_string( const unsigned char *string );
+
     CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
     CUDA_CALLABLE_MEMBER uint256_t operator|( uint256_t comp );
     CUDA_CALLABLE_MEMBER uint256_t operator^( uint256_t comp );
