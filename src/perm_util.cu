@@ -70,12 +70,9 @@ __device__ void assign_last_permutation( uint256_t *perm,
 __device__ uint256_t get_bin_coef( int n, int k )  
 {
    cudaError_t result = cudaSuccess;    
-   int *C = NULL;
+   int C[k+1];
+   memset(C,0,sizeof(C));
    int ret = -1;
-
-   result = cudaMalloc( (void**) &C, sizeof( int ) * k+1 );
-   assert( result == cudaSuccess );
-
    C[0] = 1;
 
    for( int i=1; i <= n; i++ )
@@ -85,10 +82,7 @@ __device__ uint256_t get_bin_coef( int n, int k )
          C[j] = C[j] + C[j-1];
       }
    }
-   ret = C[k];
 
-   cudaFree(C);
-
-   return ret; 
+   return C[k]; 
 }
                                 
