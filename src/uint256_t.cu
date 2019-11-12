@@ -284,8 +284,8 @@ __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
 __device__ void uint256_t::neg( uint256_t& dest )
 {
     uint256_t complement = ~(*this);
-    uint256_t one( 0x00 );
-    one[ 0 ] = 0x01;
+
+    uint256_t one( 0x01, UINT256_SIZE_IN_BYTES - 1 );
 
     complement.add( dest, one );
 }
