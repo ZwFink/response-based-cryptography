@@ -1,4 +1,4 @@
-// utility file for keyspace partitioning
+// utility file for permutation delimination
 
 #ifndef PERM_UTIL_CU_
 #define PERM_UTIL_CU_
@@ -83,29 +83,29 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
 }
 // compute the binomial coefficient:
 // get the number of k-element subsets of an n-element set
-__device__ uint256_t get_bin_coef( int n, int k )  
+__device__ unsigned long long get_bin_coef(int n, int r)
 {
-   cudaError_t result = cudaSuccess;    
-   uint256_t ret = UINT256_ZERO;
-   //int sz = k + 1;
-   //const C[sz];
 
-   //C[0] = 1;
+  int i;
+  unsigned long long b;
 
-   //for( int i=1; i <= n; i++ )
-   //{
-   //   for( int j=min(i,k); j>0; j-- )
-   //   {  
-   //      C[j] = C[j] + C[j-1];
-   //   }
-   //}
-   //
-   ////ret(C[k], 0);   
+  if ((r < 0) || (n < r)) return 0;
 
-   return ret; 
+  if ((2*r) > n) r = n-r;
+  b=1;
+
+  if( r>0 )
+  {
+     for( i=0; i<=r-1; i=i+1 )
+	 {
+        b = ( b*(n-i) ) / (i+1);
+	 }
+  }
+
+  return b;
 }
 
-// we don't need this here -- should be used in main before kernel invocation.               
+// we don't need this here -- should be used in main before kernel invocation.
 __device__ void get_random_permutation( uint256_t perm,
                                         int mismatches,
                                         int subkey_length )
