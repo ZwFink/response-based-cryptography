@@ -565,7 +565,7 @@ TEST_CASE( "uint256_t>", "[uint256_t]" )
 TEST_CASE( "uint256_t::neg", "[uint256_t]" )
 {
     uint256_t a( 0xFF );
-    uint256_t b( 0x01, 0 );
+    uint256_t b( 0x01, UINT256_SIZE_IN_BYTES - 1 );
     uint256_t c( 0x00 );
 
     uint256_t *a_dev = nullptr;
