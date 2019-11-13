@@ -216,6 +216,11 @@ CUDA_CALLABLE_MEMBER void uint256_t::to_32_bit_arr( std::uint32_t* dest )
     memcpy( dest, &(data), 32 );
 }
 
+CUDA_CALLABLE_MEMBER void uint256_t::from_64_bit_int( std::uint64_t dest )
+{
+    memcpy( &(data + 8), dest, 64 );
+}
+
 CUDA_CALLABLE_MEMBER int uint256_t::compare( const uint256_t& comp ) const
 {
     std::uint32_t *my_data = (std::uint32_t*) &data;

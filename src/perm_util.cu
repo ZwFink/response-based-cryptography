@@ -3,35 +3,34 @@
 #ifndef PERM_UTIL_CU_
 #define PERM_UTIL_CU_
 
-#ifndef NUM_BLOCKS
-#define NUM_BLOCKS 30
-#endif
-#define NUM_THREADS 1024
-#define MAX_RK_SIZE 182
-
 #include "uint256_t.h"
-
-// NOT NEEDED
-// macro for min of two ints; used in binomial function
-#define min(a, b) ((a) > (b))? (b): (a)
 
 __device__ void decode_ordinal( uint256_t perm, 
                                 const uint256_t ordinal, 
                                 int mismatches, 
                                 int subkey_length )
 {
-   uint256_t binom, curr_ordinal;   
+   uint256_t binom;
+   uint256_t curr_ordinal;   
+   uint64_t tmp_binom    = 0;
+   uint64_t tmp_curr_ord = 0;
    curr_ordinal.copy( ordinal );
+   
+   perm.set_all( 0 );
+   
 
    for( int bit = subkey_length-1; mismatches > 0; bit-- )
    {
-      // compute the binomial coefficient n over k 
-      // TODO: create binom_coef method for uint256_t class
+      tmp_binom = get_bin_coef( bit, mismatches );
+      if ( curr_ordinal > binom || curr_ordinal == binom )
+      {
+         curr_ordinal = curr_ordinal - binom;
+      }
       
    }
 }
 
-// COMPLETE
+// COMPLETED
 __device__ void assign_first_permutation( uint256_t *perm, int mismatches )
 {
    // set perm to first key
@@ -41,7 +40,7 @@ __device__ void assign_first_permutation( uint256_t *perm, int mismatches )
    perm->add( *perm, UINT256_NEGATIVE_ONE ); // add negative one
 }
 
-// COMPLETE
+// COMPLETED
 __device__ void assign_last_permutation( uint256_t *perm,
                                          int mismatches,
                                          int subkey_length )
@@ -57,20 +56,25 @@ __device__ void assign_last_permutation( uint256_t *perm,
    *perm = *perm << (subkey_length - mismatches);
 }
 
+// IN-PROGRESS (90%)
 __device__ void get_perm_pair( uint256_t *starting_perm, 
                                uint256_t *ending_perm,
                                size_t pair_index,        // thread num
                                size_t pair_count,        // num threads
                                int mismatches,           // 5
-                               size_t key_size_in_bytes, // 32
-                               size_t key_size_in_bits   // 256 
+                               size_t key_size_bytes,    // 32  (key_size)
+                               size_t key_sz_bits        // 256 (subkey_length)
                              )
 {
    uint256_t total_perms();
    uint256_t starting_ordinal();
    uint256_t ending_ordinal();
+   uint64_t tmp_tot_perms; 
+   uint64_t tmp_starting_ord; 
+   uint64_t tmp_ending_ord; 
 
-   // TODO: total_perms = binomial_coef(subkey_length, mismatches)
+   tmp_tot_perms = get_bin_coef( key_sz_bits, mismatches );
+   total_perms.from_64_bit_int( tmp_tot_perms ); 
 
    if( pair_index == 0 )
    {
@@ -78,16 +82,33 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    } 
    else
    {
-      
+      tmp_starting_ord = tmp_tot_perms / pair_count;
+      tmp_starting_ord = tmp_starting_ord * pair_index;
+      starting_ordinal.from_64_bit_int( tmp_starting_ord );
+
+      decode_ordinal(starting_perm, starting_ordinal, mismatches, key_sz_bits);
+   }
+
+   if( pair_index == pair_count - 1 )
+   {
+      assign_last_permutation( ending_perm, mismatches, key_sz_bits );
+   } 
+   else
+   {
+      tmp_ending_ord = tmp_tot_perms / pair_count;
+      tmp_starting_ord = tmp_ending_ord * (pair_index + 1);
+      starting_ordinal.from_64_bit_int( tmp_starting_ord );
+   
+      decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
    }
 }
+
 // compute the binomial coefficient:
 // get the number of k-element subsets of an n-element set
-__device__ unsigned long long get_bin_coef(int n, int r)
+__device__ uint64_t get_bin_coef(size_t n, size_t r)
 {
-
   int i;
-  unsigned long long b;
+  uint64_t b;
 
   if ((r < 0) || (n < r)) return 0;
 
@@ -96,7 +117,7 @@ __device__ unsigned long long get_bin_coef(int n, int r)
 
   if( r>0 )
   {
-     for( i=0; i<=r-1; i=i+1 )
+     for( i=0; i<=r-1; i++ )
 	 {
         b = ( b*(n-i) ) / (i+1);
 	 }
