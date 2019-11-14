@@ -22,9 +22,16 @@ __device__ void decode_ordinal( uint256_t perm,
    for( int bit = subkey_length-1; mismatches > 0; bit-- )
    {
       tmp_binom = get_bin_coef( bit, mismatches );
+      binom( 0 );
+      binom( tmp_binom, 2 );
+
       if ( curr_ordinal > binom || curr_ordinal == binom )
       {
          curr_ordinal = curr_ordinal - binom;
+
+         // TODO: set bit in perm
+
+         mismatches--;
       }
       
    }
@@ -74,7 +81,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    uint64_t tmp_ending_ord; 
 
    tmp_tot_perms = get_bin_coef( key_sz_bits, mismatches );
-   total_perms.from_64_bit_int( tmp_tot_perms ); 
+   total_perms( tmp_tot_perms, 2 ); 
 
    if( pair_index == 0 )
    {
@@ -84,7 +91,9 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    {
       tmp_starting_ord = tmp_tot_perms / pair_count;
       tmp_starting_ord = tmp_starting_ord * pair_index;
-      starting_ordinal.from_64_bit_int( tmp_starting_ord );
+      // copy 64 bit tmp into uint256_t 
+      // uint256_t is big endian - most significant byte first
+      starting_ordinal( tmp_starting_ord, 2 );
 
       decode_ordinal(starting_perm, starting_ordinal, mismatches, key_sz_bits);
    }
@@ -97,7 +106,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    {
       tmp_ending_ord = tmp_tot_perms / pair_count;
       tmp_starting_ord = tmp_ending_ord * (pair_index + 1);
-      starting_ordinal.from_64_bit_int( tmp_starting_ord );
+      starting_ordinal( tmp_starting_ord, 2 ); // copy into uint256_t
    
       decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
    }
@@ -107,23 +116,26 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
 // get the number of k-element subsets of an n-element set
 __device__ uint64_t get_bin_coef(size_t n, size_t r)
 {
-  int i;
-  uint64_t b;
+   int i;
+   uint64_t b;
 
-  if ((r < 0) || (n < r)) return 0;
+   if( (r < 0) || (n < r) ) 
+      return 0;
 
-  if ((2*r) > n) r = n-r;
-  b=1;
+   if( (2*r) > n ) 
+      r = n-r;
 
-  if( r>0 )
-  {
-     for( i=0; i<=r-1; i++ )
-	 {
-        b = ( b*(n-i) ) / (i+1);
-	 }
-  }
+   b = 1;
 
-  return b;
+   if( r>0 )
+   {
+      for( i=0; i<=r-1; i++ )
+      {
+         b = ( b*(n-i) ) / (i+1);
+      }
+   }
+
+   return b;
 }
 
 // we don't need this here -- should be used in main before kernel invocation.

@@ -33,6 +33,14 @@ CUDA_CALLABLE_MEMBER void uint256_t::copy( uint256_t copied )
    }
 }
 
+// PRECONDITION: 0 <= idx <= 2
+CUDA_CALLABLE_MEMBER void uint256_t::uint256_t( uint64_t ref, uint8_t index )
+{
+   uint64_t *data_ptr = (uint64_t *) &data;
+   
+   data_ptr[ idx ] |= ref; // bitwise OR 
+}
+
 CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
 {
     return data[ idx ];
@@ -214,11 +222,6 @@ __device__ int uint256_t::ctz()
 CUDA_CALLABLE_MEMBER void uint256_t::to_32_bit_arr( std::uint32_t* dest )
 {
     memcpy( dest, &(data), 32 );
-}
-
-CUDA_CALLABLE_MEMBER void uint256_t::from_64_bit_int( std::uint64_t dest )
-{
-    memcpy( &(data + 8), dest, 64 );
 }
 
 CUDA_CALLABLE_MEMBER int uint256_t::compare( const uint256_t& comp ) const
