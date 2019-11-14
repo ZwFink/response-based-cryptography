@@ -5,6 +5,7 @@
 
 #include "uint256_t.h"
 
+// COMPLETED
 __device__ void decode_ordinal( uint256_t perm, 
                                 const uint256_t ordinal, 
                                 int mismatches, 
@@ -30,6 +31,7 @@ __device__ void decode_ordinal( uint256_t perm,
          curr_ordinal = curr_ordinal - binom;
 
          // TODO: set bit in perm
+         perm.set_bit( bit );
 
          mismatches--;
       }
@@ -63,7 +65,7 @@ __device__ void assign_last_permutation( uint256_t *perm,
    *perm = *perm << (subkey_length - mismatches);
 }
 
-// IN-PROGRESS (90%)
+// COMPLETED
 __device__ void get_perm_pair( uint256_t *starting_perm, 
                                uint256_t *ending_perm,
                                size_t pair_index,        // thread num
@@ -89,7 +91,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    } 
    else
    {
-      tmp_starting_ord = tmp_tot_perms / pair_count;
+      tmp_starting_ord = floor( tmp_tot_perms / pair_count );
       tmp_starting_ord = tmp_starting_ord * pair_index;
       // copy 64 bit tmp into uint256_t 
       // uint256_t is big endian - most significant byte first
@@ -104,7 +106,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    } 
    else
    {
-      tmp_ending_ord = tmp_tot_perms / pair_count;
+      tmp_ending_ord = floor( tmp_tot_perms / pair_count );
       tmp_starting_ord = tmp_ending_ord * (pair_index + 1);
       starting_ordinal( tmp_starting_ord, 2 ); // copy into uint256_t
    

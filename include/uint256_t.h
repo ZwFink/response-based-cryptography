@@ -66,6 +66,8 @@ class uint256_t
 
     CUDA_CALLABLE_MEMBER void to_32_bit_arr( std::uint32_t* dest );
 
+    CUDA_CALLABLE_MEMBER void set_bit( std::uint8_t bit_idx );
+
     __device__ bool add( uint256_t& dest,
                          const uint256_t augend
                        ) const;

@@ -27,18 +27,18 @@ CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint8_t val )
 // copy constructor
 CUDA_CALLABLE_MEMBER void uint256_t::copy( uint256_t copied )
 {
-   for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; ++idx )
-   {
-      data[ idx ] = copied[ idx ];
-   }
+    for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; ++idx )
+    {
+       data[ idx ] = copied[ idx ];
+    }
 }
 
 // PRECONDITION: 0 <= idx <= 2
 CUDA_CALLABLE_MEMBER void uint256_t::uint256_t( uint64_t ref, uint8_t index )
 {
-   uint64_t *data_ptr = (uint64_t *) &data;
-   
-   data_ptr[ idx ] |= ref; // bitwise OR 
+    uint64_t *data_ptr = (uint64_t *) &data;
+    
+    data_ptr[ idx ] |= ref; // bitwise OR 
 }
 
 CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
@@ -252,7 +252,6 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator>( const uint256_t& comp ) const
     return compare( comp ) > 0;
 }
 
-
 __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
 {
     uint256_t ret;
@@ -290,3 +289,38 @@ __device__ void uint256_t::neg( uint256_t& dest )
 
     complement.add( dest, one );
 }
+
+CUDA_CALLABLE_MEMBER void uint256_t::set_bit( std::uint8_t bit_idx )
+{
+    std::uint8_t block = floor( bit_idx / 8 );
+    std::uint8_t ndx_in_block = bit_idx - ( block * 8 );
+
+    switch
+    {
+        case 0: data[ block ] |= 1; 
+                break;
+
+        case 1: data[ block ] |= 2;
+                break;
+
+        case 2: data[ block ] |= 4; 
+                break;
+
+        case 3: data[ block ] |= 8; 
+                break;
+
+        case 4: data[ block ] |= 16; 
+                break;
+
+        case 5: data[ block ] |= 32; 
+                break;
+
+        case 6: data[ block ] |= 64; 
+                break;
+
+        case 7: data[ block ] |= 128; 
+                break;
+    }
+}
+
+
