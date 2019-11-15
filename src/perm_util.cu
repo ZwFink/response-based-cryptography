@@ -22,7 +22,7 @@ __device__ void decode_ordinal( uint256_t perm,
    {
       tmp_binom = get_bin_coef( bit, mismatches );
       binom( 0 );
-      binom( tmp_binom, 2 );
+      binom.copy_64( tmp_binom, 3 );
 
       if ( wkg_ordinal > binom || wkg_ordinal == binom )
       {
@@ -80,7 +80,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    uint64_t tmp_ending_ord; 
 
    tmp_tot_perms = get_bin_coef( key_sz_bits, mismatches );
-   total_perms( tmp_tot_perms, 2 ); 
+   total_perms.copy_64( tmp_tot_perms, 3 ); 
 
    if( pair_index == 0 )
    {
@@ -90,9 +90,9 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    {
       tmp_starting_ord = floor( tmp_tot_perms / pair_count );
       tmp_starting_ord = tmp_starting_ord * pair_index;
-      // copy 64 bit tmp into uint256_t at index 2 
+      // copy 64 bit tmp into uint256_t at index 3
       // uint256_t is big endian - most significant byte first
-      starting_ordinal( tmp_starting_ord, 2 );
+      starting_ordinal.copy_64( tmp_starting_ord, 3 );
 
       decode_ordinal(starting_perm, starting_ordinal, mismatches, key_sz_bits);
    }
@@ -105,7 +105,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    {
       tmp_ending_ord = floor( tmp_tot_perms / pair_count );
       tmp_starting_ord = tmp_ending_ord * (pair_index + 1);
-      starting_ordinal( tmp_starting_ord, 2 ); // copy into uint256_t
+      starting_ordinal.copy_64( tmp_starting_ord, 3 ); // copy into uint256_t
    
       decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
    }

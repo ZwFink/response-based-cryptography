@@ -33,8 +33,8 @@ CUDA_CALLABLE_MEMBER void uint256_t::copy( uint256_t copied )
     }
 }
 
-// PRECONDITION: 0 <= idx <= 2
-CUDA_CALLABLE_MEMBER void uint256_t::uint256_t( uint64_t ref, uint8_t index )
+// PRECONDITION: 0 <= idx <= 3
+CUDA_CALLABLE_MEMBER void uint256_t::copy_64( uint64_t ref, uint8_t index )
 {
     uint64_t *data_ptr = (uint64_t *) &data;
     
@@ -290,35 +290,38 @@ __device__ void uint256_t::neg( uint256_t& dest )
     complement.add( dest, one );
 }
 
+// intended for use with permutation creation in function decode_ordinal
 CUDA_CALLABLE_MEMBER void uint256_t::set_bit( std::uint8_t bit_idx )
 {
     std::uint8_t block = floor( bit_idx / 8 );
     std::uint8_t ndx_in_block = bit_idx - ( block * 8 );
+   
+    std::uint8_t *data_ptr = (std::uint8_t *) &data;
 
     switch ( ndx_in_block )
     {
-        case 0: data[ block ] |= 1; 
+        case 0: data_ptr[ block ] |= 1; 
                 break;
 
-        case 1: data[ block ] |= 2;
+        case 1: data_ptr[ block ] |= 2;
                 break;
 
-        case 2: data[ block ] |= 4; 
+        case 2: data_ptr[ block ] |= 4; 
                 break;
 
-        case 3: data[ block ] |= 8; 
+        case 3: data_ptr[ block ] |= 8; 
                 break;
 
-        case 4: data[ block ] |= 16; 
+        case 4: data_ptr[ block ] |= 16; 
                 break;
 
-        case 5: data[ block ] |= 32; 
+        case 5: data_ptr[ block ] |= 32; 
                 break;
 
-        case 6: data[ block ] |= 64; 
+        case 6: data_ptr[ block ] |= 64; 
                 break;
 
-        case 7: data[ block ] |= 128; 
+        case 7: data_ptr[ block ] |= 128; 
                 break;
     }
 }
