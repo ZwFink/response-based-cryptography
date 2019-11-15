@@ -8,34 +8,30 @@
 // COMPLETED
 __device__ void decode_ordinal( uint256_t perm, 
                                 const uint256_t ordinal, 
-                                int mismatches, 
-                                int subkey_length )
+                                size_t mismatches, // 0-6
+                                int key_sz_bits    // 256
+                              )
 {
-   uint256_t binom;
-   uint256_t curr_ordinal;   
+   uint256_t binom, wkg_ordinal;
    uint64_t tmp_binom    = 0;
    uint64_t tmp_curr_ord = 0;
-   curr_ordinal.copy( ordinal );
-   
+   wkg_ordinal.copy( ordinal );
    perm.set_all( 0 );
-   
 
-   for( int bit = subkey_length-1; mismatches > 0; bit-- )
+   for( size_t bit = key_sz_bits-1; mismatches > 0; bit-- )
    {
       tmp_binom = get_bin_coef( bit, mismatches );
       binom( 0 );
       binom( tmp_binom, 2 );
 
-      if ( curr_ordinal > binom || curr_ordinal == binom )
+      if ( wkg_ordinal > binom || wkg_ordinal == binom )
       {
-         curr_ordinal = curr_ordinal - binom;
+         wkg_ordinal = wkg_ordinal - binom;
 
-         // TODO: set bit in perm
          perm.set_bit( bit );
 
          mismatches--;
       }
-      
    }
 }
 
@@ -52,7 +48,7 @@ __device__ void assign_first_permutation( uint256_t *perm, int mismatches )
 // COMPLETED
 __device__ void assign_last_permutation( uint256_t *perm,
                                          int mismatches,
-                                         int subkey_length )
+                                         int key_sz_bits )
 {
 
    // set perm to the first key
@@ -62,17 +58,18 @@ __device__ void assign_last_permutation( uint256_t *perm,
    // Equiv to: perm << (key_length - mismatches)
    // E.g. if key_length = 256 and mismatches = 5,
    //      we want to shift left 256 - 5 = 251 times.
-   *perm = *perm << (subkey_length - mismatches);
+   *perm = *perm << (key_sz_bits - mismatches);
 }
 
 // COMPLETED
+// Precondition: starting_perm and ending_perm have been initialized
 __device__ void get_perm_pair( uint256_t *starting_perm, 
                                uint256_t *ending_perm,
                                size_t pair_index,        // thread num
                                size_t pair_count,        // num threads
                                int mismatches,           // 5
                                size_t key_size_bytes,    // 32  (key_size)
-                               size_t key_sz_bits        // 256 (subkey_length)
+                               size_t key_sz_bits        // 256 (key_sz_bits)
                              )
 {
    uint256_t total_perms();
@@ -93,7 +90,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    {
       tmp_starting_ord = floor( tmp_tot_perms / pair_count );
       tmp_starting_ord = tmp_starting_ord * pair_index;
-      // copy 64 bit tmp into uint256_t 
+      // copy 64 bit tmp into uint256_t at index 2 
       // uint256_t is big endian - most significant byte first
       starting_ordinal( tmp_starting_ord, 2 );
 
@@ -143,7 +140,7 @@ __device__ uint64_t get_bin_coef(size_t n, size_t r)
 // we don't need this here -- should be used in main before kernel invocation.
 __device__ void get_random_permutation( uint256_t perm,
                                         int mismatches,
-                                        int subkey_length )
+                                        int key_sz_bits )
 {
 
 
@@ -152,7 +149,7 @@ __device__ void get_random_permutation( uint256_t perm,
 // we don't need this here -- should be used in main before kernel invocation.
 __device__ void get_benchmark_permutation( uint256_t perm,
                                            int mismatches,
-                                           int subkey_length )
+                                           int key_sz_bits )
 {
 
 
