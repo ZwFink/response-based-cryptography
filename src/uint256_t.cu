@@ -295,7 +295,7 @@ CUDA_CALLABLE_MEMBER void uint256_t::set_bit( std::uint8_t bit_idx )
     std::uint8_t block = floor( bit_idx / 8 );
     std::uint8_t ndx_in_block = bit_idx - ( block * 8 );
 
-    switch
+    switch ( ndx_in_block )
     {
         case 0: data[ block ] |= 1; 
                 break;
