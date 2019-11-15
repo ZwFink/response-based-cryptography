@@ -38,7 +38,8 @@ __device__ void decode_ordinal( uint256_t perm,
 // COMPLETED
 __device__ void assign_first_permutation( uint256_t *perm, int mismatches )
 {
-   // set perm to first key
+   // set the value of perm to 1
+   perm->set_bit( 0 );
 
    *perm = *perm << mismatches; // shift left
 	
