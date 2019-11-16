@@ -114,28 +114,28 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
 
 // compute the binomial coefficient:
 // get the number of k-element subsets of an n-element set
-__device__ uint64_t get_bin_coef(size_t n, size_t r)
+__device__ uint64_t get_bin_coef(size_t n, size_t k)
 {
    int i;
-   uint64_t b;
+   uint64_t binom;
 
-   if( (r < 0) || (n < r) ) 
+   if( (k < 0) || (n < k) ) 
       return 0;
 
-   if( (2*r) > n ) 
-      r = n-r;
+   if( (2*k) > n ) 
+      k = n - k;
 
-   b = 1;
+   binom = 1;
 
-   if( r>0 )
+   if( k > 0 )
    {
-      for( i=0; i<=r-1; i++ )
+      for( i = 0; i <= k-1; i++ )
       {
-         b = ( b*(n-i) ) / (i+1);
+         binom = ( binom*(k-i) ) / (i+1);
       }
    }
 
-   return b;
+   return binom;
 }
 
 // we don't need this here -- should be used in main before kernel invocation.
