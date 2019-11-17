@@ -34,7 +34,7 @@ CUDA_CALLABLE_MEMBER void uint256_t::copy( uint256_t copied )
 }
 
 // PRECONDITION: 0 <= idx <= 3
-CUDA_CALLABLE_MEMBER void uint256_t::copy_64( uint64_t ref, uint8_t index )
+CUDA_CALLABLE_MEMBER void uint256_t::copy_64( uint64_t ref, uint8_t idx )
 {
     uint64_t *data_ptr = (uint64_t *) &data;
     
