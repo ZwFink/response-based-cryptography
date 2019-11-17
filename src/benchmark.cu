@@ -4,6 +4,8 @@
 #include <sys/time.h>
 #include "AES.h"
 #include "main.h"
+#include "main_util.cu"
+#include "perm_util.cu"  
 
 using namespace std;
 

@@ -4,8 +4,14 @@
 #include <sys/time.h>
 #include "AES.h"
 #include "main.h"
+#include "main_util.cu"
+#include "perm_util.cu" // included so that perm_util is compiled 
 
 using namespace std;
+
+// below global constants are temporary and subject to change
+NBLOCKS   = 694923
+BLOCKSIZE = 256
 
 int main(int argc, char **argv) {
     if(argc < 2) {

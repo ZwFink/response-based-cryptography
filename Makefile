@@ -11,11 +11,15 @@ GENCODE = -gencode=arch=compute_60,code=sm_60
 AES_FILES=AES.cu AES.h BlockCipher.h AES_encrypt.cu 
 UINT_FILES=uint256_t.cu uint256_t.h 
 UINT_ITER_FILES=uint256_iter.cu uint256_iter.h
+UTIL_FILES=perm_util.cu main_util.cu
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
 CCTESTFLAGS := -Itest/ -Ilib/ -Isrc/
 TT?=128
 MODE?=HYBRID
+
+NBLCKS=694923 
+BLOCKSZ=256
 
 all: $(EXECUTABLES)
 
@@ -40,14 +44,14 @@ sbench: AES_smem.o benchmark.o uint.o
 AES_gmem.o: $(AES_FILES) $(UINT_FILES)
 	$(NVCC) $(CCFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
 
-AES_smem.o: $(AES_FILES) $(UINT_FILES) 
+AES_smem.o: $(AES_FILES) $(UINT_FILES)
 	$(NVCC) $(CCFLAGS) -DTTABLE=$(TT) -D$(MODE) -DUSE_SMEM -c -o $@ $<
 
 catch.o: test.cu catch.hpp
 	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -c -o $@ $<
 
 benchmark.o: benchmark.cu main.h
-	$(NVCC) $(CCFLAGS) -c -o $@ $<
+	$(NVCC) $(CCFLAGS) -DNBLOCKS=$(NBLCKS) -DBLOCKSIZE=$(BLOCKSZ) -c -o $@ $< 
 
 clean:
 	$(RM) $(EXECUTABLES) *.o

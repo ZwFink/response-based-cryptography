@@ -1,5 +1,5 @@
 #include "util.cu"
-#include "perm_util.cu" // included so that perm_util is compiled 
+//#include "perm_util.cu" // included so that perm_util is compiled 
 
 __global__ void AES_encrypt(const uint *pt, uint *ct, uint *rek, uint Nr, uint size) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
