@@ -1,16 +1,7 @@
 #ifndef UINT256_ITERATOR_HH_INCLUDED
 #define UINT256_ITERATOR_HH_INCLUDED
 #include "uint256_t.h"
-
-#define CUDA_ONLY __device__
-#ifdef __CUDACC__
-#define CUDA_CALLABLE_MEMBER __host__ __device__
-#else
-#define CUDA_CALLABLE_MEMBER 
-#endif
-
-#define INLINE __forceinline__
-
+#include "cuda_defs.h"
 
 class uint256_iter
 {

@@ -1,7 +1,9 @@
 #ifndef AES_PER_ROUND_HH_INCLUDED
 #define AES_PER_ROUND_HH_INCLUDED
-#include "uint256_t.h"
 #include <cstdint>
+
+#include "uint256_t.h"
+#include "cuda_defs.h"
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 

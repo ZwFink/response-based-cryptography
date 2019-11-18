@@ -13,13 +13,7 @@
 #include <x86intrin.h>
 #include <cstdint>
 
-#ifdef __CUDACC__
-#define CUDA_CALLABLE_MEMBER __host__ __device__
-#else
-#define CUDA_CALLABLE_MEMBER 
-#endif
-
-#define INLINE __forceinline__
+#include "cuda_defs.h"
 
 typedef std::uint8_t uint256_data_t[ UINT256_SIZE_IN_BYTES ];
 
