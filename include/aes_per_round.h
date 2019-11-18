@@ -23,7 +23,26 @@ namespace aes_per_round
 
 
     CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message );
-    
+
+    CUDA_CALLABLE_MEMBER void xor_key( message_128 *message, key_128 *key );
+
+    CUDA_CALLABLE_MEMBER uint8_t rcon( int in );
+
+    CUDA_CALLABLE_MEMBER void rotate( uint8_t in[ 4 ] );
+
+    CUDA_CALLABLE_MEMBER
+        void schedule_core( uint8_t in[ 4 ], uint8_t i, const uint8_t sbox[ 256 ] );
+
+    CUDA_CALLABLE_MEMBER void initialize_sbox( uint8_t sbox[ 256 ] );
+
+    CUDA_CALLABLE_MEMBER
+        void gmix_column( uint8_t r[ 4 ] );
+
+    CUDA_CALLABLE_MEMBER
+        void mix_columns( message_128 *message );
+
+    CUDA_CALLABLE_MEMBER
+        void sub_bytes( message_128 *message, uint8_t sbox[ 256 ] );
 
 
 }; // namespace aes_per_round 
