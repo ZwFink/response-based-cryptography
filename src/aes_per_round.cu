@@ -180,8 +180,8 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
         //third col
         r[ 0 ] = temp.bits[ 8 ];
         r[ 1 ] = temp.bits[ 9 ];
-        r[ 2 ] = temp.bits[ 1 0];
-        r[ 3 ] = temp.bits[ 1 1];
+        r[ 2 ] = temp.bits[ 10 ];
+        r[ 3 ] = temp.bits[ 11 ];
 
         gmix_column( r );
 
