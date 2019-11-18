@@ -251,7 +251,6 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator>( const uint256_t& comp ) const
     return compare( comp ) > 0;
 }
 
-
 __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
 {
     uint256_t ret;
@@ -278,7 +277,8 @@ __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
            "r"(augend_32[ 3 ]), "r"(augend_32[ 4 ]), "r"(augend_32[ 5 ]),   
            "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
          );
-    return false;
+
+    return dest_32[ 7 ] <= self_32[ 7 ];
 }
 
 __device__ void uint256_t::neg( uint256_t& dest )
