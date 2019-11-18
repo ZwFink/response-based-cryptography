@@ -8,17 +8,17 @@ uint256_t::uint256_t()
     set_all( 0 );
 }
 
+CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set, std::uint8_t index )
+{
+    data[ index ] = set;
+}
+
 CUDA_CALLABLE_MEMBER void uint256_t::from_string( const unsigned char *string )
 {
     for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES; ++index )
         {
             data[ index ] = string[ index ];
         }
-}
-
-CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set, std::uint8_t index )
-{
-    data[ index ] = set;
 }
 
 CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set )
@@ -32,7 +32,7 @@ CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint8_t val )
 }
 
 // copy constructor
-CUDA_CALLABLE_MEMBER void uint256_t::copy( uint256_t copied )
+CUDA_CALLABLE_MEMBER void uint256_t::copy( const uint256_t& copied )
 {
     for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; ++idx )
     {
@@ -46,6 +46,11 @@ CUDA_CALLABLE_MEMBER void uint256_t::copy_64( uint64_t ref, uint8_t idx )
     uint64_t *data_ptr = (uint64_t *) &data;
     
     data_ptr[ idx ] |= ref; // bitwise OR 
+}
+
+CUDA_CALLABLE_MEMBER const std::uint8_t& uint256_t::operator[]( std::uint8_t idx ) const
+{
+    return data[ idx ];
 }
 
 CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )

@@ -32,7 +32,7 @@ class uint256_t
     // set the member at index to set
     CUDA_CALLABLE_MEMBER uint256_t( std::uint8_t set, std::uint8_t index );
     CUDA_CALLABLE_MEMBER ~uint256_t() = default;
-	 CUDA_CALLABLE_MEMBER void copy( uint256_t copied );
+	 CUDA_CALLABLE_MEMBER void copy( const uint256_t& copied );
     // copy 64 bit integer into member starting at index
     CUDA_CALLABLE_MEMBER void copy_64( uint64_t ref, uint8_t index );
 
@@ -48,6 +48,7 @@ class uint256_t
     CUDA_CALLABLE_MEMBER uint256_t operator~();
 
     CUDA_CALLABLE_MEMBER std::uint8_t& operator[]( std::uint8_t idx );
+    CUDA_CALLABLE_MEMBER const std::uint8_t& operator[]( std::uint8_t idx ) const;
     CUDA_CALLABLE_MEMBER std::uint8_t at( int loc );
 
     CUDA_CALLABLE_MEMBER bool operator==( uint256_t comp );
