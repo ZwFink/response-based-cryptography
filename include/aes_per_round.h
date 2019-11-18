@@ -11,15 +11,19 @@ namespace aes_per_round
 {
     typedef struct key_128
     {
-        std::uint8_t key[ 16 ];
+        std::uint8_t bits[ 16 ];
 
     } key_128;
 
     typedef struct message_128
     {
-        std::uint8_t key[ 16 ];
+        std::uint8_t bits[ 16 ];
 
     } message_128;
+
+
+    CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message );
+    
 
 
 }; // namespace aes_per_round 
