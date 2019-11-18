@@ -10,7 +10,7 @@ EXECUTABLES=gbench sbench test_rbc # aes aes_ecb benchmark benchmark_async bench
 GENCODE = -gencode=arch=compute_60,code=sm_60
 AES_FILES=AES.cu AES.h BlockCipher.h AES_encrypt.cu 
 UINT_FILES=uint256_t.cu uint256_t.h 
-UINT_ITER_FILES=uint256_iter.cu uint256_iter.h
+UINT_ITER_FILES=uint256_iterator.cu uint256_iterator.h
 UTIL_FILES=perm_util.cu main_util.cu
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
@@ -23,13 +23,13 @@ BLOCKSZ=256
 
 all: $(EXECUTABLES)
 
-test_rbc: AES_smem.o catch.o uint.o
+test_rbc: AES_smem.o catch.o uint.o uint_iter.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
 test.o: catch.hpp test_utils.h test.cu
 	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
 
-uint_iter.o: $(UINT_INTER_FILES)
+uint_iter.o: $(UINT_ITER_FILES)
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 uint.o: $(UINT_FILES) 

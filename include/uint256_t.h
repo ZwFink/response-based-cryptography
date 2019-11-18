@@ -36,6 +36,8 @@ class uint256_t
     // copy 64 bit integer into member starting at index
     CUDA_CALLABLE_MEMBER void copy_64( uint64_t ref, uint8_t index );
 
+    CUDA_CALLABLE_MEMBER void from_string( const unsigned char *string );
+
     CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
     CUDA_CALLABLE_MEMBER uint256_t operator|( uint256_t comp );
     CUDA_CALLABLE_MEMBER uint256_t operator^( uint256_t comp );

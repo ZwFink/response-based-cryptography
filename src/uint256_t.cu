@@ -8,6 +8,13 @@ uint256_t::uint256_t()
     set_all( 0 );
 }
 
+CUDA_CALLABLE_MEMBER void uint256_t::from_string( const unsigned char *string )
+{
+    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES; ++index )
+        {
+            data[ index ] = string[ index ];
+        }
+}
 
 CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set, std::uint8_t index )
 {
@@ -278,14 +285,15 @@ __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
            "r"(augend_32[ 3 ]), "r"(augend_32[ 4 ]), "r"(augend_32[ 5 ]),   
            "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
          );
-    return false;
+
+    return dest_32[ 7 ] <= self_32[ 7 ];
 }
 
 __device__ void uint256_t::neg( uint256_t& dest )
 {
     uint256_t complement = ~(*this);
-    uint256_t one( 0x00 );
-    one[ 0 ] = 0x01;
+
+    uint256_t one( 0x01, UINT256_SIZE_IN_BYTES - 1 );
 
     complement.add( dest, one );
 }
