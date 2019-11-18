@@ -21,6 +21,7 @@ class uint256_iter
                                        const uint256_t& final_perm
                                      );
 
+    __device__ void next();
     uint256_t curr_perm;
     uint256_t last_perm;
     uint256_t t;
