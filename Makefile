@@ -24,14 +24,14 @@ BLOCKSZ=256
 
 all: $(EXECUTABLES)
 
-test_rbc: AES_smem.o catch.o uint.o uint_iter.o
+test_rbc: AES_smem.o catch.o uint.o uint_iter.o aes_per_round.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
 test.o: catch.hpp test_utils.h test.cu
 	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
 
 aes_per_round.o: $(AES_PER_ROUND_FILES) cuda_defs.h
-	$(NVCC) $(CCFLAGS -c -o $@ $<
+	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 uint_iter.o: $(UINT_ITER_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
