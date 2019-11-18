@@ -9,6 +9,18 @@
 
 namespace aes_per_round
 {
+    typedef struct key_128
+    {
+        std::uint8_t key[ 16 ];
+
+    } key_128;
+
+    typedef struct message_128
+    {
+        std::uint8_t key[ 16 ];
+
+    } message_128;
+
 
 }; // namespace aes_per_round 
 
