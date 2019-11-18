@@ -32,3 +32,8 @@ __device__ void uint256_iter::next()
     corrupted_key = key_uint ^ curr_perm;
 
 }
+
+__device__ bool uint256_iter::end()
+{
+    return curr_perm.compare( last_perm ) > 0 || overflow;
+}
