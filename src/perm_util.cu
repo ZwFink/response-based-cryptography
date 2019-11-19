@@ -22,7 +22,7 @@ __device__ void decode_ordinal( uint256_t *perm,
    {
       binom = get_bin_coef( bit, mismatches );
 
-      if ( wkg_ord > binom || wkg_ord == binom )
+      if ( wkg_ord >= binom )
       {
          wkg_ord = wkg_ord - binom;
 
