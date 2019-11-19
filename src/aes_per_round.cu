@@ -85,6 +85,7 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
             {
                 uint8_t less_nibble = in[a] & 0x0f;
                 uint8_t more_nibble = (in[a] & 0xf0) >> 4;
+                // in[a] = sbox[less_nibble + more_nibble*16];
                 in[a] = sbox[less_nibble + more_nibble*16];
             } 
         /* On just the first byte, add 2^i to the byte */
@@ -214,5 +215,51 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
             message->bits[ i ] = sbox[ less_nibble + more_nibble*16 ];
         } 
     }
+
+    DEVICE_ONLY
+    void roundwise_encrypt( message_128 *dest,
+                            const key_256 *key,
+                            const message_128 *message,
+                            const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ]
+                          )
+    {
+
+        std::uint8_t round_keys[ 48 ];
+
+        std::uint8_t round_no = 0;
+        std::uint8_t idx      = 0;
+        std::uint8_t i        = 0;
+
+        for( i = 0; i < 32; ++i )
+            {
+                round_keys[ i ] = key->bits[ i ];
+            }
+
+        // start at 2 because we have the first two keys
+        for( round_no = 2; round_no < 15; ++round_no )
+            {
+                // get the key for the round
+                get_round_key( round_keys,
+                               sbox,
+                               &i,
+                               round_no
+                             );
+
+                // do aes for the round
+
+
+                idx = 0;
+                // reset the round key
+                for( idx = 0; idx < 16; ++idx )
+                    {
+                        // shift the bytes over by 16
+                        round_keys[ idx ] = round_keys[ idx + 16 ];
+                        round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
+                        round_keys[ idx + 32 ] = 0;
+                    }
+            }
+
+    }
+
 
 };
