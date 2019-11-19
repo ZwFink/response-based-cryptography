@@ -6,6 +6,7 @@
 #include "cuda_defs.h"
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
+#define SBOX_SIZE_IN_BYTES 256
 
 namespace aes_per_round
 {
