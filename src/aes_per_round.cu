@@ -261,5 +261,57 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
 
     }
 
+    DEVICE_ONLY
+    void get_round_key( std::uint8_t keys[ 48 ],
+                        const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ],
+                        std::uint8_t *i,
+                        int round_no
+                        )
+    {
+        std::uint8_t t[ 4 ];
+        std::uint8_t c = 32;
+        std::uint8_t a = 0;
+        // first 16 bytes:  current key
+        // second 16 bytes: previous key
+        while( c < 48 )
+            {
+
+                for( a = 0; a < 4; ++a )
+                    {
+                        t[ a ] = keys[ a + c - 4 ];
+                    }
+
+                // NOTE: All threads in a warp will take the same path
+                // for this branch
+                if( !( round_no % 2 // even round number and first iteration
+                       ||  c % 32
+                     )
+                  )
+                    {
+                        schedule_core( t, *i, sbox );
+                        ++(*i);
+
+                    }
+                else if( round_no % 2 // odd round number and first iteration
+                         && !( c % 32 )
+                       )
+                    {
+                        for( a = 0; a < 4; ++a )
+                            {
+                                uint8_t less_nibble = t[ a ] & 0x0F;
+                                uint8_t more_nibble = ( t[ a ] & 0xF0 ) >> 4;
+
+                                t[ a ] = sbox[ less_nibble + more_nibble*16 ];
+
+                            }
+                    }
+
+                for( a = 0; a < 4; ++a )
+                    {
+                        keys[ c ] = keys[ c - 32 ] ^ t[ a ];
+                        ++c;
+                    }
+            }
+    }
 
 };

@@ -58,6 +58,12 @@ namespace aes_per_round
                                 const uint8_t sbox[ SBOX_SIZE_IN_BYTES ]
                               );
 
+    DEVICE_ONLY
+    void get_round_key( std::uint8_t keys[ 48 ],
+                        const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ],
+                        std::uint8_t *i,
+                        int round_no
+                      );
 
 }; // namespace aes_per_round 
 
