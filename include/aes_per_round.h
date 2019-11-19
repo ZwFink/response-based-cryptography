@@ -31,7 +31,7 @@ namespace aes_per_round
 
     CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message );
 
-    CUDA_CALLABLE_MEMBER void xor_key( message_128 *message, key_128 *key );
+    CUDA_CALLABLE_MEMBER void xor_key( message_128 *message, const std::uint8_t *key );
 
     CUDA_CALLABLE_MEMBER uint8_t rcon( int in );
 
@@ -58,12 +58,18 @@ namespace aes_per_round
                                 const uint8_t sbox[ SBOX_SIZE_IN_BYTES ]
                               );
 
+    DEVICE_ONLY INLINE
+        void do_aes_round( message_128 *message,
+                           const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ],
+                           const std::uint8_t *key
+                         );
+
     DEVICE_ONLY
-    void get_round_key( std::uint8_t keys[ 48 ],
-                        const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ],
-                        std::uint8_t *i,
-                        int round_no
-                      );
+        void get_round_key( std::uint8_t keys[ 48 ],
+                            const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ],
+                            std::uint8_t *i,
+                            int round_no
+                          );
 
 }; // namespace aes_per_round 
 

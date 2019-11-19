@@ -33,13 +33,12 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
 
     }
 
-    CUDA_CALLABLE_MEMBER void xor_key( message_128 *message, key_128 *key )
+    CUDA_CALLABLE_MEMBER void xor_key( message_128 *message, const std::uint8_t *key )
     {
 
-        for( std::uint8_t idx = 0; idx < KEY_128_SIZE_IN_BYTES / 4; ++idx )
+        for( std::uint8_t idx = 0; idx < KEY_128_SIZE_IN_BYTES; ++idx )
             {
-                ((uint32_t*) message->bits)[ idx ] ^=
-                    ((uint32_t*) key->bits)[ idx ];
+                message->bits[ idx ] ^= key[ idx ];
             }
 
     }
@@ -206,7 +205,7 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
     }
 
     CUDA_CALLABLE_MEMBER
-    void sub_bytes( message_128 *message, uint8_t sbox[ 256 ] )
+    void sub_bytes( message_128 *message, const uint8_t sbox[ 256 ] )
     {
         //take the bytes and seperate the nibbles out
         for ( int i = 0; i < 16; i++ ){
@@ -217,9 +216,8 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
     }
 
     DEVICE_ONLY
-    void roundwise_encrypt( message_128 *dest,
+    void roundwise_encrypt( message_128 *message,
                             const key_256 *key,
-                            const message_128 *message,
                             const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ]
                           )
     {
@@ -235,8 +233,16 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
                 round_keys[ i ] = key->bits[ i ];
             }
 
+        xor_key( message, round_keys );
+
+        // do AES for the first round
+        do_aes_round( message,
+                      sbox,
+                      round_keys + 16
+                    );
+
         // start at 2 because we have the first two keys
-        for( round_no = 2; round_no < 15; ++round_no )
+        for( round_no = 2; round_no < 14; ++round_no )
             {
                 // get the key for the round
                 get_round_key( round_keys,
@@ -246,7 +252,10 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
                              );
 
                 // do aes for the round
-
+                do_aes_round( message,
+                              sbox,
+                              round_keys + 32
+                            );
 
                 idx = 0;
                 // reset the round key
@@ -258,6 +267,13 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
                         round_keys[ idx + 32 ] = 0;
                     }
             }
+
+        // roundno = 14
+        get_round_key( round_keys, sbox, &i, round_no );
+
+        sub_bytes( message, sbox );
+        shift_rows( message );
+        xor_key( message, round_keys + 32 );
 
     }
 
@@ -312,6 +328,17 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
                         ++c;
                     }
             }
+    }
+
+    DEVICE_ONLY INLINE void do_aes_round( message_128 *message,
+                                          const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ],
+                                          const std::uint8_t *key
+                                        )
+    {
+        sub_bytes( message, sbox );
+        shift_rows( message );
+        mix_columns( message );
+        xor_key( message, key );
     }
 
 };
