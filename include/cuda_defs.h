@@ -8,6 +8,8 @@
 #endif
 
 #define INLINE __forceinline__
+#define DEVICE_ONLY __device__
+#define HOST_ONLY __host__
 
 
 #endif // CUDA_DEFS_HH_INCLUDED
