@@ -22,6 +22,11 @@ namespace aes_per_round
 
     } message_128;
 
+    typedef struct key_256
+    {
+        std::uint8_t bits[ 32 ];
+    } key_256;
+
 
     CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message );
 
