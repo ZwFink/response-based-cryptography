@@ -4,6 +4,7 @@
 #define MAIN_UTIL_CU_
 
 #include "perm_util.cu"
+#include "uint256_iterator.h"
 #include "AES.h"
 
 __device__ int validator( uint256_t *starting_perm,
@@ -27,8 +28,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     uint256_t starting_perm, ending_perm;
 
     size_t mismatch   = 0;
-	uint64_t num_keys = 0;
-	int result        = 0;
+    uint64_t num_keys = 0;
+    int result        = 0;
 
     for( mismatch = first_mismatch; mismatch <= last_mismatch; mismatch++ )
     {
