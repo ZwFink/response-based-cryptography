@@ -9,6 +9,7 @@
 
 #include "test_utils.h"
 
+#include "aes_per_round.h"
 #include "uint256_iterator.h"
 #include "uint256_t.h"
 #include "AES.h"

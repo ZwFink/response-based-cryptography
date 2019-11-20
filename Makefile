@@ -9,6 +9,7 @@ EXECUTABLES=gbench sbench test_rbc # aes aes_ecb benchmark benchmark_async bench
 #GENCODE = -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_75,code=sm_75
 GENCODE = -gencode=arch=compute_60,code=sm_60
 AES_FILES=AES.cu AES.h BlockCipher.h AES_encrypt.cu 
+AES_PER_ROUND_FILES=aes_per_round.cu aes_per_round.h
 UINT_FILES=uint256_t.cu uint256_t.h 
 UINT_ITER_FILES=uint256_iterator.cu uint256_iterator.h
 UTIL_FILES=perm_util.cu main_util.cu
@@ -23,16 +24,19 @@ BLOCKSZ=256
 
 all: $(EXECUTABLES)
 
-test_rbc: AES_smem.o catch.o uint.o uint_iter.o
+test_rbc: AES_smem.o catch.o uint.o uint_iter.o aes_per_round.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
 test.o: catch.hpp test_utils.h test.cu
 	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
 
-uint_iter.o: $(UINT_ITER_FILES)
+aes_per_round.o: $(AES_PER_ROUND_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
-uint.o: $(UINT_FILES) 
+uint_iter.o: $(UINT_ITER_FILES) cuda_defs.h
+	$(NVCC) $(CCFLAGS) -c -o $@ $<
+
+uint.o: $(UINT_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 gbench: AES_gmem.o benchmark.o uint.o
