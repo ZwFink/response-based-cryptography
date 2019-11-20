@@ -100,31 +100,28 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    }
 }
 
-// compute the binomial coefficient:
-// get the number of k-element subsets of an n-element set
+// Returns value of Binomial Coefficient C(n, k)  
+// ref: https://www.geeksforgeeks.org/space-and-time-efficient-binomial-coefficient/
 __device__ uint64_t get_bin_coef(size_t n, size_t k)
-{
-   int i;
-   uint64_t binom;
-
-   if( n < k ) 
-      return 0;
-
-   if( (2*k) > n ) 
-      k = n - k;
-
-   binom = 1;
-
-   if( k > 0 )
-   {
-      for( i = 0; i <= k-1; i++ )
-      {
-         binom = ( binom*(k-i) ) / (i+1);
-      }
-   }
-
-   return binom;
-}
+{  
+    int ret = 1;  
+  
+    // Since C(n, k) = C(n, n-k)  
+    if ( k > n - k )  
+        k = n - k;  
+  
+    // Calculate value of  
+    // [n * (n-1) *---* (n-k+1)] / [k * (k-1) *----* 1]  
+    // IMPLEMENT: pipelining technique to increase the number of operations per cycle
+    // increases register usage (dropping occupancy) := unroll "4" specifically
+    for (int i = 0; i < k; ++i)  
+    {  
+        ret *= (n - i);  
+        ret /= (i + 1);  
+    }  
+  
+    return ret;  
+}  
 
 // we don't need this here -- should be used in main before kernel invocation.
 __device__ void get_random_permutation( uint256_t perm,
