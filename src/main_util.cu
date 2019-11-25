@@ -3,10 +3,39 @@
 #ifndef MAIN_UTIL_CU_
 #define MAIN_UTIL_CU_
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <random>
+#include <algorithm> 
+#include <string.h>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <math.h>
+#include <queue>
+#include <iomanip>
+#include <set>
+#include <algorithm>
+#include <thread>
+#include <cstdint>
+#include <utility>
+
+
+// thrust inclusions
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/sort.h>
+#include <thrust/device_ptr.h>
+#include <thrust/system/cuda/execution_policy.h>
+#include <thrust/binary_search.h>
+#include <thrust/execution_policy.h>
+
 #include "perm_util.cu"
 #include "uint256_iterator.h"
-#include "AES.h"
+#include "aes_per_round.h"
 
+void warm_up_gpu( int device );
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,
@@ -31,32 +60,29 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     uint64_t num_keys = 0;
     int result        = 0;
 
-    for( mismatch = first_mismatch; mismatch <= last_mismatch; mismatch++ )
-    {
-        num_keys = get_bin_coef( key_sz_bits, mismatch ); 
+    num_keys = get_bin_coef( key_sz_bits, mismatch ); 
    
-        // only run thread if tid is less than cardinality of current keyspace
-        if( tid < num_keys )
-        {
-            get_perm_pair( &starting_perm, 
-                           &ending_perm, 
-                           (size_t) tid, 
-                           (size_t) NBLOCKS*BLOCKSIZE,
-                           mismatch,
-                           key_sz_bytes,
-                           key_sz_bits
-                         );
-            
-            result = validator( &starting_perm,
-                                &ending_perm,
-                                key_for_encryp,
-                                user_id,
-                                auth_cipher
-                              );
+    // only run thread if tid is less than cardinality of current keyspace
+    if( tid < num_keys )
+    {
+        get_perm_pair( &starting_perm, 
+                       &ending_perm, 
+                       (size_t) tid, 
+                       (size_t) NBLOCKS*BLOCKSIZE,
+                       mismatch,
+                       key_sz_bytes,
+                       key_sz_bits
+                     );
+        
+        result = validator( &starting_perm,
+                            &ending_perm,
+                            key_for_encryp,
+                            user_id,
+                            auth_cipher
+                          );
 
-            // if result is 1 then we found a key matching client's private key
-            // signal all threads to stop
-        }
+        // if result is 1 then we found a key matching client's private key
+        // signal all threads to stop
     }
 
 }
@@ -71,5 +97,35 @@ __device__ int validator( uint256_t *starting_perm,
 
 }
 
+void warm_up_gpu( int device )
+{
+    cudaSetDevice( device ); 		
+    // initialize all ten integers of a device_vector to 1 
+    thrust::device_vector<int> D(10, 1); 
+    // set the first seven elements of a vector to 9 
+    thrust::fill(D.begin(), D.begin() + 7, 9); 
+    // initialize a host_vector with the first five elements of D 
+    thrust::host_vector<int> H(D.begin(), D.begin() + 5); 
+    // set the elements of H to 0, 1, 2, 3, ... 
+    thrust::sequence(H.begin(), H.end()); // copy all of H back to the beginning of D 
+    thrust::copy(H.begin(), H.end(), D.begin()); 
+    // print D 
+
+    printf("\nDevice: %d\n",device);
+
+    for(int i = 0; i < D.size(); i++) 
+        std::cout << " D[" << i << "] = " << D[i]; 
+
+
+    // empty the vector
+    D.clear();
+
+    // deallocate any capacity which may currently be associated with vec
+    D.shrink_to_fit();
+
+    printf("\n");
+
+    return;
+}
 
 #endif
