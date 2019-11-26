@@ -55,7 +55,7 @@ int main(int argc, char * argv[])
     key_128 key_set[15];
     key_gen(key_set, bit_key, sbox);
 
-    printf("keys initiazed\n");
+    printf("keys initialized\n");
 
     xor_key(&cipher, key_set[0]);
 
@@ -96,9 +96,11 @@ int main(int argc, char * argv[])
     {
         staging_key.bits[i] = (uint8_t) bit_key.bits[i];
     }
-    for (int i = 0; i < mismatches; i++)
+    // this is subject to change...
+    for (int i = 0; i < mismatches*2; i=i+2)
     {
-        staging_key.bits[i] |= (1 << 4); 
+        // flip the third bit of the first 6 even numbered blocks 
+        staging_key.bits[i] ^= (1 << 3); 
     }
 
     /* ok, we now have:
