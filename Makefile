@@ -1,7 +1,6 @@
 NVCC=nvcc
 vpath %.cu src
 vpath %.cu test
-vpath %.tab tabs
 vpath %.h include
 vpath %.hpp lib
 
@@ -13,8 +12,8 @@ AES_FILES=AES.cu AES.h BlockCipher.h AES_encrypt.cu
 AES_PER_ROUND_FILES=aes_per_round.cu aes_per_round.h
 UINT_FILES=uint256_t.cu uint256_t.h 
 UINT_ITER_FILES=uint256_iterator.cu uint256_iterator.h
-SBOX_FILES=sbox.h sbox.tab
-UTIL_FILES=perm_util.cu main_util.cu
+SBOX_FILES=sbox.cu sbox.h 
+UTIL_FILES=perm_util.cu main_util.cu cuda_utils.h
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
 CCTESTFLAGS := -Itest/ -Ilib/ -Isrc/
@@ -26,7 +25,7 @@ BLOCKSZ=256
 
 all: $(EXECUTABLES)
 
-test_rbc: AES_smem.o catch.o uint.o uint_iter.o aes_per_round.o
+test_rbc: AES_smem.o catch.o uint.o uint_iter.o aes_per_round.o 
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
 test.o: catch.hpp test_utils.h test.cu
@@ -44,11 +43,14 @@ uint_iter.o: $(UINT_ITER_FILES) cuda_defs.h
 uint.o: $(UINT_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
-gbench: AES_gmem.o benchmark.o uint.o
+gbench: AES_gmem.o benchmark.o uint.o sbox.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
-sbench: AES_smem.o benchmark.o uint.o
+sbench: AES_smem.o uint.o sbox.o aes_per_round.o uint_iter.o benchmark.o util.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
+
+util.o: $(UTIL_FILES)
+	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 AES_gmem.o: $(AES_FILES) $(UINT_FILES)
 	$(NVCC) $(CCFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
