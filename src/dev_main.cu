@@ -1,9 +1,5 @@
 
-#include "AES.h"
 #include "main.h"
-#include "main_util.h"
-#include "uint256_t.h"
-#include "cuda_utils.h"
 
 using namespace std;
 
@@ -110,8 +106,8 @@ int main(int argc, char * argv[])
     */
         
     // send userid, cipher, and corrupted key to GPU global memory
-    message_128 * dev_uid = nullptr;
-    message_128 * dev_cipher = nullptr;
+    aes_per_round::message_128 * dev_uid = nullptr;
+    aes_per_round::message_128 * dev_cipher = nullptr;
     uint256_t * dev_key = nullptr, * host_key = nullptr;
     uint256_t * dev_found_key = nullptr;
     uint256_t host_found_key;
@@ -120,17 +116,17 @@ int main(int argc, char * argv[])
         host_key->set( staging_key.bits[i], i );
     }
 
-    cudaMalloc( (void**) &dev_uid, sizeof( message_128 ) );
-    cudaMalloc( (void**) &dev_cipher, sizeof( message_128 ) );
+    cudaMalloc( (void**) &dev_uid, sizeof( aes_per_round::message_128 ) );
+    cudaMalloc( (void**) &dev_cipher, sizeof( aes_per_round::message_128 ) );
     cudaMalloc( (void**) &dev_key, sizeof( uint256_t ) );
     cudaMalloc( (void**) &dev_found_key, sizeof( uint256_t ) );
 
-    if( cuda_utils::HtoD( dev_uid, uid, sizeof( message_128 ) ) != cudaSuccess )
+    if( cuda_utils::HtoD( dev_uid, uid, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
         {
             std::cout << "Failure to transfer uid to device\n";
         }
 
-    if( cuda_utils::HtoD( dev_cipher, &cipher, sizeof( message_128 ) ) != cudaSuccess)
+    if( cuda_utils::HtoD( dev_cipher, &cipher, sizeof( aes_per_round::message_128 ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer cipher to device\n";
         }
@@ -146,11 +142,18 @@ int main(int argc, char * argv[])
         }
 
 	 cudaDeviceSynchronize();
-
+	
     //for( int i=0; i <= mismatches; i++ )
     for( int i=mismatches; i <= mismatches; i++ ) // fixed
     {
-        // kernel invocation here    
+       // kernel_rbc_engine<<<NBLOCKS, BLOCKSIZE>>>( dev_key,
+       //                                            dev_found_key,
+       //                                            i,
+       //                                            dev_uid,
+       //                                            dev_cipher,
+       //                                            UINT256_SIZE_IN_BYTES,
+       //                                            UINT256_SIZE_IN_BITS
+       //                                          );
     }
 
     if( cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) != cudaSuccess)
