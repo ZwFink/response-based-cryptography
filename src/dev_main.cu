@@ -1,10 +1,4 @@
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-
-#include <stdlib.h>
-#include <sys/time.h>
 #include "AES.h"
 #include "main.h"
 #include "main_util.cu"
@@ -91,7 +85,7 @@ int main(int argc, char * argv[])
 
         //print_message(cipher);
     }
-   // printf("ROUND: %u\n", 14);
+    // printf("ROUND: %u\n", 14);
     sub_bytes(&cipher, sbox);
 
     shift_rows(&cipher);
@@ -101,24 +95,34 @@ int main(int argc, char * argv[])
     print_message(cipher);
 
     // corrupt bit_key by number of mismatches
-    key_256 cpd_key;
+    key_256 staging_key;
     for (int i = 0; i < 32; i++)
     {
-        cpd_key.bits[i] = (uint8_t) bit_key.bits[i];
+        staging_key.bits[i] = (uint8_t) bit_key.bits[i];
     }
     for (int i = 0; i < mismatches; i++)
     {
-        cpd_key.bits[i] |= (1 << 4); 
+        staging_key.bits[i] |= (1 << 4); 
     }
 
     /* ok, we now have:
-       - uid:      client's 128 bit message to encrypt
-       - cipher:   client's encrypted cipher text to check against 
-       - cpd_key:  corrupted version of bit_key
+       - uid:          client's 128 bit message to encrypt
+       - cipher:       client's encrypted cipher text to check against 
+       - staging_key:  corrupted version of bit_key
     */
     
-    // send userid, cipher, and corrupted key to the GPU
+    // send userid, cipher, and corrupted key to GPU global memory
+    uint256_t *host_key, *dev_key;
 
+	 memcpy( host_key->data[0], staging_key, 32 );
+
+	 result = cudaMalloc( (uint256_t **) &dev_key, sizeof( uint8_t ) * 32 );
+    assert( result == cudaSuccess );
+
+	 result = cudaMemcpy( dev_key, host_key, sizeof( uint8_t ) * 32, cudaMemcpyHostToDevice );
+    assert( result == cudaSuccess );
+
+	 cudaDeviceSynchronize();
     
 
     return 0;
