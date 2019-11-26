@@ -603,10 +603,5 @@ TEST_CASE( "uint256_iter_constructor", "[uint256_iterator]" )
 
     uint256_t a( 0x00 );
     uint256_t b( 0xFF );
-    uint256_iter( (const unsigned char *)
-                  "abcdefghijklmnopqrstuvwxyz012345",
-                  a,
-                  b
-                );
 
 }
