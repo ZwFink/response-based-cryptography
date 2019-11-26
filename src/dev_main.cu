@@ -2,9 +2,8 @@
 #include "AES.h"
 #include "main.h"
 #include "main_util.cu"
-#include "perm_util.cu" // included so that perm_util is compiled 
 #include "uint256_t.h"
-#include "test_utils.h"
+#include "cuda_utils.h"
 
 using namespace std;
 
@@ -124,34 +123,34 @@ int main(int argc, char * argv[])
     cudaMalloc( (void**) &dev_key, sizeof( uint256_t ) );
     cudaMalloc( (void**) &dev_found_key, sizeof( uint256_t ) );
 
-    if( test_utils::HtoD( dev_uid, &uid, sizeof( message_128 ) ) != cudaSuccess )
+    if( cuda_utils::HtoD( dev_uid, uid, sizeof( message_128 ) ) != cudaSuccess )
         {
             std::cout << "Failure to transfer uid to device\n";
         }
 
-    if( test_utils::HtoD( dev_cipher, &cipher, sizeof( message_128 ) ) != cudaSuccess)
+    if( cuda_utils::HtoD( dev_cipher, &cipher, sizeof( message_128 ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer cipher to device\n";
         }
 
-    if( test_utils::HtoD( dev_key, host_key, sizeof( uint256_t ) ) != cudaSuccess)
+    if( cuda_utils::HtoD( dev_key, host_key, sizeof( uint256_t ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer corrupted_key to device\n";
         }
 
-    if( test_utils::HtoD( dev_found_key, &host_found_key, sizeof( uint256_t ) ) != cudaSuccess)
+    if( cuda_utils::HtoD( dev_found_key, &host_found_key, sizeof( uint256_t ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer client_key_to_find to device\n";
         }
 
 	 cudaDeviceSynchronize();
 
-    for( int i=0; i < mismastches; i++ )
+    for( int i=0; i < mismatches; i++ )
     {
         // kernel invocation here    
     }
 
-    if( test_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) != cudaSuccess)
+    if( cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer client_key_to_find to host \n";
         }
