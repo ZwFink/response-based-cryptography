@@ -3,19 +3,15 @@
 #include "main.h"
 #include "main_util.cu"
 #include "perm_util.cu" // included so that perm_util is compiled 
+#include "uint256_t.h"
 
 using namespace std;
-
-// below global constants are temporary and subject to change
-NBLOCKS   = 694923
-BLOCKSIZE = 256
-NUM_ARGS  = 3
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 
 int main(int argc, char * argv[])
 {
-    if( argc != NUM_ARGS )
+    if( argc != 3 )
     {
         printf("\nERROR: must enter 3 args only [ uid, key, mismatches ]");
         return 0;
@@ -112,9 +108,13 @@ int main(int argc, char * argv[])
     */
     
     // send userid, cipher, and corrupted key to GPU global memory
-    uint256_t *host_key, *dev_key;
-
-	 memcpy( host_key->data[0], staging_key, 32 );
+    uint256_t *host_key;
+    uint256_t *dev_key;
+    
+    for( uint8_t i=0; i < 32; i++ )
+    { 
+        host_key->set( staging_key.bits[i], i );
+    }
 
 	 result = cudaMalloc( (uint256_t **) &dev_key, sizeof( uint8_t ) * 32 );
     assert( result == cudaSuccess );
@@ -123,6 +123,8 @@ int main(int argc, char * argv[])
     assert( result == cudaSuccess );
 
 	 cudaDeviceSynchronize();
+
+    
     
 
     return 0;

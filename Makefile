@@ -54,7 +54,7 @@ AES_smem.o: $(AES_FILES) $(UINT_FILES)
 catch.o: test.cu catch.hpp
 	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -c -o $@ $<
 
-benchmark.o: benchmark.cu main.h
+benchmark.o: dev_main.cu main.h
 	$(NVCC) $(CCFLAGS) -DNBLOCKS=$(NBLCKS) -DBLOCKSIZE=$(BLOCKSZ) -c -o $@ $< 
 
 clean:

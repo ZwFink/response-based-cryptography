@@ -48,6 +48,10 @@ CUDA_CALLABLE_MEMBER void uint256_t::copy_64( uint64_t ref, uint8_t idx )
     data_ptr[ idx ] |= ref; // bitwise OR 
 }
 
+CUDA_CALLABLE_MEMBER void uint256_t::set( std::uint8_t set, std::uint8_t index ){
+    data[ index ] = set;
+}
+
 CUDA_CALLABLE_MEMBER const std::uint8_t& uint256_t::operator[]( std::uint8_t idx ) const
 {
     return data[ idx ];

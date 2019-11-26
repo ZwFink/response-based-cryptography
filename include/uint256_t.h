@@ -29,6 +29,7 @@ class uint256_t
 	 CUDA_CALLABLE_MEMBER void copy( const uint256_t& copied );
     // copy 64 bit integer into member starting at index
     CUDA_CALLABLE_MEMBER void copy_64( uint64_t ref, uint8_t index );
+    CUDA_CALLABLE_MEMBER void set( std::uint8_t set, std::uint8_t index );
 
     CUDA_CALLABLE_MEMBER void from_string( const unsigned char *string );
 
