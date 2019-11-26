@@ -125,7 +125,10 @@ int main(int argc, char * argv[])
 	 cudaDeviceSynchronize();
 
     
-    
+    for( int i=0; i < mismastches; i++ )
+    {
+        // kernel invocation here    
+    }
 
     return 0;
 }
