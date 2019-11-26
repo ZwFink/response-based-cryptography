@@ -1,7 +1,7 @@
 
 #include "AES.h"
 #include "main.h"
-#include "main_util.cu"
+#include "main_util.h"
 #include "uint256_t.h"
 #include "cuda_utils.h"
 

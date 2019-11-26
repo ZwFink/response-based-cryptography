@@ -13,7 +13,7 @@ AES_PER_ROUND_FILES=aes_per_round.cu aes_per_round.h
 UINT_FILES=uint256_t.cu uint256_t.h 
 UINT_ITER_FILES=uint256_iterator.cu uint256_iterator.h
 SBOX_FILES=sbox.cu sbox.h 
-UTIL_FILES=perm_util.cu main_util.cu cuda_utils.h
+UTIL_FILES=perm_util.cu perm_util.h main_util.cu main_util.h cuda_utils.h
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
 CCTESTFLAGS := -Itest/ -Ilib/ -Isrc/
