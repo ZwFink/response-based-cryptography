@@ -136,6 +136,11 @@ CUDA_CALLABLE_MEMBER uint256_data_t& uint256_t::get_data()
     return data;
 }
 
+CUDA_CALLABLE_MEMBER std::uint8_t *uint256_t::get_data_ptr()
+{
+    return data;
+}
+
 CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
 {
     return !( *this == comp );

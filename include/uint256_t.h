@@ -54,6 +54,7 @@ class uint256_t
     CUDA_CALLABLE_MEMBER bool operator>( const uint256_t& comp ) const;
 
     CUDA_CALLABLE_MEMBER uint256_data_t& get_data();
+    CUDA_CALLABLE_MEMBER std::uint8_t *get_data_ptr();
 
     CUDA_CALLABLE_MEMBER void set_all( std::uint8_t value );
 
