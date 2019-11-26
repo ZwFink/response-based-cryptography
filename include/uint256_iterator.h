@@ -7,7 +7,7 @@ class uint256_iter
 {
  public:
 
-    CUDA_CALLABLE_MEMBER uint256_iter( const unsigned char *key,
+    CUDA_CALLABLE_MEMBER uint256_iter( const uint256_t& key,
                                        const uint256_t& first_perm,
                                        const uint256_t& final_perm
                                      );
