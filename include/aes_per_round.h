@@ -52,7 +52,7 @@ namespace aes_per_round
 
     DEVICE_ONLY
         void roundwise_encrypt( message_128 *dest,
-                                const key_256 *key,
+                                const uint256_t *key,
                                 const message_128 *message,
                                 const uint8_t sbox[ SBOX_SIZE_IN_BYTES ]
                               );
