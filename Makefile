@@ -1,6 +1,7 @@
 NVCC=nvcc
 vpath %.cu src
 vpath %.cu test
+vpath %.tab tabs
 vpath %.h include
 vpath %.hpp lib
 
@@ -12,6 +13,7 @@ AES_FILES=AES.cu AES.h BlockCipher.h AES_encrypt.cu
 AES_PER_ROUND_FILES=aes_per_round.cu aes_per_round.h
 UINT_FILES=uint256_t.cu uint256_t.h 
 UINT_ITER_FILES=uint256_iterator.cu uint256_iterator.h
+SBOX_FILES=sbox.h sbox.tab
 UTIL_FILES=perm_util.cu main_util.cu
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
@@ -31,6 +33,9 @@ test.o: catch.hpp test_utils.h test.cu
 	$(NVCC) $(CCFLAGS) $(CCTESTFLAGS) -DTTABLE=$(TT) -D$(MODE) -c -o $@ $<
 
 aes_per_round.o: $(AES_PER_ROUND_FILES) cuda_defs.h
+	$(NVCC) $(CCFLAGS) -c -o $@ $<
+
+sbox.o: $(SBOX_FILES)
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 uint_iter.o: $(UINT_ITER_FILES) cuda_defs.h

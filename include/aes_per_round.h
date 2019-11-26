@@ -4,8 +4,7 @@
 
 #include "uint256_t.h"
 #include "cuda_defs.h"
-#include "sbox.tab"
-
+#include "sbox.h"
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 #define SBOX_SIZE_IN_BYTES 256
 
