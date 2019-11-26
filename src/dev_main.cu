@@ -147,7 +147,8 @@ int main(int argc, char * argv[])
 
 	 cudaDeviceSynchronize();
 
-    for( int i=0; i < mismatches; i++ )
+    //for( int i=0; i <= mismatches; i++ )
+    for( int i=mismatches; i <= mismatches; i++ ) // fixed
     {
         // kernel invocation here    
     }
