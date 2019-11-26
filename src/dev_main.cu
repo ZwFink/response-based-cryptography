@@ -4,6 +4,7 @@
 #include "main_util.cu"
 #include "perm_util.cu" // included so that perm_util is compiled 
 #include "uint256_t.h"
+#include "test_utils.h"
 
 using namespace std;
 
@@ -106,29 +107,54 @@ int main(int argc, char * argv[])
        - cipher:       client's encrypted cipher text to check against 
        - staging_key:  corrupted version of bit_key
     */
-    
+        
     // send userid, cipher, and corrupted key to GPU global memory
-    uint256_t *host_key;
-    uint256_t *dev_key;
-    
+    message_128 * dev_uid = nullptr;
+    message_128 * dev_cipher = nullptr;
+    uint256_t * dev_key = nullptr, * host_key = nullptr;
+    uint256_t * dev_found_key = nullptr;
+    uint256_t host_found_key;
     for( uint8_t i=0; i < 32; i++ )
     { 
         host_key->set( staging_key.bits[i], i );
     }
 
-	 result = cudaMalloc( (uint256_t **) &dev_key, sizeof( uint8_t ) * 32 );
-    assert( result == cudaSuccess );
+    cudaMalloc( (void**) &dev_uid, sizeof( message_128 ) );
+    cudaMalloc( (void**) &dev_cipher, sizeof( message_128 ) );
+    cudaMalloc( (void**) &dev_key, sizeof( uint256_t ) );
+    cudaMalloc( (void**) &dev_found_key, sizeof( uint256_t ) );
 
-	 result = cudaMemcpy( dev_key, host_key, sizeof( uint8_t ) * 32, cudaMemcpyHostToDevice );
-    assert( result == cudaSuccess );
+    if( test_utils::HtoD( dev_uid, &uid, sizeof( message_128 ) ) != cudaSuccess )
+        {
+            std::cout << "Failure to transfer uid to device\n";
+        }
+
+    if( test_utils::HtoD( dev_cipher, &cipher, sizeof( message_128 ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer cipher to device\n";
+        }
+
+    if( test_utils::HtoD( dev_key, host_key, sizeof( uint256_t ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer corrupted_key to device\n";
+        }
+
+    if( test_utils::HtoD( dev_found_key, &host_found_key, sizeof( uint256_t ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer client_key_to_find to device\n";
+        }
 
 	 cudaDeviceSynchronize();
 
-    
     for( int i=0; i < mismastches; i++ )
     {
         // kernel invocation here    
     }
+
+    if( test_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) != cudaSuccess)
+        {
+            std::cout << "Failure to transfer client_key_to_find to host \n";
+        }
 
     return 0;
 }
