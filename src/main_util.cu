@@ -3,6 +3,7 @@
 #ifndef MAIN_UTIL_CU_
 #define MAIN_UTIL_CU_
 
+#define USE_SMEM 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,20 +35,21 @@
 #include "perm_util.cu"
 #include "uint256_iterator.h"
 #include "aes_per_round.h"
+#include "sbox.h"
 
 void warm_up_gpu( int device );
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,
-                          uint256_t user_id,
-                          uint256_t auth_cipher 
+                          const aes_per_round::message_128 *user_id,
+                          const aes_per_round::message_128 *auth_cipher 
                         );
 
 __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    size_t first_mismatch,
                                    size_t last_mismatch,
-                                   const uint256_t user_id,
-                                   const uint256_t auth_cipher,
+                                   const aes_per_round::message_128 *user_id,
+                                   const aes_per_round::message_128 *auth_cipher,
                                    const size_t key_sz_bytes,
                                    const size_t key_sz_bits
                                  )
@@ -74,9 +76,9 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                        key_sz_bits
                      );
         
-        result = validator( &starting_perm,
+        result = validator( key_for_encryp,
+                            &starting_perm,
                             &ending_perm,
-                            key_for_encryp,
                             user_id,
                             auth_cipher
                           );
@@ -90,10 +92,58 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,
-                          const uint256_t user_id,
-                          const uint256_t auth_cipher 
+                          const aes_per_round::message_128 *user_id,
+                          const aes_per_round::message_128 *auth_cipher 
                         )
 {
+    aes_per_round::message_128 encrypted;
+    int idx = 0;
+
+    for( idx = 0; idx < 4; ++idx )
+        {
+            ((uint32_t*)&(encrypted.bits))[ idx ] = 0;
+        }
+
+    #ifdef USE_SMEM
+    __shared__ std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ];
+    if( threadIdx.x < SBOX_SIZE_IN_BYTES )
+        {
+            sbox[ threadIdx.x ] = Tsbox_256[ threadIdx.x ];
+        }
+
+    __syncthreads();
+
+    #else
+    // just get a reference to it
+    uint8_t *sbox = Tsbox_256;
+    #endif 
+
+    uint256_iter iter ( *key_for_encryp,
+                        *starting_perm,
+                        *ending_perm
+                      );
+    while( !iter.end() )
+        {
+
+            // encrypt
+            aes_per_round::roundwise_encrypt( &encrypted,
+                                              key_for_encryp,
+                                              user_id,
+                                              sbox
+                                            );
+
+            // check for match! 
+
+
+            // get next key
+
+
+            for( idx = 0; idx < 4; ++idx )
+                {
+                    ((uint32_t*)&(encrypted.bits))[ idx ] = 0;
+                }
+
+        }
 
 }
 
