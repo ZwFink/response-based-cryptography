@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef MAIN_HH_INCLUDED
+#define MAIN_HH_INCLUDED
 
 
 #include <stdio.h>
@@ -56,4 +56,4 @@ void sub_bytes(message_128 *message, uint8_t sbox[256]);
 void shift_rows(message_128 *message);
 void xor_key(message_128 *message, key_128 key);
 
-#endif
+#endif // MAIN_HH_INCLUDED
