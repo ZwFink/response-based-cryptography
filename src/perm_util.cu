@@ -1,11 +1,7 @@
 // utility file for permutation delimination
 
-#ifndef PERM_UTIL_CU_
-#define PERM_UTIL_CU_
+#include "perm_util.h"
 
-#include "uint256_t.h"
-
-__device__ uint64_t get_bin_coef(size_t n, size_t k);
 
 // COMPLETED
 __device__ void decode_ordinal( uint256_t *perm, 
@@ -145,25 +141,5 @@ __device__ uint64_t get_bin_coef(size_t n, size_t k)
   
     return ret;  
 }  
-
-// we don't need this here -- should be used in main before kernel invocation.
-__device__ void get_random_permutation( uint256_t perm,
-                                        int mismatches,
-                                        int key_sz_bits )
-{
-
-
-}
-
-// we don't need this here -- should be used in main before kernel invocation.
-__device__ void get_benchmark_permutation( uint256_t perm,
-                                           int mismatches,
-                                           int key_sz_bits )
-{
-
-
-}
-   
-#endif
 
                              
