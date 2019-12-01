@@ -7,8 +7,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    int mismatch,
                                    const aes_per_round::message_128 *user_id,
                                    const aes_per_round::message_128 *auth_cipher,
-                                   const size_t key_sz_bytes,
-                                   const size_t key_sz_bits
+                                   const std::size_t key_sz_bytes,
+                                   const std::size_t key_sz_bits
                                  )
 {
     unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x );
@@ -26,8 +26,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     {
         get_perm_pair( &starting_perm, 
                        &ending_perm, 
-                       (size_t) tid, 
-                       (size_t) NBLOCKS*BLOCKSIZE,
+                       (std::size_t) tid, 
+                       (std::size_t) NBLOCKS*BLOCKSIZE,
                        mismatch,
                        key_sz_bytes,
                        key_sz_bits
