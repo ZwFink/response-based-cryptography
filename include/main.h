@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include "AES.h"
+#include "aes_per_round.h"
+#include "cuda_utils.h"
 
 uint stringToUcharArray(char *str, uchar **array);
 uint stringToUcharArray(char *str, uint **array);

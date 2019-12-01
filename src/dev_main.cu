@@ -1,7 +1,5 @@
-
+#include <iostream>
 #include "main.h"
-
-using namespace std;
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 
