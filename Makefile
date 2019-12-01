@@ -17,6 +17,9 @@ UTIL_FILES=perm_util.cu perm_util.h cuda_utils.h
 UTIL_MAIN_FILES=main_util.cu main_util.h cuda_utils.h
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
+DEBUGFLAGS := -O0 -g --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
+-Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
+
 CCTESTFLAGS := -Itest/ -Ilib/ -Isrc/
 TT?=128
 MODE?=HYBRID
@@ -68,8 +71,14 @@ catch.o: test.cu catch.hpp
 benchmark.o: dev_main.cu main.h
 	$(NVCC) $(CCFLAGS) -DNBLOCKS=$(NBLCKS) -DBLOCKSIZE=$(BLOCKSZ) -c -o $@ $< 
 
+.PHONY: clean clobber debug
+
 clean:
 	$(RM) $(EXECUTABLES) *.o
 
 clobber: clean
 	rm *~
+
+debug: clean
+debug: CCFLAGS=$(DEBUGFLAGS)
+debug: sbench

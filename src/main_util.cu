@@ -15,7 +15,6 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
     uint256_t starting_perm, ending_perm;
 
-    size_t mismatch   = 0;
     uint64_t num_keys = 0;
     int result        = 0;
 
