@@ -46,12 +46,12 @@ __device__ int validator( uint256_t *starting_perm,
                         );
 
 __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
-                                   size_t first_mismatch,
-                                   size_t last_mismatch,
+                                   uint256_t *key_to_find,
+                                   int mismatch,
                                    const aes_per_round::message_128 *user_id,
                                    const aes_per_round::message_128 *auth_cipher,
-                                   const size_t key_sz_bytes,
-                                   const size_t key_sz_bits
+                                   const std::size_t key_sz_bytes,
+                                   const std::size_t key_sz_bits
                                  );
 
 #endif // MAIN_UTIL_HH_INCLUDED
