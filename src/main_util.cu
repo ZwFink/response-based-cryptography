@@ -1,6 +1,7 @@
 // utility file for host driver funciton (main)
 
 #include "main_util.h"
+#include <stdio.h>
 
 __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    uint256_t *key_to_find,
@@ -32,15 +33,19 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                        key_sz_bits
                      );
         
-        result = validator( key_for_encryp,
-                            &starting_perm,
+        result = validator( &starting_perm,
                             &ending_perm,
+                            key_for_encryp,
                             user_id,
                             auth_cipher
                           );
 
         // if result is 1 then we found a key matching client's private key
         // signal all threads to stop
+        // if( result )
+        //     {
+        //         *key_to_find = *key_for_encryp; 
+        //     }
     }
 
 }
@@ -54,6 +59,8 @@ __device__ int validator( uint256_t *starting_perm,
 {
     aes_per_round::message_128 encrypted;
     int idx = 0;
+    std::uint8_t match = 0;
+    std::uint8_t match2 = 0;
 
     for( idx = 0; idx < 4; ++idx )
         {
@@ -83,15 +90,28 @@ __device__ int validator( uint256_t *starting_perm,
 
             // encrypt
             aes_per_round::roundwise_encrypt( &encrypted,
-                                              key_for_encryp,
+                                              &iter.corrupted_key,
                                               user_id,
                                               sbox
                                             );
 
             // check for match! 
+            for( idx = 0; idx < 16; ++idx )
+                {
+                    match += ( encrypted.bits[ idx ] == auth_cipher->bits[ idx ] );
+                }
+            match2 += match == 16; // if all 16 bytes matched, we have a match!
 
+            if( match == 16 )
+                {
+                    *key_for_encryp = iter.corrupted_key;
+                    printf( "I found it!\n" );
+                }
+
+            match = 0;
 
             // get next key
+            iter.next();
 
 
             for( idx = 0; idx < 4; ++idx )
@@ -100,7 +120,7 @@ __device__ int validator( uint256_t *starting_perm,
                 }
 
         }
-
+    return match2;
 }
 
 void warm_up_gpu( int device )
