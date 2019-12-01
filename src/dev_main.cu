@@ -104,9 +104,11 @@ int main(int argc, char * argv[])
     */
         
     // send userid, cipher, and corrupted key to GPU global memory
+    uint256_t host_key_value;
     aes_per_round::message_128 * dev_uid = nullptr;
     aes_per_round::message_128 * dev_cipher = nullptr;
     uint256_t *dev_key = nullptr, * host_key = nullptr;
+    host_key = &host_key_value;
     uint256_t *dev_found_key = nullptr;
     uint256_t host_found_key;
     for( uint8_t i=0; i < 32; i++ )
@@ -152,6 +154,7 @@ int main(int argc, char * argv[])
                                                   UINT256_SIZE_IN_BYTES,
                                                   UINT256_SIZE_IN_BITS
                                                 );
+       cudaDeviceSynchronize();
     }
 
     if( cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) != cudaSuccess)
