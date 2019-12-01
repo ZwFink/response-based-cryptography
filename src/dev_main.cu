@@ -157,11 +157,14 @@ int main(int argc, char * argv[])
        cudaDeviceSynchronize();
     }
 
-    if( cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) != cudaSuccess)
+    cudaError_t res = cudaSuccess;
+    if( ( res = cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer client_key_to_find to host \n";
+            std::cout << "Failed with code: " << res << "\n";
         }
 
+    host_found_key.dump();
     return 0;
 }
 
