@@ -42,7 +42,7 @@ uint_iter.o: $(UINT_ITER_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 util_main.o: $(UTIL_MAIN_FILES) 
-	$(NVCC) $(CCFLAGS) -c -o $@ $<
+	$(NVCC) $(CCFLAGS) -DNBLOCKS=$(NBLCKS) -DBLOCKSIZE=$(BLOCKSZ) -c -o $@ $< 
 
 uint.o: $(UINT_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
