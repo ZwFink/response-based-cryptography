@@ -5,9 +5,9 @@
 
 int main(int argc, char * argv[])
 {
-    if( argc != 3 )
+    if( argc != 4 )
     {
-        printf("\nERROR: must enter 3 args only [ uid, key, mismatches ]");
+        printf("\nERROR: must enter 3 args only [ uid, key, mismatches ]\n");
         return 0;
     }
 
