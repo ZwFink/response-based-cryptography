@@ -106,8 +106,8 @@ int main(int argc, char * argv[])
     // send userid, cipher, and corrupted key to GPU global memory
     aes_per_round::message_128 * dev_uid = nullptr;
     aes_per_round::message_128 * dev_cipher = nullptr;
-    uint256_t * dev_key = nullptr, * host_key = nullptr;
-    uint256_t * dev_found_key = nullptr;
+    uint256_t *dev_key = nullptr, * host_key = nullptr;
+    uint256_t *dev_found_key = nullptr;
     uint256_t host_found_key;
     for( uint8_t i=0; i < 32; i++ )
     { 
@@ -144,14 +144,14 @@ int main(int argc, char * argv[])
     //for( int i=0; i <= mismatches; i++ )
     for( int i=mismatches; i <= mismatches; i++ ) // fixed
     {
-       // kernel_rbc_engine<<<NBLOCKS, BLOCKSIZE>>>( dev_key,
-       //                                            dev_found_key,
-       //                                            i,
-       //                                            dev_uid,
-       //                                            dev_cipher,
-       //                                            UINT256_SIZE_IN_BYTES,
-       //                                            UINT256_SIZE_IN_BITS
-       //                                          );
+       kernel_rbc_engine<<<NBLOCKS, BLOCKSIZE>>>( dev_key,
+                                                  dev_found_key,
+                                                  i,
+                                                  dev_uid,
+                                                  dev_cipher,
+                                                  UINT256_SIZE_IN_BYTES,
+                                                  UINT256_SIZE_IN_BITS
+                                                );
     }
 
     if( cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) != cudaSuccess)
