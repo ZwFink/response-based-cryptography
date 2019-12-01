@@ -11,6 +11,8 @@
 #include "AES.h"
 #include "aes_per_round.h"
 #include "cuda_utils.h"
+#include "main_util.h"
+#include "uint256_t.h"
 
 uint stringToUcharArray(char *str, uchar **array);
 uint stringToUcharArray(char *str, uint **array);
