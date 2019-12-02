@@ -161,6 +161,14 @@ CUDA_CALLABLE_MEMBER std::uint8_t *uint256_t::get_data_ptr()
     return data;
 }
 
+CUDA_CALLABLE_MEMBER void uint256_t::operator=( const uint256_t& set )
+{
+    for( std::uint8_t a = 0; a < UINT256_SIZE_IN_BYTES / 4; ++a )
+        {
+            *((uint32_t*)data + a )  = *((uint32_t*)set.data + a );
+        }
+}
+
 CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
 {
     return !( *this == comp );

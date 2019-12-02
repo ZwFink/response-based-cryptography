@@ -65,6 +65,7 @@ class uint256_t
 
     CUDA_CALLABLE_MEMBER void set_all( std::uint8_t value );
 
+    CUDA_CALLABLE_MEMBER void operator=( const uint256_t& set );
     __host__ void dump();
     CUDA_CALLABLE_MEMBER void dump_hex();
 
