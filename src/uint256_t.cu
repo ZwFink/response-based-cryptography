@@ -307,7 +307,7 @@ __device__ void uint256_t::neg( uint256_t& dest )
 {
     uint256_t complement = ~(*this);
 
-    uint256_t one( 0x01, UINT256_SIZE_IN_BYTES - 1 );
+    uint256_t one( 0x01, 0 );
 
     complement.add( dest, one );
 }
