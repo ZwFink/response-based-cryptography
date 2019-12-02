@@ -144,6 +144,23 @@ namespace test_utils
 
          }
 
+        __global__ void uint256_iter_next_knl( uint256_iter *iter,
+                                               uint256_t *key,
+                                               uint256_t *first_perm,
+                                               uint256_t *last_perm,
+                                               int *count_ptr
+                                             )
+        {
+            int c = 0;
+            while( !iter->end() )
+                {
+            iter->next();
+            ++c;
+                }
+
+            *count_ptr = c;
+
+        }
 };
 
 #endif
