@@ -166,6 +166,22 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
     return !( *this == comp );
 }
 
+CUDA_CALLABLE_MEMBER void uint256_t::dump_hex()
+{
+    char buff[ 163 ] = { 0 };
+
+    for( int x = 0; x < 32; ++x )
+        {
+            snprintf( buff + ( x * 5 ), 
+                      6,
+                      "0x%02x ", data[ x ]
+                    );
+                    
+        }
+    printf( "%s\n", buff );
+}
+
+
 __host__ void uint256_t::dump()
 {
     for( const auto& x : data )

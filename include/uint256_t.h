@@ -66,6 +66,7 @@ class uint256_t
     CUDA_CALLABLE_MEMBER void set_all( std::uint8_t value );
 
     __host__ void dump();
+    CUDA_CALLABLE_MEMBER void dump_hex();
 
     __device__ int ctz();
     __device__ int popc();
