@@ -171,12 +171,12 @@ __host__ void uint256_t::dump()
     for( const auto& x : data )
         {
             std::cout
-                << "0x"
-                << std::setfill('0')
-                << std::setw(2)
-                << std::hex
-                << unsigned( x )
-                << " ";
+               << "0x"
+               << std::setfill('0')
+               << std::setw(2)
+               << std::hex
+               << unsigned( x )
+               << " ";
         }
     std::cout << "\n"; 
 }
@@ -332,16 +332,14 @@ __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
            "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
          );
 
-    return dest_32[ 7 ] <= self_32[ 7 ];
+    return dest_32[ 7 ] < self_32[ 7 ];
 }
 
 __device__ void uint256_t::neg( uint256_t& dest )
 {
     uint256_t complement = ~(*this);
 
-    uint256_t one( 0x01, 0 );
-
-    complement.add( dest, one );
+    complement.add( dest, UINT256_ONE );
 }
 
 // intended for use with permutation creation in function decode_ordinal
