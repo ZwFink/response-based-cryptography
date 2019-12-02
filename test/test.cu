@@ -629,7 +629,7 @@ TEST_CASE( "uint256_iter", "[uint256_iterator]" )
     *b_dev = b;
     *c_dev = c;
 
-    test_utils::get_perm_pair_knl<<<1,1>>>( b_dev, c_dev );
+    test_utils::get_perm_pair_knl<<<1,1>>>( b_dev, c_dev, 0, 1 );
 
     cudaDeviceSynchronize();
     uint256_iter iter( *a_dev, *b_dev, *c_dev ) ;

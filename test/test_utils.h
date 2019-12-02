@@ -132,12 +132,13 @@ namespace test_utils
         }
 
         __global__ void get_perm_pair_knl( uint256_t *starting_perm, 
-                                           uint256_t *ending_perm
+                                           uint256_t *ending_perm,
+                                           int tid, int nthreads
                                          )
          {
 
              get_perm_pair( starting_perm, ending_perm,
-                            0, 1,
+                            tid, nthreads,
                             2, 32,
                             256
                           );
