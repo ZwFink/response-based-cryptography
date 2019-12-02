@@ -11,6 +11,7 @@ class uint256_iter
                                        const uint256_t& first_perm,
                                        const uint256_t& final_perm
                                      );
+    CUDA_CALLABLE_MEMBER uint256_iter();
 
     __device__ void get( uint256_t& dest );
 

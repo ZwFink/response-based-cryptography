@@ -9,7 +9,12 @@ CUDA_CALLABLE_MEMBER uint256_iter::uint256_iter( const uint256_t& key,
     last_perm = final_perm;
     key_uint = key;
     corrupted_key = key_uint ^ curr_perm;
+    overflow = false;
 }
+
+CUDA_CALLABLE_MEMBER uint256_iter::uint256_iter()
+:
+    curr_perm( 0x00 ), last_perm( 0x00 ), key_uint( 0x00 ), corrupted_key( 0x00 ), overflow( false ) {}
 
 __device__ void uint256_iter::next()
 {
@@ -41,7 +46,8 @@ __device__ void uint256_iter::next()
     tmp.set_all( 0x00 );
 
 
-    // | ( t + 1 )
+
+    // ( t + 1 )
     overflow = t.add( tmp, UINT256_ONE );
 
     curr_perm = tmp | add_tmp;
