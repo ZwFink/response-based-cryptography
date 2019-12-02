@@ -257,7 +257,19 @@ CUDA_CALLABLE_MEMBER std::uint8_t uint256_t::at( int loc )
 
 __device__ int uint256_t::ctz()
 {
-    return 256 - popc();
+    int ret = 0;
+    int count_limit = 0;
+    for( std::uint8_t idx = 0;
+         ret == count_limit
+          && idx < UINT256_SIZE_IN_BYTES / 4;
+         ++idx
+       )
+        {
+            count_limit += sizeof( uint32_t ) * 8;
+            ret += uint256_ctz_table::ctz( *((std::uint32_t*) data + idx ) );
+        }
+
+    return ret;
 }
 
 CUDA_CALLABLE_MEMBER void uint256_t::to_32_bit_arr( std::uint32_t* dest )
