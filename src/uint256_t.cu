@@ -3,6 +3,26 @@
 
 #include "uint256_t.h"
 
+namespace uint256_ctz_table
+{
+    #ifdef USE_CONSTANT
+    __constant__
+    #endif
+    __device__ 
+    std::uint8_t lookup[ 37 ] = 
+    {
+        32, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11, 0, 13, 4,
+        7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
+        20, 8, 19, 18
+    };
+
+    INLINE DEVICE_ONLY int ctz( const std::uint32_t loc )
+    {
+        return lookup[ ( -loc & loc ) % 37 ];
+    }
+
+}
+
 uint256_t::uint256_t()
 {
     set_all( 0 );

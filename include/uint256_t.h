@@ -17,6 +17,13 @@
 
 typedef std::uint8_t uint256_data_t[ UINT256_SIZE_IN_BYTES ];
 
+namespace uint256_ctz_table
+{
+    extern std::uint8_t lookup[ 37 ];
+
+    INLINE DEVICE_ONLY int ctz( const std::uint32_t loc );
+}
+
 class uint256_t
 {
  public:
