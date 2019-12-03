@@ -48,7 +48,10 @@ CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set )
 
 CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint8_t val )
 {
-    memset( data, val, UINT256_SIZE_IN_BYTES );
+    for( std::uint8_t x = 0; x < UINT256_SIZE_IN_BYTES; ++x )
+        {
+            data[ x ] = val;
+        }
 }
 
 // copy constructor
