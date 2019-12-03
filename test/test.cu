@@ -629,21 +629,69 @@ TEST_CASE( "uint256_iter", "[uint256_iterator]" )
     *b_dev = b;
     *c_dev = c;
 
-    test_utils::get_perm_pair_knl<<<1,1>>>( b_dev, c_dev, 0, 1 );
+    SECTION( "All of the keys are generated when there is one thread" )
+        {
+            test_utils::get_perm_pair_knl<<<1,1>>>( b_dev, c_dev, 0, 1 );
 
-    cudaDeviceSynchronize();
-    uint256_iter iter( *a_dev, *b_dev, *c_dev ) ;
+            cudaDeviceSynchronize();
+            uint256_iter iter( *a_dev, *b_dev, *c_dev ) ;
 
-    *iter_ptr = iter;
+            *iter_ptr = iter;
 
-    test_utils::uint256_iter_next_knl<<<1,1>>>( iter_ptr,
-                                                a_dev,
-                                                b_dev,
-                                                c_dev,
-                                                count_ptr
-                                               );
+            test_utils::uint256_iter_next_knl<<<1,1>>>( iter_ptr,
+                                                        a_dev,
+                                                        b_dev,
+                                                        c_dev,
+                                                        count_ptr
+                                                        );
 
-    cudaDeviceSynchronize();
-    REQUIRE( *count_ptr == 32640 );
+            cudaDeviceSynchronize();
+            REQUIRE( *count_ptr == 32640 );
+        }
+    SECTION( "All of the keys are generated where are two threads" )
+        {
+            uint256_t start_2( 0x00 ), end_2( 0x00 );
+
+            b_dev->set_all( 0x00 );
+            c_dev->set_all( 0x00 );
+
+            uint256_t *start_2_ptr, *end_2_ptr;
+            uint256_iter *iter_2_ptr;
+            int *count_2_ptr;
+
+            cudaMallocManaged( &start_2_ptr, sizeof( uint256_t ) );
+            cudaMallocManaged( &end_2_ptr, sizeof( uint256_t ) );
+            cudaMallocManaged( &count_2_ptr, sizeof( int ) );
+            cudaMallocManaged( &iter_2_ptr, sizeof( uint256_iter ) );
+
+
+            test_utils::get_perm_pair_knl<<<1,1>>>( b_dev, c_dev, 0, 2 );
+            test_utils::get_perm_pair_knl<<<1,1>>>( start_2_ptr, end_2_ptr, 1, 2 );
+
+            cudaDeviceSynchronize();
+
+            uint256_iter iter( *a_dev, *b_dev, *c_dev ) ;
+            uint256_iter iter2( *a_dev, *start_2_ptr, *end_2_ptr ) ;
+
+            *iter_ptr = iter;
+            *iter_2_ptr = iter2;
+            test_utils::uint256_iter_next_knl<<<1,1>>>( iter_ptr,
+                                                        a_dev,
+                                                        b_dev,
+                                                        c_dev,
+                                                        count_ptr
+                                                        );
+
+            test_utils::uint256_iter_next_knl<<<1,1>>>( iter_2_ptr,
+                                                        a_dev,
+                                                        b_dev,
+                                                        c_dev,
+                                                        count_2_ptr
+                                                      );
+
+            cudaDeviceSynchronize();
+            REQUIRE( *count_ptr - *count_2_ptr < 2 );
+
+        }
 
 }
