@@ -1,7 +1,23 @@
 #include <iostream>
+#include <omp.h>
 #include "main.h"
+#include "perm_util.h"
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
+#define THREADS_PER_BLOCK 256
+#define OPS_PER_THREAD 128
+
+unsigned char flip_n_bits( unsigned char val,
+                           int n
+)
+{
+    int mismatches = n;
+    unsigned char mask_left = 0xFF << ( 8 - mismatches );
+    unsigned char mask_right = 0xFF >> ( mismatches );
+
+    return ( mask_left & ~val ) | ( mask_right & val );
+                      
+}
 
 int main(int argc, char * argv[])
 {
@@ -15,6 +31,11 @@ int main(int argc, char * argv[])
     char * uid     = argv[1];
     char * key     = argv[2];
     int mismatches = atoi(argv[3]);
+
+    std::uint32_t total_threads = THREADS_PER_BLOCK * OPS_PER_THREAD; 
+    std::uint64_t num_blocks = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches ) / total_threads;
+    ++num_blocks;
+                                             
 
     uint8_t key_hex[32];
     uint8_t uid_hex[16];
@@ -91,17 +112,27 @@ int main(int argc, char * argv[])
         staging_key.bits[i] = (uint8_t) bit_key.bits[i];
     }
     // this is subject to change...
-    for (int i = 0; i < mismatches*2; i=i+2)
-    {
-        // flip the third bit of the first 6 even numbered blocks 
-        staging_key.bits[i] ^= (1 << 3); 
-    }
+    staging_key.bits[ 31 ] = flip_n_bits( bit_key.bits[ 31 ], mismatches );
+    for( int x = 0; x < 32; ++x )
+        {
+            printf( "0x%02X ", staging_key.bits[ x ] );
+
+        }
+    printf( "\n" );
+    for( int x = 0; x < 32; ++x )
+        {
+            printf( "0x%02X ", bit_key.bits[ x ] );
+
+        }
+    printf( "\n" );
+
 
     /* ok, we now have:
        - uid:          client's 128 bit message to encrypt
        - cipher:       client's encrypted cipher text to check against 
        - staging_key:  corrupted version of bit_key
     */
+    double start_time = omp_get_wtime();
         
     // send userid, cipher, and corrupted key to GPU global memory
     uint256_t host_key_value;
@@ -146,14 +177,15 @@ int main(int argc, char * argv[])
     //for( int i=0; i <= mismatches; i++ )
     for( int i=mismatches; i <= mismatches; i++ ) // fixed
     {
-       kernel_rbc_engine<<<NBLOCKS, BLOCKSIZE>>>( dev_key,
-                                                  dev_found_key,
-                                                  i,
-                                                  dev_uid,
-                                                  dev_cipher,
-                                                  UINT256_SIZE_IN_BYTES,
-                                                  UINT256_SIZE_IN_BITS
-                                                );
+       kernel_rbc_engine<<<num_blocks, THREADS_PER_BLOCK>>>( dev_key,
+                                                             dev_found_key,
+                                                             i,
+                                                             dev_uid,
+                                                             dev_cipher,
+                                                             UINT256_SIZE_IN_BYTES,
+                                                             num_blocks,
+                                                             THREADS_PER_BLOCK
+                                                           );
        cudaDeviceSynchronize();
     }
 
@@ -163,6 +195,10 @@ int main(int argc, char * argv[])
             std::cout << "Failure to transfer client_key_to_find to host \n";
             std::cout << "Failed with code: " << res << "\n";
         }
+
+    double end_time = omp_get_wtime() ;
+
+    std::cout << "Elapsed: " << end_time - start_time << "\n";
 
     host_found_key.dump();
     return 0;
