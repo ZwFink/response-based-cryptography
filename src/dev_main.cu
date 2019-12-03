@@ -36,6 +36,10 @@ int main(int argc, char * argv[])
     std::uint64_t num_blocks = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches ) / total_threads;
     ++num_blocks;
                                              
+    ////////////////
+    //Turn on gpu
+    printf("\nTurning on the GPU...\n");
+    warm_up_gpu( 0 );
 
     uint8_t key_hex[32];
     uint8_t uid_hex[16];
