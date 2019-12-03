@@ -5,11 +5,12 @@
 
 __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    uint256_t *key_to_find,
-                                   int mismatch,
+                                   const int mismatch,
                                    const aes_per_round::message_128 *user_id,
                                    const aes_per_round::message_128 *auth_cipher,
                                    const std::size_t key_sz_bytes,
-                                   const std::size_t key_sz_bits
+                                   const std::size_t num_blocks,
+                                   const std::size_t threads_per_block
                                  )
 {
     unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x );
@@ -19,7 +20,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     uint64_t num_keys = 0;
     int result        = 0;
 
-    num_keys = get_bin_coef( key_sz_bits, mismatch ); 
+    num_keys = get_bin_coef( key_sz_bytes * 8, mismatch ); 
    
     // only run thread if tid is less than cardinality of current keyspace
     if( tid < num_keys )
@@ -27,10 +28,10 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
         get_perm_pair( &starting_perm, 
                        &ending_perm, 
                        (std::size_t) tid, 
-                       (std::size_t) NBLOCKS*BLOCKSIZE,
+                       (std::size_t) num_blocks * threads_per_block,
                        mismatch,
                        key_sz_bytes,
-                       key_sz_bits
+                       key_sz_bytes * 8
                      );
         
         result = validator( &starting_perm,
@@ -112,7 +113,6 @@ __device__ int validator( uint256_t *starting_perm,
 
             // get next key
             iter.next();
-
 
             for( idx = 0; idx < 4; ++idx )
                 {
