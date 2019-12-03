@@ -26,9 +26,6 @@ CCTESTFLAGS := -Itest/ -Ilib/ -Isrc/
 TT?=128
 MODE?=HYBRID
 
-NBLCKS=694923 
-BLOCKSZ=256
-
 all: $(EXECUTABLES)
 
 test_rbc: $(GENERAL_OBJECTS) test.o util_main.o
@@ -47,7 +44,7 @@ uint_iter.o: $(UINT_ITER_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 util_main.o: $(UTIL_MAIN_FILES) 
-	$(NVCC) $(CCFLAGS) -DNBLOCKS=$(NBLCKS) -DBLOCKSIZE=$(BLOCKSZ) -c -o $@ $< 
+	$(NVCC) $(CCFLAGS) -c -o $@ $< 
 
 uint.o: $(UINT_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
