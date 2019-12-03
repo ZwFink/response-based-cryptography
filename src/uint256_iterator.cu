@@ -10,6 +10,7 @@ CUDA_CALLABLE_MEMBER uint256_iter::uint256_iter( const uint256_t& key,
     key_uint = key;
     corrupted_key = key_uint ^ curr_perm;
     overflow = false;
+    tmp.set_all( 0x00 );
 }
 
 CUDA_CALLABLE_MEMBER uint256_iter::uint256_iter()
@@ -19,33 +20,35 @@ CUDA_CALLABLE_MEMBER uint256_iter::uint256_iter()
 __device__ void uint256_iter::next()
 {
 
+    tmp.set_all( 0x00 );
+    // t = curr | ( curr - 1 )
     uint256_t add_tmp( 0x00 );
-    curr_perm.add( add_tmp, UINT256_NEGATIVE_ONE );
-    t = curr_perm | ( add_tmp );
+    curr_perm.add( add_tmp, UINT256_NEGATIVE_ONE ); // curr - 1 
+
+    t = curr_perm | ( add_tmp ); // curr | ( curr - 1 )
+
 
     uint8_t shift = curr_perm.ctz() + 1;
 
     add_tmp.set_all( 0x00 );
 
-    // ( t + 1 ) | ( ( ( ~t & -~t ) - 1 ) >> ( ctz( perm ) + 1 ) )
+
+   // ( t + 1 ) | ( ( ( ~t & -~t ) - 1 ) >> ( ctz( perm ) + 1 ) )
 
     // ~t & -~t
-    tmp = ~t;
-    tmp.neg( add_tmp );
-    tmp = tmp & add_tmp;
+    tmp = ~t; // ~t
+    tmp.neg( add_tmp ); // -~t
+    tmp = tmp & add_tmp; // ~t & -~t
 
     add_tmp.set_all( 0x00 );
 
     // - 1
-    tmp.add( add_tmp, UINT256_NEGATIVE_ONE );
-
+    tmp.add( add_tmp, UINT256_NEGATIVE_ONE ); // ( ~t & -~t ) - 1
 
     // >> ctz( perm ) + 1
     add_tmp = add_tmp >> shift;
 
     tmp.set_all( 0x00 );
-
-
 
     // ( t + 1 )
     overflow = t.add( tmp, UINT256_ONE );
