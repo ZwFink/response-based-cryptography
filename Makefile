@@ -18,7 +18,7 @@ UTIL_FILES=perm_util.cu perm_util.h cuda_utils.h
 UTIL_MAIN_FILES=main_util.cu main_util.h cuda_utils.h
 GENERAL_OBJECTS=aes_per_round.o sbox.o uint_iter.o uint.o util.o
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
--Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
+-Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/ -DUSE_CONSTANT
 DEBUGFLAGS := -O0 -g --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
 
