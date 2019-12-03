@@ -177,7 +177,7 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
     return !( *this == comp );
 }
 
-CUDA_CALLABLE_MEMBER void uint256_t::dump_hex()
+__host__ void uint256_t::dump_hex()
 {
     char buff[ 163 ] = { 0 };
 
@@ -372,7 +372,7 @@ __device__ void uint256_t::neg( uint256_t& dest )
 // intended for use with permutation creation in function decode_ordinal
 CUDA_CALLABLE_MEMBER void uint256_t::set_bit( std::uint8_t bit_idx )
 {
-    std::uint8_t block = floor( bit_idx / 8 );
+    std::uint8_t block = bit_idx / 8;
     std::uint8_t ndx_in_block = bit_idx - ( block * 8 );
    
     data[ block ] |= ( 1 << ndx_in_block );
