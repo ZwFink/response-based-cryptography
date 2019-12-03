@@ -10,7 +10,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const aes_per_round::message_128 *auth_cipher,
                                    const std::size_t key_sz_bytes,
                                    const std::size_t num_blocks,
-                                   const std::size_t threads_per_block
+                                   const std::size_t threads_per_block,
+                                   std::uint64_t *iter_count
                                  )
 {
     unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x );
@@ -47,6 +48,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
         //     {
         //         *key_to_find = *key_for_encryp; 
         //     }
+        atomicAdd( (unsigned long long int*) iter_count, result );
     }
 
 }
@@ -62,6 +64,7 @@ __device__ int validator( uint256_t *starting_perm,
     int idx = 0;
     std::uint8_t match = 0;
     std::uint8_t match2 = 0;
+    int total = 0;
 
     for( idx = 0; idx < 4; ++idx )
         {
@@ -89,6 +92,7 @@ __device__ int validator( uint256_t *starting_perm,
     while( !iter.end() )
         {
 
+            ++total;
             // encrypt
             aes_per_round::roundwise_encrypt( &encrypted,
                                               &iter.corrupted_key,
@@ -120,7 +124,8 @@ __device__ int validator( uint256_t *starting_perm,
                 }
 
         }
-    return match2;
+    return total;
+    // return match2;
 }
 
 void warm_up_gpu( int device )

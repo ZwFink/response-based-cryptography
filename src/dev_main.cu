@@ -152,6 +152,11 @@ int main(int argc, char * argv[])
     cudaMalloc( (void**) &dev_key, sizeof( uint256_t ) );
     cudaMalloc( (void**) &dev_found_key, sizeof( uint256_t ) );
 
+    std::uint64_t *total_iter_count = nullptr;
+    cudaMallocManaged( (void**) &total_iter_count, sizeof( std::uint64_t ) );
+    *total_iter_count = 0;
+
+
     if( cuda_utils::HtoD( dev_uid, uid, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
         {
             std::cout << "Failure to transfer uid to device\n";
@@ -184,12 +189,14 @@ int main(int argc, char * argv[])
                                                              dev_cipher,
                                                              UINT256_SIZE_IN_BYTES,
                                                              num_blocks,
-                                                             THREADS_PER_BLOCK
+                                                             THREADS_PER_BLOCK,
+                                                             total_iter_count
                                                            );
        cudaDeviceSynchronize();
     }
 
     cudaError_t res = cudaSuccess;
+    std::cout << "Num keys: " << *total_iter_count << "\n";
     if( ( res = cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer client_key_to_find to host \n";

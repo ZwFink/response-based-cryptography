@@ -52,7 +52,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const aes_per_round::message_128 *auth_cipher,
                                    const std::size_t key_sz_bytes,
                                    const std::size_t num_blocks,
-                                   const std::size_t threads_per_block
+                                   const std::size_t threads_per_block,
+                                   std::uint64_t *iter_count
                                  );
 
 #endif // MAIN_UTIL_HH_INCLUDED
