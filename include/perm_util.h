@@ -3,8 +3,9 @@
 #define PERM_UTIL_HH_INCLUDED
 
 #include "uint256_t.h"
+#include "cuda_defs.h"
 
-__device__ uint64_t get_bin_coef(size_t n, size_t k);
+CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(size_t n, size_t k);
 __device__ void decode_ordinal( uint256_t *perm, 
                                 const uint64_t ordinal, 
                                 size_t mismatches, // 0-6

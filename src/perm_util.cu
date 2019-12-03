@@ -98,7 +98,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
 
 // Returns value of Binomial Coefficient C(n, k)  
 // ref: https://www.geeksforgeeks.org/space-and-time-efficient-binomial-coefficient/
-__device__ uint64_t get_bin_coef(size_t n, size_t k)
+CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(size_t n, size_t k)
 {  
     int ret = 1;  
     int i;
