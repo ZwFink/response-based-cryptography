@@ -4,6 +4,8 @@
 #include <cuda.h>
 
 #include "uint256_t.h"
+#include "uint256_iterator.h"
+#include "perm_util.h"
 
 namespace test_utils
 {
@@ -119,8 +121,7 @@ namespace test_utils
                                  uint256_t *res
                                )
         {
-            uint256_t result = a->add( *b );
-            *res = result;
+            a->add( *res, *b );
         }
 
         __global__ void neg_knl( uint256_t *a,
@@ -130,6 +131,37 @@ namespace test_utils
             a->neg( *dest );
         }
 
+        __global__ void get_perm_pair_knl( uint256_t *starting_perm, 
+                                           uint256_t *ending_perm,
+                                           int tid, int nthreads
+                                         )
+         {
+
+             get_perm_pair( starting_perm, ending_perm,
+                            tid, nthreads,
+                            2, 32,
+                            256
+                          );
+
+         }
+
+        __global__ void uint256_iter_next_knl( uint256_iter *iter,
+                                               uint256_t *key,
+                                               uint256_t *first_perm,
+                                               uint256_t *last_perm,
+                                               int *count_ptr
+                                             )
+        {
+            int c = 0;
+            while( !iter->end() )
+                {
+            iter->next();
+            ++c;
+                }
+
+            *count_ptr = c;
+
+        }
 };
 
 #endif

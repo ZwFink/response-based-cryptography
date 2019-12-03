@@ -3,15 +3,42 @@
 
 #include "uint256_t.h"
 
+namespace uint256_ctz_table
+{
+    #ifdef USE_CONSTANT
+    __constant__
+    #endif
+    __device__ 
+    std::uint8_t lookup[ 37 ] = 
+    {
+        32, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11, 0, 13, 4,
+        7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
+        20, 8, 19, 18
+    };
+
+    INLINE DEVICE_ONLY int ctz( const std::uint32_t loc )
+    {
+        return lookup[ ( -loc & loc ) % 37 ];
+    }
+
+}
+
 uint256_t::uint256_t()
 {
     set_all( 0 );
 }
 
-
 CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set, std::uint8_t index )
 {
     data[ index ] = set;
+}
+
+CUDA_CALLABLE_MEMBER void uint256_t::from_string( const unsigned char *string )
+{
+    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES; ++index )
+        {
+            data[ index ] = string[ index ];
+        }
 }
 
 CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set )
@@ -21,7 +48,36 @@ CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint8_t set )
 
 CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint8_t val )
 {
-    memset( data, val, UINT256_SIZE_IN_BYTES );
+    for( std::uint8_t x = 0; x < UINT256_SIZE_IN_BYTES; ++x )
+        {
+            data[ x ] = val;
+        }
+}
+
+// copy constructor
+CUDA_CALLABLE_MEMBER void uint256_t::copy( const uint256_t& copied )
+{
+    for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; ++idx )
+    {
+       data[ idx ] = copied[ idx ];
+    }
+}
+
+// PRECONDITION: 0 <= idx <= 3
+CUDA_CALLABLE_MEMBER void uint256_t::copy_64( uint64_t ref, uint8_t idx )
+{
+    uint64_t *data_ptr = (uint64_t *) &data;
+    
+    data_ptr[ idx ] |= ref; // bitwise OR 
+}
+
+CUDA_CALLABLE_MEMBER void uint256_t::set( std::uint8_t set, std::uint8_t index ){
+    data[ index ] = set;
+}
+
+CUDA_CALLABLE_MEMBER const std::uint8_t& uint256_t::operator[]( std::uint8_t idx ) const
+{
+    return data[ idx ];
 }
 
 CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
@@ -103,22 +159,51 @@ CUDA_CALLABLE_MEMBER uint256_data_t& uint256_t::get_data()
     return data;
 }
 
+CUDA_CALLABLE_MEMBER std::uint8_t *uint256_t::get_data_ptr()
+{
+    return data;
+}
+
+CUDA_CALLABLE_MEMBER void uint256_t::operator=( const uint256_t& set )
+{
+    for( std::uint8_t a = 0; a < UINT256_SIZE_IN_BYTES / 4; ++a )
+        {
+            *((uint32_t*)data + a )  = *((uint32_t*)set.data + a );
+        }
+}
+
 CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
 {
     return !( *this == comp );
 }
+
+__host__ void uint256_t::dump_hex()
+{
+    char buff[ 163 ] = { 0 };
+
+    for( int x = 0; x < 32; ++x )
+        {
+            snprintf( buff + ( x * 5 ), 
+                      6,
+                      "0x%02x ", data[ x ]
+                    );
+                    
+        }
+    printf( "%s\n", buff );
+}
+
 
 __host__ void uint256_t::dump()
 {
     for( const auto& x : data )
         {
             std::cout
-                << "0x"
-                << std::setfill('0')
-                << std::setw(2)
-                << std::hex
-                << unsigned( x )
-                << " ";
+               << "0x"
+               << std::setfill('0')
+               << std::setw(2)
+               << std::hex
+               << unsigned( x )
+               << " ";
         }
     std::cout << "\n"; 
 }
@@ -199,7 +284,19 @@ CUDA_CALLABLE_MEMBER std::uint8_t uint256_t::at( int loc )
 
 __device__ int uint256_t::ctz()
 {
-    return 256 - popc();
+    int ret = 0;
+    int count_limit = 0;
+    for( std::uint8_t idx = 0;
+         ret == count_limit
+          && idx < UINT256_SIZE_IN_BYTES / 4;
+         ++idx
+       )
+        {
+            count_limit += sizeof( uint32_t ) * 8;
+            ret += uint256_ctz_table::ctz( *((std::uint32_t*) data + idx ) );
+        }
+
+    return ret;
 }
 
 CUDA_CALLABLE_MEMBER void uint256_t::to_32_bit_arr( std::uint32_t* dest )
@@ -235,14 +332,13 @@ CUDA_CALLABLE_MEMBER bool uint256_t::operator>( const uint256_t& comp ) const
     return compare( comp ) > 0;
 }
 
-
-__device__ uint256_t uint256_t::add( uint256_t augend )
+__device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
 {
     uint256_t ret;
 
     std::uint32_t *self_32   = (uint32_t*) &data;
     std::uint32_t *augend_32 = (uint32_t*) &augend.data;
-    std::uint32_t *ret_32    = (uint32_t*) &ret.data;
+    std::uint32_t *dest_32   = (uint32_t*) &dest.data;
 
     asm ("add.cc.u32      %0, %8, %16;\n\t"
          "addc.cc.u32     %1, %9, %17;\n\t"
@@ -252,9 +348,9 @@ __device__ uint256_t uint256_t::add( uint256_t augend )
          "addc.cc.u32     %5, %13, %21;\n\t"
          "addc.cc.u32     %6, %14, %22;\n\t"
          "addc.u32        %7, %15, %23;\n\t"
-         : "=r"(ret_32[ 0 ]), "=r"(ret_32[ 1 ]), "=r"(ret_32[ 2 ]),   
-           "=r"(ret_32[ 3 ]), "=r"(ret_32[ 4 ]), "=r"(ret_32[ 5 ]),   
-           "=r"(ret_32[ 6 ]), "=r"(ret_32[ 7 ])
+         : "=r"(dest_32[ 0 ]), "=r"(dest_32[ 1 ]), "=r"(dest_32[ 2 ]),   
+           "=r"(dest_32[ 3 ]), "=r"(dest_32[ 4 ]), "=r"(dest_32[ 5 ]),   
+           "=r"(dest_32[ 6 ]), "=r"(dest_32[ 7 ])
          : "r"(self_32[ 0 ]), "r"(self_32[ 1 ]), "r"(self_32[ 2 ]),   
            "r"(self_32[ 3 ]), "r"(self_32[ 4 ]), "r"(self_32[ 5 ]),   
            "r"(self_32[ 6 ]), "r"(self_32[ 7 ]),
@@ -263,14 +359,23 @@ __device__ uint256_t uint256_t::add( uint256_t augend )
            "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
          );
 
-    return ret;
+    return dest_32[ 7 ] < self_32[ 7 ];
 }
 
 __device__ void uint256_t::neg( uint256_t& dest )
 {
     uint256_t complement = ~(*this);
-    uint256_t one( 0x00 );
-    one[ 0 ] = 0x01;
 
-    dest = complement.add( one );
+    complement.add( dest, UINT256_ONE );
 }
+
+// intended for use with permutation creation in function decode_ordinal
+CUDA_CALLABLE_MEMBER void uint256_t::set_bit( std::uint8_t bit_idx )
+{
+    std::uint8_t block = bit_idx / 8;
+    std::uint8_t ndx_in_block = bit_idx - ( block * 8 );
+   
+    data[ block ] |= ( 1 << ndx_in_block );
+}
+
+

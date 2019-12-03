@@ -9,6 +9,8 @@
 
 #include "test_utils.h"
 
+#include "aes_per_round.h"
+#include "uint256_iterator.h"
 #include "uint256_t.h"
 #include "AES.h"
 
@@ -74,6 +76,7 @@ TEST_CASE( "uint256_t_eq_dev", "[uint256_t]" )
         }
 
     test_utils::binary_op_kernel<uint256_t, &uint256_t::operator==><<<1,1>>>( a1_dev, a2_dev, result_code_dev );
+    cudaDeviceSynchronize();
 
     if( test_utils::DtoH( &result_code, result_code_dev, sizeof( bool ) ) != cudaSuccess)
         {
@@ -97,6 +100,7 @@ TEST_CASE( "uint256_t_eq_dev", "[uint256_t]" )
         }
 
     test_utils::binary_op_kernel<uint256_t, &uint256_t::operator==><<<1,1>>>( a1_dev, a2_dev, result_code_dev );
+    cudaDeviceSynchronize();
 
     if( test_utils::DtoH( &result_code, result_code_dev, sizeof( bool ) ) != cudaSuccess)
         {
@@ -183,6 +187,7 @@ TEST_CASE( "uint256_t_negation_gpu", "[uint256_t]" )
         ( a1_dev,
           a2_dev
         );
+    cudaDeviceSynchronize();
 
     if( test_utils::DtoH( &a2, a2_dev, sizeof( uint256_t ) ) != cudaSuccess)
         {
@@ -207,39 +212,25 @@ TEST_CASE( "uint256_t_ctz_popc", "[uint256_t]" )
     uint256_t *my_int_dev_2;
     int *z_count_dev;
 
-    cudaMalloc( (void**) &my_int_dev, sizeof( uint256_t ) );
-    cudaMalloc( (void**) &my_int_dev_2, sizeof( uint256_t ) );
-    cudaMalloc( (void**) &z_count_dev, sizeof( int ) );
+    cudaMallocManaged( (void**) &my_int_dev, sizeof( uint256_t ) );
+    cudaMallocManaged( (void**) &my_int_dev_2, sizeof( uint256_t ) );
+    cudaMallocManaged( (void**) &z_count_dev, sizeof( int ) );
 
     bool result_code = false;
 
-    if( test_utils::HtoD( my_int_dev, &my_int, sizeof( uint256_t ) ) != cudaSuccess )
-        {
-            std::cout << "Failure to transfer a1 to device\n";
-        }
-
-    if( test_utils::HtoD( z_count_dev, &z_count, sizeof( int ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer a2 to device\n";
-        }
+    *my_int_dev = my_int;
+    *my_int_dev_2 = my_int_2;
+    *z_count_dev = z_count;
 
     test_utils::popc<<<1,1>>>( my_int_dev, z_count_dev );
+    cudaDeviceSynchronize();
 
-    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer a2 to device\n";
-        }
-
-    REQUIRE( z_count == 0 );
+    REQUIRE( *z_count_dev == 0 );
 
     test_utils::ctz<<<1,1>>>( my_int_dev, z_count_dev );
+    cudaDeviceSynchronize();
 
-    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer a2 to device\n";
-        }
-
-    REQUIRE( z_count == 256 );
+    REQUIRE( *z_count_dev == 256 );
 
     test_utils::unary_op_kernel<uint256_t, &uint256_t::operator~><<<1,1>>>
         ( my_int_dev,
@@ -247,22 +238,32 @@ TEST_CASE( "uint256_t_ctz_popc", "[uint256_t]" )
         );
 
     test_utils::popc<<<1,1>>>( my_int_dev_2, z_count_dev );
+    cudaDeviceSynchronize();
 
-    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer a2 to device\n";
-        }
-
-    REQUIRE( z_count == 256 );
+    REQUIRE( *z_count_dev == 256 );
 
     test_utils::ctz<<<1,1>>>( my_int_dev_2, z_count_dev );
+    cudaDeviceSynchronize();
 
-    if( test_utils::DtoH( &z_count, z_count_dev, sizeof( int ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer a2 to device\n";
-        }
+    REQUIRE( *z_count_dev == 0 );
 
-    REQUIRE( z_count == 0 );
+    (*my_int_dev)[ 0 ] = 0x01;
+    test_utils::ctz<<<1,1>>>( my_int_dev, z_count_dev );
+    REQUIRE( *z_count_dev == 0 );
+
+    (*my_int_dev)[ 0 ] = 0x02;
+    test_utils::ctz<<<1,1>>>( my_int_dev, z_count_dev );
+    cudaDeviceSynchronize();
+    REQUIRE( ( *z_count_dev == 1 ) );
+
+    my_int_dev->set_all( 0x00 );
+
+    (*my_int_dev)[ 8 ] = 0x01;
+    (*my_int_dev)[ 9 ] = 0x02; // to make sure we aren't reading downstream trailing zeroes
+    test_utils::ctz<<<1,1>>>( my_int_dev, z_count_dev );
+    cudaDeviceSynchronize();
+    REQUIRE( ( *z_count_dev == 64 ) );
+
 
     cudaFree( my_int_dev );
     cudaFree( my_int_dev_2 );
@@ -451,6 +452,19 @@ TEST_CASE( "uint256_t_add", "[uint256_t]" )
 
             result_code = result == UINT256_MAX_INT;
             REQUIRE( result_code );
+
+            // a1 + a2, but storing the result back in a1
+            test_utils::add_knl<<<1,1>>>( a1_dev, a2_dev, a1_dev );
+            cudaDeviceSynchronize();
+
+            if( test_utils::DtoH( &result, a1_dev, sizeof( uint256_t ) ) != cudaSuccess)
+                {
+                    std::cout << "Failure to transfer to host \n";
+                }
+
+            result_code = result == UINT256_MAX_INT;
+            REQUIRE( result_code );
+
         }
 
     cudaFree( a1_dev );
@@ -595,3 +609,89 @@ TEST_CASE( "uint256_t::neg", "[uint256_t]" )
     REQUIRE( result );
 }
 
+
+TEST_CASE( "uint256_iter", "[uint256_iterator]" )
+{
+
+    // key, first_perm, last_perm
+    uint256_t a( 0xAF ), b( 0x00 ), c( 0x00 );
+    uint256_t *a_dev, *b_dev, *c_dev;
+    uint256_iter *iter_ptr;
+    int *count_ptr;
+
+    cudaMallocManaged( &a_dev, sizeof( uint256_t ) );
+    cudaMallocManaged( &b_dev, sizeof( uint256_t ) );
+    cudaMallocManaged( &c_dev, sizeof( uint256_t ) );
+    cudaMallocManaged( &count_ptr, sizeof( int ) );
+    cudaMallocManaged( &iter_ptr, sizeof( uint256_iter ) );
+
+    *a_dev = a;
+    *b_dev = b;
+    *c_dev = c;
+
+    SECTION( "All of the keys are generated when there is one thread" )
+        {
+            test_utils::get_perm_pair_knl<<<1,1>>>( b_dev, c_dev, 0, 1 );
+
+            cudaDeviceSynchronize();
+            uint256_iter iter( *a_dev, *b_dev, *c_dev ) ;
+
+            *iter_ptr = iter;
+
+            test_utils::uint256_iter_next_knl<<<1,1>>>( iter_ptr,
+                                                        a_dev,
+                                                        b_dev,
+                                                        c_dev,
+                                                        count_ptr
+                                                        );
+
+            cudaDeviceSynchronize();
+            REQUIRE( *count_ptr == 32640 );
+        }
+    SECTION( "All of the keys are generated where are two threads" )
+        {
+            uint256_t start_2( 0x00 ), end_2( 0x00 );
+
+            b_dev->set_all( 0x00 );
+            c_dev->set_all( 0x00 );
+
+            uint256_t *start_2_ptr, *end_2_ptr;
+            uint256_iter *iter_2_ptr;
+            int *count_2_ptr;
+
+            cudaMallocManaged( &start_2_ptr, sizeof( uint256_t ) );
+            cudaMallocManaged( &end_2_ptr, sizeof( uint256_t ) );
+            cudaMallocManaged( &count_2_ptr, sizeof( int ) );
+            cudaMallocManaged( &iter_2_ptr, sizeof( uint256_iter ) );
+
+
+            test_utils::get_perm_pair_knl<<<1,1>>>( b_dev, c_dev, 0, 2 );
+            test_utils::get_perm_pair_knl<<<1,1>>>( start_2_ptr, end_2_ptr, 1, 2 );
+
+            cudaDeviceSynchronize();
+
+            uint256_iter iter( *a_dev, *b_dev, *c_dev ) ;
+            uint256_iter iter2( *a_dev, *start_2_ptr, *end_2_ptr ) ;
+
+            *iter_ptr = iter;
+            *iter_2_ptr = iter2;
+            test_utils::uint256_iter_next_knl<<<1,1>>>( iter_ptr,
+                                                        a_dev,
+                                                        b_dev,
+                                                        c_dev,
+                                                        count_ptr
+                                                        );
+
+            test_utils::uint256_iter_next_knl<<<1,1>>>( iter_2_ptr,
+                                                        a_dev,
+                                                        b_dev,
+                                                        c_dev,
+                                                        count_2_ptr
+                                                      );
+
+            cudaDeviceSynchronize();
+            REQUIRE( *count_ptr - *count_2_ptr < 2 );
+
+        }
+
+}
