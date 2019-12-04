@@ -100,7 +100,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
 // ref: https://www.geeksforgeeks.org/space-and-time-efficient-binomial-coefficient/
 CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(size_t n, size_t k)
 {  
-    int ret = 1;  
+    uint64_t ret = 1;  
     int i;
   
     // Since C(n, k) = C(n, n-k)  
@@ -109,35 +109,37 @@ CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(size_t n, size_t k)
   
     // Calculate value of  
     // [n * (n-1) *---* (n-k+1)] / [k * (k-1) *----* 1]  
-    if( k >= 4 )
-    {
-        // IMPLEMENT: pipelining technique to increase 
-        //            the number of operations per cycle
-        //            also increases register usage (dropping occupancy) 
-        //            unroll "4" specifically
-        for (i = 0; i < k; i+=4)  
-        {  
-            ret *= (n - i);  
-            ret /= (i + 1);  
+    //if( k >= 4 )
+    //{
+    //    // IMPLEMENT: pipelining technique to increase 
+    //    //            the number of operations per cycle
+    //    //            also increases register usage (dropping occupancy) 
+    //    //            unroll "4" specifically
+    //    for (i = 0; i < k; i+=4)  
+    //    {  
+    //        ret *= (n - i);  
+    //        ret /= (i + 1);  
 
-            ret *= (n - (i+1));  
-            ret /= ((i+1) + 1);  
+    //        ret *= (n - (i+1));  
+    //        ret /= ((i+1) + 1);  
 
-            ret *= (n - (i+2));  
-            ret /= ((i+2) + 1);  
+    //        ret *= (n - (i+2));  
+    //        ret /= ((i+2) + 1);  
 
-            ret *= (n - (i+3));  
-            ret /= ((i+3) + 1);  
-        }  
+    //        ret *= (n - (i+3));  
+    //        ret /= ((i+3) + 1);  
+    //    }  
+    //}
+    //else 
+    //{
+
+    for (i = 0; i < k; ++i)  
+    {  
+        ret *= (n - i);  
+        ret /= (i + 1);  
     }
-    else 
-    {
-        for (i = 0; i < k; ++i)  
-        {  
-            ret *= (n - i);  
-            ret /= (i + 1);  
-        }
-    }
+
+    //}
   
     return ret;  
 }  
