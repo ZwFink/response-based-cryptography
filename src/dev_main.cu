@@ -32,8 +32,8 @@ int main(int argc, char * argv[])
     char * key     = argv[2];
     int mismatches = atoi(argv[3]);
 
-    std::uint32_t total_threads = THREADS_PER_BLOCK * OPS_PER_THREAD; 
-    std::uint64_t num_blocks = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches ) / total_threads;
+    std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD; 
+    std::uint64_t num_blocks = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches ) / ops_per_block;
     ++num_blocks;
                                              
     ////////////////
