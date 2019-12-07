@@ -1,5 +1,6 @@
 NVCC=nvcc
 vpath %.cu src
+vpath %.cpp src
 vpath %.cu test
 vpath %.h include
 vpath %.h test
@@ -16,7 +17,8 @@ UINT_ITER_FILES=uint256_iterator.cu uint256_iterator.h
 SBOX_FILES=sbox.cu sbox.h 
 UTIL_FILES=perm_util.cu perm_util.h cuda_utils.h
 UTIL_MAIN_FILES=main_util.cu main_util.h cuda_utils.h
-GENERAL_OBJECTS=aes_per_round.o sbox.o uint_iter.o uint.o util.o
+AES_CPU_FILES=aes_cpu.cpp aes_cpu.h
+GENERAL_OBJECTS=aes_per_round.o sbox.o uint_iter.o uint.o util.o aes_cpu.o
 CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/ -DUSE_CONSTANT
 DEBUGFLAGS := -O0 -g --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
@@ -38,6 +40,9 @@ aes_per_round.o: $(AES_PER_ROUND_FILES) cuda_defs.h
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 sbox.o: $(SBOX_FILES)
+	$(NVCC) $(CCFLAGS) -c -o $@ $<
+
+aes_cpu.o: $(AES_CPU_FILES) 
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
 
 uint_iter.o: $(UINT_ITER_FILES) cuda_defs.h
