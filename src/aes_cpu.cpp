@@ -371,3 +371,51 @@ void print_sbox(uint8_t sbox[256])
     }
     printf("\n");
 }
+
+void aes_cpu::encrypt_ecb( message_128 *cipher,
+                           key_256 *key
+                         )
+{
+    uint8_t sbox[ 256 ];
+    key_128 key_set[ 15 ];
+
+    // make the sbox
+    initialize_aes_sbox(sbox);
+    //print_sbox(sbox);
+    
+
+    key_gen(key_set, *key, sbox);
+
+    xor_key(cipher, key_set[0]);
+
+    //print_message(cipher);
+
+    for(unsigned int i = 0; i < 13; i++){
+        //printf("ROUND: %u\n", i+1);
+        //print_key_128(key_set[i]);
+        //only working with 256 bit aes
+        sub_bytes(cipher, sbox);
+        
+        //print_message(cipher);
+
+        shift_rows(cipher);
+
+        //print_message(cipher);
+
+        mix_columns(cipher);
+
+        //print_message(cipher);
+
+        xor_key(cipher, key_set[i+1]);
+
+        //print_message(cipher);
+    }
+    // printf("ROUND: %u\n", 14);
+    sub_bytes(cipher, sbox);
+
+    shift_rows(cipher);
+
+    xor_key(cipher, key_set[14]);
+
+
+}

@@ -66,6 +66,10 @@ namespace aes_cpu
     void schedule_core(uint8_t in[4], uint8_t i, uint8_t sbox[256]) ;
     //from https://www.samiam.org/key-schedule.html
     void rotate(uint8_t in[4]);
+    void encrypt_ecb( message_128 *cipher,
+                      key_256 *key
+                    );
+
 
 };
 
