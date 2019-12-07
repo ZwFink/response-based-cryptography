@@ -85,7 +85,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    } 
    else
    {
-      starting_ordinal = (floorf( total_perms / pair_count ) * pair_index);
+      starting_ordinal = ( total_perms / pair_count ) * pair_index;
 
       decode_ordinal(starting_perm, starting_ordinal, mismatches, key_sz_bits);
    }
@@ -96,7 +96,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    } 
    else
    {
-      ending_ordinal = floorf( total_perms / pair_count ) * (pair_index + 1);
+      ending_ordinal = ( total_perms / pair_count ) * (pair_index + 1);
    
       decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
    }
