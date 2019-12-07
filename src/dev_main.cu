@@ -5,7 +5,7 @@
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 #define THREADS_PER_BLOCK 256
-#define OPS_PER_THREAD 128
+#define OPS_PER_THREAD 12800
 
 unsigned char flip_n_bits( unsigned char val,
                            int n
@@ -35,6 +35,9 @@ int main(int argc, char * argv[])
     std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD; 
     std::uint64_t num_blocks = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches ) / ops_per_block;
     ++num_blocks;
+    
+    printf("\nNumber of blocks: %d",num_blocks);
+    printf("\nNumber of threads per block: %d",THREADS_PER_BLOCK);
                                              
     ////////////////
     //Turn on gpu

@@ -32,12 +32,19 @@ __device__ void decode_ordinal( uint256_t *perm,
 // COMPLETED
 __device__ void assign_first_permutation( uint256_t *perm, int mismatches )
 {
-   // set the value of perm to 1
-   perm->set_bit( 0 );
+   // Chris P's implementation: currently not working correctly
+   //// set the value of perm to 1
+   //perm->set_bit( 0 );
 
-   *perm = *perm << mismatches; // shift left
-	
-   perm->add( *perm, UINT256_NEGATIVE_ONE ); // add negative one
+   //*perm = *perm << mismatches; // shift left
+	//
+   //perm->add( *perm, UINT256_NEGATIVE_ONE ); // add negative one
+
+   // New implementation:
+   for( int i = 0; i < mismatches; ++i )
+   {
+      perm->set_bit( i );
+   }
 }
 
 // COMPLETED
@@ -79,7 +86,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    } 
    else
    {
-      starting_ordinal = floorf( total_perms / pair_count ) * pair_index;
+      starting_ordinal = (floorf( total_perms / pair_count ) * pair_index) + 1;
 
       decode_ordinal(starting_perm, starting_ordinal, mismatches, key_sz_bits);
    }
