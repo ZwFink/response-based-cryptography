@@ -72,44 +72,9 @@ int main(int argc, char * argv[])
     aes_cpu::initialize_aes_sbox(sbox);
     //print_sbox(sbox);
     
-    printf("sbox initialized\n");
-
     key_128 key_set[15];
-    aes_cpu::key_gen(key_set, bit_key, sbox);
 
-    printf("keys initialized\n");
-
-    aes_cpu::xor_key(&cipher, key_set[0]);
-
-    //print_message(cipher);
-
-    for(unsigned int i = 0; i < 13; i++){
-        //printf("ROUND: %u\n", i+1);
-        //print_key_128(key_set[i]);
-        //only working with 256 bit aes
-        aes_cpu::sub_bytes(&cipher, sbox);
-        
-        //print_message(cipher);
-
-        aes_cpu::shift_rows(&cipher);
-
-        //print_message(cipher);
-
-        aes_cpu::mix_columns(&cipher);
-
-        //print_message(cipher);
-
-        aes_cpu::xor_key(&cipher, key_set[i+1]);
-
-        //print_message(cipher);
-    }
-    // printf("ROUND: %u\n", 14);
-    aes_cpu::sub_bytes(&cipher, sbox);
-
-    aes_cpu::shift_rows(&cipher);
-
-    aes_cpu::xor_key(&cipher, key_set[14]);
-
+    aes_cpu::encrypt_ecb( &cipher, &bit_key );
     print_message(cipher);
 
     // corrupt bit_key by number of mismatches
