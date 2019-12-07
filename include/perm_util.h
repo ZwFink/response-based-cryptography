@@ -20,7 +20,6 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
                                size_t pair_index,        // thread num
                                size_t pair_count,        // num threads
                                int mismatches,           // 5
-                               size_t key_size_bytes,    // 32  (key_size)
                                size_t key_sz_bits        // 256 (key_sz_bits)
                              );
 

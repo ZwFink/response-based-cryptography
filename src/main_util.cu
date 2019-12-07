@@ -8,7 +8,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const int mismatch,
                                    const aes_per_round::message_128 *user_id,
                                    const aes_per_round::message_128 *auth_cipher,
-                                   const std::size_t key_sz_bytes,
+                                   const std::size_t key_sz_bits,
                                    const std::size_t num_blocks,
                                    const std::size_t threads_per_block,
                                    std::uint64_t *iter_count
@@ -21,7 +21,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     uint64_t num_keys = 0;
     int result        = 0;
 
-    num_keys = get_bin_coef( key_sz_bytes * 8, mismatch ); 
+    num_keys = get_bin_coef( key_sz_bits, mismatch ); 
    
     // only run thread if tid is less than cardinality of current keyspace
     if( tid < num_keys )
@@ -31,8 +31,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                        (std::size_t) tid, 
                        (std::size_t) num_blocks * threads_per_block,
                        mismatch,
-                       key_sz_bytes,
-                       key_sz_bytes * 8
+                       key_sz_bits
                      );
         
         result = validator( &starting_perm,

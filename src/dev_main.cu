@@ -194,7 +194,7 @@ int main(int argc, char * argv[])
                                                              i,
                                                              dev_uid,
                                                              dev_cipher,
-                                                             UINT256_SIZE_IN_BYTES,
+                                                             UINT256_SIZE_IN_BITS,
                                                              num_blocks,
                                                              THREADS_PER_BLOCK,
                                                              total_iter_count
