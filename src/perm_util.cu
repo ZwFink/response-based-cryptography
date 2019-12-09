@@ -67,10 +67,11 @@ __device__ void assign_last_permutation( uint256_t *perm,
 // Precondition: starting_perm and ending_perm have been initialized
 __device__ void get_perm_pair( uint256_t *starting_perm, 
                                uint256_t *ending_perm,
-                               size_t pair_index,        // thread num
-                               size_t pair_count,        // num threads
-                               int mismatches,           // 5
-                               size_t key_sz_bits        // 256 (key_sz_bits)
+                               std::size_t pair_index,        // thread num
+                               std::size_t pair_count,        // num threads
+                               int mismatches,           
+                               const std::size_t keys_per_thread,
+                               std::size_t key_sz_bits        
                              )
 {
    uint64_t total_perms      = 0;
@@ -96,7 +97,8 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
    } 
    else
    {
-      ending_ordinal = ( total_perms / pair_count ) * (pair_index + 1);
+      //ending_ordinal = ( total_perms / pair_count ) * (pair_index + 1);
+      ending_ordinal = starting_ordinal + ( keys_per_thread - 1 );
    
       decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
    }

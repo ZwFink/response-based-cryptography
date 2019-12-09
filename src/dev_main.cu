@@ -32,9 +32,13 @@ int main(int argc, char * argv[])
     char * key     = argv[2];
     int mismatches = atoi(argv[3]);
 
+    std::uint64_t total_keys = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches );
     std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD; 
-    std::uint64_t num_blocks = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches ) / ops_per_block;
+    std::uint64_t num_blocks    = total_keys / ops_per_block;
     ++num_blocks;
+   
+    std::uint64_t num_threads      = num_blocks*THREADS_PER_BLOCK;
+    std::uint64_t keys_per_thread  = total_keys / num_threads;
     
     printf("\nNumber of blocks: %d",num_blocks);
     printf("\nNumber of threads per block: %d",THREADS_PER_BLOCK);
@@ -162,6 +166,7 @@ int main(int argc, char * argv[])
                                                              UINT256_SIZE_IN_BITS,
                                                              num_blocks,
                                                              THREADS_PER_BLOCK,
+                                                             keys_per_thread,
                                                              total_iter_count
                                                            );
        cudaDeviceSynchronize();
