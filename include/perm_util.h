@@ -17,11 +17,12 @@ __device__ void assign_last_permutation( uint256_t *perm,
                                          int key_sz_bits );
 __device__ void get_perm_pair( uint256_t *starting_perm, 
                                uint256_t *ending_perm,
-                               size_t pair_index,        // thread id
-                               size_t pair_count,        // num threads
-                               int mismatches,           
+                               std::size_t pair_index,        // thread id
+                               std::size_t pair_count,        // num threads
+                               const int mismatches,           
                                const std::size_t keys_per_thread,
-                               size_t key_sz_bits        
+                               const std::size_t key_sz_bits,        
+                               const std::uint64_t total_perms
                              );
 
 
