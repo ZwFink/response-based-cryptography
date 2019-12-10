@@ -4,7 +4,7 @@
 #include "perm_util.h"
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
-#define THREADS_PER_BLOCK 256
+#define THREADS_PER_BLOCK 128
 #define OPS_PER_THREAD 12800
 
 unsigned char flip_n_bits( unsigned char val,
