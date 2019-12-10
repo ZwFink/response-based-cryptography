@@ -40,12 +40,12 @@ class uint256_t
 
     CUDA_CALLABLE_MEMBER void from_string( const unsigned char *string );
 
-    CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
-    CUDA_CALLABLE_MEMBER uint256_t operator|( uint256_t comp );
-    CUDA_CALLABLE_MEMBER uint256_t operator^( uint256_t comp );
+    CUDA_CALLABLE_MEMBER uint256_t operator&( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER uint256_t operator|( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER uint256_t operator^( const uint256_t& comp ) const;
 
-    CUDA_CALLABLE_MEMBER uint256_t operator<<( int shift );
-    CUDA_CALLABLE_MEMBER uint256_t operator>>( int shift );
+    CUDA_CALLABLE_MEMBER uint256_t operator<<( int shift ) const;
+    CUDA_CALLABLE_MEMBER uint256_t operator>>( int shift ) const;
 
     CUDA_CALLABLE_MEMBER uint256_t operator~();
 
@@ -53,8 +53,8 @@ class uint256_t
     CUDA_CALLABLE_MEMBER const std::uint8_t& operator[]( std::uint8_t idx ) const;
     CUDA_CALLABLE_MEMBER std::uint8_t at( int loc );
 
-    CUDA_CALLABLE_MEMBER bool operator==( uint256_t comp );
-    CUDA_CALLABLE_MEMBER bool operator!=( uint256_t comp );
+    CUDA_CALLABLE_MEMBER bool operator==( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER bool operator!=( const uint256_t& comp ) const;
 
     CUDA_CALLABLE_MEMBER int compare( const uint256_t& comp ) const;
     CUDA_CALLABLE_MEMBER bool operator<( const uint256_t& comp ) const;

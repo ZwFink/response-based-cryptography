@@ -99,7 +99,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator~()
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator&( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator&( const uint256_t& comp ) const
 {
     uint256_t ret;
 
@@ -114,7 +114,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator&( uint256_t comp )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator^( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator^( const uint256_t& comp ) const
 {
     uint256_t ret;
 
@@ -129,7 +129,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator^( uint256_t comp )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( const uint256_t& comp ) const
 {
     uint256_t ret;
 
@@ -144,7 +144,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( uint256_t comp )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER bool uint256_t::operator==( uint256_t comp )
+CUDA_CALLABLE_MEMBER bool uint256_t::operator==( const uint256_t& comp ) const
 {
     bool ret = true;
     for( uint8_t byte = 0; byte < UINT256_SIZE_IN_BYTES; ++byte )
@@ -172,7 +172,7 @@ CUDA_CALLABLE_MEMBER void uint256_t::operator=( const uint256_t& set )
         }
 }
 
-CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
+CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( const uint256_t& comp ) const
 {
     return !( *this == comp );
 }
@@ -208,7 +208,7 @@ __host__ void uint256_t::dump()
     std::cout << "\n"; 
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift ) const
 {
     uint256_t ret;
 
@@ -236,7 +236,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator<<( int shift )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator<<( int shift ) const
 {
     uint256_t ret;
 
