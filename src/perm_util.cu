@@ -87,7 +87,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
         } 
         else
         {
-           strt_ordinal = (( total_perms / pair_count ) * pair_index) + 1;
+           strt_ordinal = ( keys_per_thread * pair_index ) + 1;
 
            decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
         }
@@ -99,7 +99,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
     else
     {
 
-        strt_ordinal = (( total_perms / pair_count ) * pair_index) + extra_keys;
+        strt_ordinal = ( keys_per_thread * pair_index ) + extra_keys;
 
         decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
 
