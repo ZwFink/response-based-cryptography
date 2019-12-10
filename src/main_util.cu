@@ -12,6 +12,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::size_t num_blocks,
                                    const std::size_t threads_per_block,
                                    const std::size_t keys_per_thread,
+                                   std::uint64_t num_keys,
+                                   std::uint64_t extra_keys,
                                    std::uint64_t *iter_count
                                  )
 {
@@ -19,10 +21,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
     uint256_t starting_perm, ending_perm;
 
-    uint64_t num_keys = 0;
-    int result        = 0;
+    int result = 0;
 
-    num_keys = get_bin_coef( key_sz_bits, mismatch ); 
    
     // only run thread if tid is less than cardinality of current keyspace
     if( tid < num_keys )
@@ -33,7 +33,9 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                        (std::size_t) num_blocks * threads_per_block,
                        mismatch,
                        keys_per_thread,
-                       key_sz_bits
+                       key_sz_bits,
+                       extra_keys,
+                       num_keys
                      );
         
         result = validator( &starting_perm,

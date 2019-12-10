@@ -32,20 +32,41 @@ int main(int argc, char * argv[])
     char * key     = argv[2];
     int mismatches = atoi(argv[3]);
 
-    std::uint64_t total_keys = get_bin_coef( UINT256_SIZE_IN_BITS, mismatches );
+    // partition key space
+    std::uint64_t extra_keys    = 0;
+    std::uint64_t total_keys    = get_bin_coef(UINT256_SIZE_IN_BITS,mismatches);
     std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD; 
-    std::uint64_t num_blocks    = total_keys / ops_per_block;
+    std::uint64_t num_blocks    = total_keys / ops_per_block; // kernel arg
     ++num_blocks;
    
-    std::uint64_t num_threads      = num_blocks*THREADS_PER_BLOCK;
-    std::uint64_t keys_per_thread  = total_keys / num_threads;
+    std::uint64_t total_threads    = num_blocks * THREADS_PER_BLOCK;
+    std::uint64_t keys_per_thread  = total_keys / total_threads;
+    std::uint64_t last_thread_numkeys = keys_per_thread + (total_keys - keys_per_thread*total_threads);
     
     printf("\nNumber of blocks: %d",num_blocks);
     printf("\nNumber of threads per block: %d",THREADS_PER_BLOCK);
-                                             
+    printf("\nNumber of keys per thread: %d",keys_per_thread);
+    printf("\nTotal number of keys: %d",total_keys);
+    printf("\nLast thread's number of keys: %d",last_thread_numkeys);
+
+    if( last_thread_numkeys != keys_per_thread )
+    {
+        extra_keys = last_thread_numkeys - keys_per_thread;
+
+        printf("\n\nWarning: num keys not divisible by num threads");
+        printf("\nLeftover keys = %d");
+        printf("\nThe first %d threads will handle leftover keys",extra_keys);
+    }
+
+    else
+    {
+        printf("\nTotal number of threads evenly divides total number of keys");   
+        printf("\nLeftover keys = %d",extra_keys);
+    }
+
     ////////////////
-    //Turn on gpu
-    printf("\nTurning on the GPU...\n");
+    // turn on gpu
+    printf("\nTurning on the GPU...\n\n");
     warm_up_gpu( 0 );
 
     uint8_t key_hex[32];
@@ -66,9 +87,9 @@ int main(int argc, char * argv[])
         cipher.bits[i] = (uint8_t) uid_hex[i];
     }
 
-    print_message(cipher);
+    //print_message(cipher);
 
-    print_key_256(bit_key);
+    //print_key_256(bit_key);
     
 
     // make the sbox
@@ -76,10 +97,8 @@ int main(int argc, char * argv[])
     aes_cpu::initialize_aes_sbox(sbox);
     //print_sbox(sbox);
     
-    key_128 key_set[15];
-
     aes_cpu::encrypt_ecb( &cipher, &bit_key );
-    print_message(cipher);
+    //print_message(cipher);
 
     // corrupt bit_key by number of mismatches
     key_256 staging_key;
@@ -89,18 +108,18 @@ int main(int argc, char * argv[])
     }
     // this is subject to change...
     staging_key.bits[ 31 ] = flip_n_bits( bit_key.bits[ 31 ], mismatches );
-    for( int x = 0; x < 32; ++x )
-        {
-            printf( "0x%02X ", staging_key.bits[ x ] );
+    //for( int x = 0; x < 32; ++x )
+    //    {
+    //        printf( "0x%02X ", staging_key.bits[ x ] );
 
-        }
-    printf( "\n" );
-    for( int x = 0; x < 32; ++x )
-        {
-            printf( "0x%02X ", bit_key.bits[ x ] );
+    //    }
+    //printf( "\n" );
+    //for( int x = 0; x < 32; ++x )
+    //    {
+    //        printf( "0x%02X ", bit_key.bits[ x ] );
 
-        }
-    printf( "\n" );
+    //    }
+    //printf( "\n" );
 
 
     /* ok, we now have:
@@ -167,13 +186,18 @@ int main(int argc, char * argv[])
                                                              num_blocks,
                                                              THREADS_PER_BLOCK,
                                                              keys_per_thread,
+                                                             total_keys,
+                                                             extra_keys,
                                                              total_iter_count
                                                            );
        cudaDeviceSynchronize();
     }
 
     cudaError_t res = cudaSuccess;
-    std::cout << "Num keys: " << *total_iter_count << "\n";
+    
+    std::cout << "\nNum keys: " << total_keys << "\n";
+    std::cout << "Iterated: " << *total_iter_count << "\n";
+    std::cout << "Num_keys - Iterated: " << total_keys-*total_iter_count << "\n\n";
     if( ( res = cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer client_key_to_find to host \n";
@@ -185,17 +209,9 @@ int main(int argc, char * argv[])
     std::cout << "Elapsed: " << end_time - start_time << "\n";
 
     host_found_key.dump();
+
     return 0;
-}
 
-
-
-
-
-
-
-
-
-
+} 
 
 

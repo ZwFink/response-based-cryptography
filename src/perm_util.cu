@@ -72,35 +72,49 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
                                const int mismatches,           
                                const std::size_t keys_per_thread,
                                std::size_t key_sz_bits,        
+                               const std::uint64_t extra_keys,
                                const std::uint64_t total_perms
                              )
 {
-   uint64_t starting_ordinal = 0;
-   uint64_t ending_ordinal   = 0;
+   uint64_t strt_ordinal   = 0;
+   uint64_t ending_ordinal = 0;
 
+    if( pair_index < extra_keys )
+    {
+        if( pair_index == 0 )
+        {
+           assign_first_permutation( starting_perm, mismatches );
+        } 
+        else
+        {
+           strt_ordinal = (( total_perms / pair_count ) * pair_index) + 1;
 
-   if( pair_index == 0 )
-   {
-      assign_first_permutation( starting_perm, mismatches );
-   } 
-   else
-   {
-      starting_ordinal = ( total_perms / pair_count ) * pair_index;
+           decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
+        }
 
-      decode_ordinal(starting_perm, starting_ordinal, mismatches, key_sz_bits);
-   }
+        ending_ordinal = strt_ordinal + keys_per_thread;
+        
+        decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
+    }
+    else
+    {
 
-   if( pair_index == pair_count - 1 )
-   {
-      assign_last_permutation( ending_perm, mismatches, key_sz_bits );
-   } 
-   else
-   {
-      //ending_ordinal = ( total_perms / pair_count ) * (pair_index + 1);
-      ending_ordinal = starting_ordinal + ( keys_per_thread - 1 );
-   
-      decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
-   }
+        strt_ordinal = (( total_perms / pair_count ) * pair_index) + extra_keys;
+
+        decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
+
+        if( pair_index == pair_count - 1 )
+        {
+           assign_last_permutation( ending_perm, mismatches, key_sz_bits );
+        } 
+        else
+        {
+           //ending_ordinal = ( total_perms / pair_count ) * (pair_index + 1);
+           ending_ordinal = strt_ordinal + ( keys_per_thread - 1 );
+        
+           decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
+        }
+    }
 }
 
 // Returns value of Binomial Coefficient C(n, k)  
