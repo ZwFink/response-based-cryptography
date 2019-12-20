@@ -47,7 +47,7 @@ class uint256_t
     CUDA_CALLABLE_MEMBER uint256_t operator<<( int shift ) const;
     CUDA_CALLABLE_MEMBER uint256_t operator>>( int shift ) const;
 
-    CUDA_CALLABLE_MEMBER uint256_t operator~();
+    CUDA_CALLABLE_MEMBER uint256_t operator~() const;
 
     CUDA_CALLABLE_MEMBER std::uint8_t& operator[]( std::uint8_t idx );
     CUDA_CALLABLE_MEMBER const std::uint8_t& operator[]( std::uint8_t idx ) const;

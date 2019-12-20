@@ -85,7 +85,7 @@ CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
     return data[ idx ];
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator~()
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator~() const
 {
     uint256_t ret;
 
