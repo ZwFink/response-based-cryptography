@@ -41,20 +41,20 @@ int main(int argc, char * argv[])
    
     std::uint64_t total_threads    = num_blocks * THREADS_PER_BLOCK;
     std::uint64_t keys_per_thread  = total_keys / total_threads;
-    std::uint64_t last_thread_numkeys = keys_per_thread + (total_keys - keys_per_thread*total_threads);
+    std::uint64_t last_thread_numkeys = keys_per_thread + total_keys - keys_per_thread*total_threads;
     
     printf("\nNumber of blocks: %d",num_blocks);
     printf("\nNumber of threads per block: %d",THREADS_PER_BLOCK);
     printf("\nNumber of keys per thread: %d",keys_per_thread);
-    printf("\nTotal number of keys: %d",total_keys);
-    printf("\nLast thread's number of keys: %d",last_thread_numkeys);
+    std::cout << "\nTotal number of keys: " << total_keys;
+    std::cout << "\nLast thread's number of keys: %d" << last_thread_numkeys;
 
     if( last_thread_numkeys != keys_per_thread )
     {
         extra_keys = last_thread_numkeys - keys_per_thread;
 
         printf("\n\nWarning: num keys not divisible by num threads");
-        printf("\nLeftover keys = %d");
+        printf("\nLeftover keys = %d", extra_keys);
         printf("\nThe first %d threads will handle leftover keys",extra_keys);
     }
 
@@ -66,7 +66,7 @@ int main(int argc, char * argv[])
 
     ////////////////
     // turn on gpu
-    printf("\nTurning on the GPU...\n\n");
+    printf("\nTurning on the GPU...\n");
     warm_up_gpu( 0 );
 
     uint8_t key_hex[32];
