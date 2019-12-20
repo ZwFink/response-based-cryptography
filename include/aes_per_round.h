@@ -29,6 +29,7 @@ namespace aes_per_round
 
 
     CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message );
+    CUDA_CALLABLE_MEMBER void shift_mix( message_128 *message );
 
     CUDA_CALLABLE_MEMBER void xor_key( message_128 *message, const std::uint8_t *key );
 

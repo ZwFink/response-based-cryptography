@@ -5,6 +5,67 @@
 namespace aes_per_round
 {
 
+    
+    CUDA_CALLABLE_MEMBER void shift_mix( message_128 *message )
+    {
+        uint8_t a[4];
+        uint8_t b[4];
+        uint8_t c[4];
+        uint8_t d[4];
+
+        //first col
+
+        a[0] = message->bits[0]; //0
+        a[1] = message->bits[5]; //1
+        a[2] = message->bits[10]; //2
+        a[3] = message->bits[15]; //3
+
+        //sec col
+        b[0] = message->bits[4]; //4
+        b[1] = message->bits[9]; //5
+        b[2] = message->bits[14]; //6
+        b[3] = message->bits[3]; //7
+
+        //third col
+        c[0] = message->bits[8]; //8
+        c[1] = message->bits[13]; //9
+        c[2] = message->bits[2]; //10
+        c[3] = message->bits[7]; //11
+
+        //fourth col
+        d[0] = message->bits[12]; //12
+        d[1] = message->bits[1]; //13
+        d[2] = message->bits[6]; //14
+        d[3] = message->bits[11]; //15
+
+        gmix_column(a);
+        gmix_column(b);
+        gmix_column(c);
+        gmix_column(d);
+
+        message->bits[0] = a[0];
+        message->bits[1] = a[1];
+        message->bits[2] = a[2];
+        message->bits[3] = a[3];
+
+        message->bits[4] = b[0];
+        message->bits[5] = b[1];
+        message->bits[6] = b[2];
+        message->bits[7] = b[3];
+
+        message->bits[8] = c[0];
+        message->bits[9] = c[1];
+        message->bits[10] = c[2];
+        message->bits[11] = c[3];
+
+        message->bits[12] = d[0];
+        message->bits[13] = d[1];
+        message->bits[14] = d[2];
+        message->bits[15] = d[3];
+
+
+    }
+
 CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
 {
         uint8_t temp;
@@ -342,8 +403,7 @@ CUDA_CALLABLE_MEMBER void shift_rows( message_128 *message )
                                         )
     {
         sub_bytes( message, sbox );
-        shift_rows( message );
-        mix_columns( message );
+        shift_mix( message );
         xor_key( message, key );
     }
 
