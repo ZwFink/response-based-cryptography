@@ -38,8 +38,8 @@ namespace test_utils
          *        func call 
          * @returns the boolean result of the call, true or false
          **/
-        template<typename Type, bool (Type::*func)( Type )>
-            __device__ bool bin_op_dev( Type *one, Type *two )
+        template<typename Type, bool (Type::*func)( Type ) const>
+            __device__ bool bin_op_dev( const Type *one, const Type *two )
         {
             return (one->*func)( *two );
         }
@@ -70,16 +70,22 @@ namespace test_utils
          * @param dest Pointer to bool where the result should be stored
          * @note (one->*func)( *two ) will be called by this function
          **/
-        template<class Type, bool (Type::*func)( Type )>
+        template<class Type, bool (Type::*func)( const Type& ) const>
+            __global__ void binary_op_kernel( const Type *one, const Type *two,
+                                              bool *dest
+                                            )
+            {
+                *dest = (one->*func)( *two );
+            }
+
+        template<class Type, bool (Type::*func)( Type& ) >
             __global__ void binary_op_kernel( Type *one, Type *two,
                                               bool *dest
                                             )
             {
-                bool comp = false;
-
-                comp = bin_op_dev<Type, func>( one, two );
-                *dest = comp;
+                *dest = (one->*func)( *two );
             }
+
 
 
         /**
@@ -97,10 +103,17 @@ namespace test_utils
                                              Type *dest
                                              )
             {
-                Type ret = unary_op_dev<Type, func>( one );
-
-                *dest = ret;
+                *dest =  (one->*func)();
             }
+
+        template<class Type, Type (Type::*func)() const>
+            __global__ void unary_op_kernel( const Type *one,
+                                             Type *dest
+                                             )
+            {
+                *dest =  (one->*func)();
+            }
+
 
         __global__ void popc( uint256_t *to_pop,
                               int *dest
