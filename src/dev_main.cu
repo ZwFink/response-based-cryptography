@@ -4,7 +4,6 @@
 #include "perm_util.h"
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
-#define THREADS_PER_BLOCK 128
 #define OPS_PER_THREAD 12800
 
 unsigned char flip_n_bits( unsigned char val,
@@ -172,9 +171,7 @@ int main(int argc, char * argv[])
             std::cout << "Failure to transfer client_key_to_find to device\n";
         }
 
-	 cudaDeviceSynchronize();
 	
-    //for( int i=0; i <= mismatches; i++ )
     for( int i=mismatches; i <= mismatches; i++ ) // fixed
     {
        kernel_rbc_engine<<<num_blocks, THREADS_PER_BLOCK>>>( dev_key,
