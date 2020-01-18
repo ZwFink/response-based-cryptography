@@ -84,7 +84,6 @@ class uint256_t
     __device__ void neg( uint256_t& dest );
 
 
- private:
     std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
 
 };
