@@ -85,7 +85,7 @@ CUDA_CALLABLE_MEMBER std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
     return data[ idx ];
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator~()
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator~() const
 {
     uint256_t ret;
 
@@ -99,7 +99,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator~()
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator&( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator&( const uint256_t& comp ) const
 {
     uint256_t ret;
 
@@ -114,7 +114,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator&( uint256_t comp )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator^( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator^( const uint256_t& comp ) const
 {
     uint256_t ret;
 
@@ -129,7 +129,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator^( uint256_t comp )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( uint256_t comp )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( const uint256_t& comp ) const
 {
     uint256_t ret;
 
@@ -144,7 +144,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator|( uint256_t comp )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER bool uint256_t::operator==( uint256_t comp )
+CUDA_CALLABLE_MEMBER bool uint256_t::operator==( const uint256_t& comp ) const
 {
     bool ret = true;
     for( uint8_t byte = 0; byte < UINT256_SIZE_IN_BYTES; ++byte )
@@ -172,7 +172,7 @@ CUDA_CALLABLE_MEMBER void uint256_t::operator=( const uint256_t& set )
         }
 }
 
-CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( uint256_t comp )
+CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( const uint256_t& comp ) const
 {
     return !( *this == comp );
 }
@@ -208,7 +208,7 @@ __host__ void uint256_t::dump()
     std::cout << "\n"; 
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift ) const
 {
     uint256_t ret;
 
@@ -236,7 +236,7 @@ CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift )
     return ret;
 }
 
-CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator<<( int shift )
+CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator<<( int shift ) const
 {
     uint256_t ret;
 
@@ -362,11 +362,23 @@ __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
     return dest_32[ 7 ] < self_32[ 7 ];
 }
 
-__device__ void uint256_t::neg( uint256_t& dest )
+__device__ uint256_t uint256_t::operator+( const uint256_t& other ) const
 {
-    uint256_t complement = ~(*this);
+    uint256_t ret;
+    add( ret, other );
+    return ret;
+}
 
-    complement.add( dest, UINT256_ONE );
+__device__ void uint256_t::neg( uint256_t& dest ) const
+{
+    (~(*this)).add( dest, UINT256_ONE );
+}
+
+__device__ uint256_t uint256_t::operator-() const
+{
+    uint256_t tmp;
+    neg( tmp );
+    return tmp;
 }
 
 // intended for use with permutation creation in function decode_ordinal

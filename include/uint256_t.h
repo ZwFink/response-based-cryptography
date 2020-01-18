@@ -40,21 +40,21 @@ class uint256_t
 
     CUDA_CALLABLE_MEMBER void from_string( const unsigned char *string );
 
-    CUDA_CALLABLE_MEMBER uint256_t operator&( uint256_t comp );
-    CUDA_CALLABLE_MEMBER uint256_t operator|( uint256_t comp );
-    CUDA_CALLABLE_MEMBER uint256_t operator^( uint256_t comp );
+    CUDA_CALLABLE_MEMBER uint256_t operator&( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER uint256_t operator|( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER uint256_t operator^( const uint256_t& comp ) const;
 
-    CUDA_CALLABLE_MEMBER uint256_t operator<<( int shift );
-    CUDA_CALLABLE_MEMBER uint256_t operator>>( int shift );
+    CUDA_CALLABLE_MEMBER uint256_t operator<<( int shift ) const;
+    CUDA_CALLABLE_MEMBER uint256_t operator>>( int shift ) const;
 
-    CUDA_CALLABLE_MEMBER uint256_t operator~();
+    CUDA_CALLABLE_MEMBER uint256_t operator~() const;
 
     CUDA_CALLABLE_MEMBER std::uint8_t& operator[]( std::uint8_t idx );
     CUDA_CALLABLE_MEMBER const std::uint8_t& operator[]( std::uint8_t idx ) const;
     CUDA_CALLABLE_MEMBER std::uint8_t at( int loc );
 
-    CUDA_CALLABLE_MEMBER bool operator==( uint256_t comp );
-    CUDA_CALLABLE_MEMBER bool operator!=( uint256_t comp );
+    CUDA_CALLABLE_MEMBER bool operator==( const uint256_t& comp ) const;
+    CUDA_CALLABLE_MEMBER bool operator!=( const uint256_t& comp ) const;
 
     CUDA_CALLABLE_MEMBER int compare( const uint256_t& comp ) const;
     CUDA_CALLABLE_MEMBER bool operator<( const uint256_t& comp ) const;
@@ -79,12 +79,13 @@ class uint256_t
     __device__ bool add( uint256_t& dest,
                          const uint256_t augend
                        ) const;
+    __device__ uint256_t operator+( const uint256_t& other ) const;
 
     // this must be device-only because uint256_t::add is used
-    __device__ void neg( uint256_t& dest );
+    __device__ void neg( uint256_t& dest ) const;
+    __device__ uint256_t operator-() const;
 
 
- private:
     std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
 
 };

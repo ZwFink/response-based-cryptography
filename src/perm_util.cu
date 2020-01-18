@@ -32,12 +32,19 @@ __device__ void decode_ordinal( uint256_t *perm,
 // COMPLETED
 __device__ void assign_first_permutation( uint256_t *perm, int mismatches )
 {
-   // set the value of perm to 1
-   perm->set_bit( 0 );
+   // Chris P's implementation: currently not working correctly
+   //// set the value of perm to 1
+   //perm->set_bit( 0 );
 
-   *perm = *perm << mismatches; // shift left
-	
-   perm->add( *perm, UINT256_NEGATIVE_ONE ); // add negative one
+   //*perm = *perm << mismatches; // shift left
+	//
+   //perm->add( *perm, UINT256_NEGATIVE_ONE ); // add negative one
+
+   // New implementation:
+   for( int i = 0; i < mismatches; ++i )
+   {
+      perm->set_bit( i );
+   }
 }
 
 // COMPLETED
@@ -60,47 +67,61 @@ __device__ void assign_last_permutation( uint256_t *perm,
 // Precondition: starting_perm and ending_perm have been initialized
 __device__ void get_perm_pair( uint256_t *starting_perm, 
                                uint256_t *ending_perm,
-                               size_t pair_index,        // thread num
-                               size_t pair_count,        // num threads
-                               int mismatches,           // 5
-                               size_t key_size_bytes,    // 32  (key_size)
-                               size_t key_sz_bits        // 256 (key_sz_bits)
+                               std::size_t pair_index,        // thread num
+                               std::size_t pair_count,        // num threads
+                               const int mismatches,           
+                               const std::size_t keys_per_thread,
+                               std::size_t key_sz_bits,        
+                               const std::uint64_t extra_keys,
+                               const std::uint64_t total_perms
                              )
 {
-   uint64_t total_perms      = 0;
-   uint64_t starting_ordinal = 0;
-   uint64_t ending_ordinal   = 0;
+   uint64_t strt_ordinal   = 0;
+   uint64_t ending_ordinal = 0;
 
-   total_perms = get_bin_coef( key_sz_bits, mismatches );
+    if( pair_index < extra_keys )
+    {
+        if( pair_index == 0 )
+        {
+           assign_first_permutation( starting_perm, mismatches );
+        } 
+        else
+        {
+           strt_ordinal = ( keys_per_thread * pair_index ) + 1;
 
-   if( pair_index == 0 )
-   {
-      assign_first_permutation( starting_perm, mismatches );
-   } 
-   else
-   {
-      starting_ordinal = floorf( total_perms / pair_count ) * pair_index;
+           decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
+        }
 
-      decode_ordinal(starting_perm, starting_ordinal, mismatches, key_sz_bits);
-   }
+        ending_ordinal = strt_ordinal + keys_per_thread;
+        
+        decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
+    }
+    else
+    {
 
-   if( pair_index == pair_count - 1 )
-   {
-      assign_last_permutation( ending_perm, mismatches, key_sz_bits );
-   } 
-   else
-   {
-      ending_ordinal = floorf( total_perms / pair_count ) * (pair_index + 1);
-   
-      decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
-   }
+        strt_ordinal = ( keys_per_thread * pair_index ) + extra_keys;
+
+        decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
+
+        if( pair_index == pair_count - 1 )
+        {
+           assign_last_permutation( ending_perm, mismatches, key_sz_bits );
+        } 
+        else
+        {
+           //ending_ordinal = ( total_perms / pair_count ) * (pair_index + 1);
+           ending_ordinal = strt_ordinal + ( keys_per_thread - 1 );
+        
+           decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
+        }
+    }
 }
 
 // Returns value of Binomial Coefficient C(n, k)  
 // ref: https://www.geeksforgeeks.org/space-and-time-efficient-binomial-coefficient/
 CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(size_t n, size_t k)
 {  
-    int ret = 1;  
+    uint64_t ret = 1;  
     int i;
   
     // Since C(n, k) = C(n, n-k)  
@@ -109,35 +130,37 @@ CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(size_t n, size_t k)
   
     // Calculate value of  
     // [n * (n-1) *---* (n-k+1)] / [k * (k-1) *----* 1]  
-    if( k >= 4 )
-    {
-        // IMPLEMENT: pipelining technique to increase 
-        //            the number of operations per cycle
-        //            also increases register usage (dropping occupancy) 
-        //            unroll "4" specifically
-        for (i = 0; i < k; i+=4)  
-        {  
-            ret *= (n - i);  
-            ret /= (i + 1);  
+    //if( k >= 4 )
+    //{
+    //    // IMPLEMENT: pipelining technique to increase 
+    //    //            the number of operations per cycle
+    //    //            also increases register usage (dropping occupancy) 
+    //    //            unroll "4" specifically
+    //    for (i = 0; i < k; i+=4)  
+    //    {  
+    //        ret *= (n - i);  
+    //        ret /= (i + 1);  
 
-            ret *= (n - (i+1));  
-            ret /= ((i+1) + 1);  
+    //        ret *= (n - (i+1));  
+    //        ret /= ((i+1) + 1);  
 
-            ret *= (n - (i+2));  
-            ret /= ((i+2) + 1);  
+    //        ret *= (n - (i+2));  
+    //        ret /= ((i+2) + 1);  
 
-            ret *= (n - (i+3));  
-            ret /= ((i+3) + 1);  
-        }  
+    //        ret *= (n - (i+3));  
+    //        ret /= ((i+3) + 1);  
+    //    }  
+    //}
+    //else 
+    //{
+
+    for (i = 0; i < k; ++i)  
+    {  
+        ret *= (n - i);  
+        ret /= (i + 1);  
     }
-    else 
-    {
-        for (i = 0; i < k; ++i)  
-        {  
-            ret *= (n - i);  
-            ret /= (i + 1);  
-        }
-    }
+
+    //}
   
     return ret;  
 }  
