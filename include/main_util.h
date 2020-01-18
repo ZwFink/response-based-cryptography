@@ -1,7 +1,6 @@
 #ifndef MAIN_UTIL_HH_INCLUDED
 #define MAIN_UTIL_HH_INCLUDED
 
-#define USE_SMEM 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,6 +37,7 @@
 
 
 void warm_up_gpu( int device );
+
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,
