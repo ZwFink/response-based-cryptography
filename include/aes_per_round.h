@@ -79,7 +79,7 @@ namespace aes_per_round
 namespace aes_gpu
 {
     DEVICE_ONLY void expand_key( uint *expanded_loc,
-                                 uint *cipherKey
+                                 std::uint8_t i
                                );
 
     DEVICE_ONLY void encrypt( const uint pt[4], uint ct[4], uint *rek,

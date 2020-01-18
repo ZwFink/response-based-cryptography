@@ -435,48 +435,43 @@ CUDA_CALLABLE_MEMBER INLINE void shift_rows( message_128 *message )
 namespace aes_gpu
 {
     DEVICE_ONLY void expand_key( uint *expanded_loc,
-                                 uint *cipherKey
+                                 std::uint8_t i
                                )
     {
-        uint i = 0;
         uint temp;
-        expanded_loc[0] = GETWORD(cipherKey     );
-        expanded_loc[1] = GETWORD(cipherKey +  4);
-        expanded_loc[2] = GETWORD(cipherKey +  8);
-        expanded_loc[3] = GETWORD(cipherKey + 12);
+        // expanded_loc[0] = GETWORD(cipherKey     );
+        // expanded_loc[1] = GETWORD(cipherKey +  4);
+        // expanded_loc[2] = GETWORD(cipherKey +  8);
+        // expanded_loc[3] = GETWORD(cipherKey + 12);
 
-        expanded_loc[4] = GETWORD(cipherKey + 16);
-        expanded_loc[5] = GETWORD(cipherKey + 20);
+        // expanded_loc[4] = GETWORD(cipherKey + 16);
+        // expanded_loc[5] = GETWORD(cipherKey + 20);
 
-        expanded_loc[6] = GETWORD(cipherKey + 24);
-        expanded_loc[7] = GETWORD(cipherKey + 28);
-
-        for (;;)
-            {
-                temp = expanded_loc[ 7 ];
-                expanded_loc[ 8] = expanded_loc[ 0] ^
-                    (cTe4[(temp >> 16) & 0xff] & 0xff000000) ^
-                    (cTe4[(temp >>  8) & 0xff] & 0x00ff0000) ^
-                    (cTe4[(temp      ) & 0xff] & 0x0000ff00) ^
-                    (cTe4[(temp >> 24)       ] & 0x000000ff) ^
-                    Rcon[i];
-                expanded_loc[ 9] = expanded_loc[ 1] ^ expanded_loc[ 8];
-                expanded_loc[10] = expanded_loc[ 2] ^ expanded_loc[ 9];
-                expanded_loc[11] = expanded_loc[ 3] ^ expanded_loc[10];
-                if (++i == 7) {
-                    return;
-                }
-                temp = expanded_loc[11];
-                expanded_loc[12] = expanded_loc[ 4] ^
-                    (cTe4[(temp >> 24)       ] & 0xff000000) ^
-                    (cTe4[(temp >> 16) & 0xff] & 0x00ff0000) ^
-                    (cTe4[(temp >>  8) & 0xff] & 0x0000ff00) ^
-                    (cTe4[(temp      ) & 0xff] & 0x000000ff);
-                expanded_loc[13] = expanded_loc[ 5] ^ expanded_loc[12];
-                expanded_loc[14] = expanded_loc[ 6] ^ expanded_loc[13];
-                expanded_loc[15] = expanded_loc[ 7] ^ expanded_loc[14];
-                expanded_loc += 8;
-            }
+        // expanded_loc[6] = GETWORD(cipherKey + 24);
+        // expanded_loc[7] = GETWORD(cipherKey + 28);
+        temp = expanded_loc[ 7 ];
+        expanded_loc[ 8] = expanded_loc[ 0] ^
+            (cTe4[(temp >> 16) & 0xff] & 0xff000000) ^
+            (cTe4[(temp >>  8) & 0xff] & 0x00ff0000) ^
+            (cTe4[(temp      ) & 0xff] & 0x0000ff00) ^
+            (cTe4[(temp >> 24)       ] & 0x000000ff) ^
+            Rcon[i];
+        expanded_loc[ 9] = expanded_loc[ 1] ^ expanded_loc[ 8];
+        expanded_loc[10] = expanded_loc[ 2] ^ expanded_loc[ 9];
+        expanded_loc[11] = expanded_loc[ 3] ^ expanded_loc[10];
+        // if (++i == 7) {
+        //     return;
+        // }
+        temp = expanded_loc[11];
+        expanded_loc[12] = expanded_loc[ 4] ^
+            (cTe4[(temp >> 24)       ] & 0xff000000) ^
+            (cTe4[(temp >> 16) & 0xff] & 0x00ff0000) ^
+            (cTe4[(temp >>  8) & 0xff] & 0x0000ff00) ^
+            (cTe4[(temp      ) & 0xff] & 0x000000ff);
+        expanded_loc[13] = expanded_loc[ 5] ^ expanded_loc[12];
+        expanded_loc[14] = expanded_loc[ 6] ^ expanded_loc[13];
+        expanded_loc[15] = expanded_loc[ 7] ^ expanded_loc[14];
+        // expanded_loc += 8;
     }
 
     DEVICE_ONLY void encrypt( const uint pt[4], uint ct[4], uint *rek,
@@ -486,7 +481,7 @@ namespace aes_gpu
         #define Nr 14
         using namespace aes_per_round;
 
-        std::uint8_t round_keys[ 48 ];
+        std::uint8_t round_keys[ 64 ];
         std::uint8_t i        = 0;
         std::uint8_t idx = 0;
 
@@ -498,6 +493,8 @@ namespace aes_gpu
                     = ( (uint32_t*) rek )[ i ];
             }
 
+
+        i = 0;
 
         int tid = blockIdx.x * blockDim.x + threadIdx.x;
         uint s0, s1, s2, s3, t0, t1, t2, t3;
@@ -537,12 +534,9 @@ namespace aes_gpu
              ^ INTERPRET_UINT32( round_keys )[ 7 ];
 
         // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       2
-                     );
 
+        expand_key( INTERPRET_UINT32( round_keys) , i );
+        
         /* round 2: */
         s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
             ^ INTERPRET_UINT32( round_keys )[ 8 ];
@@ -553,49 +547,27 @@ namespace aes_gpu
         s3 = Te0[t3 >> 24] ^ Te1[(t0 >> 16) & 0xff] ^ Te2[(t1 >>  8) & 0xff] ^ Te3[t2 & 0xff]
             ^ INTERPRET_UINT32( round_keys )[ 11 ];
 
-        idx = 0;
-        // reset the round key
-        for( idx = 0; idx < 16; ++idx )
-            {
-                // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
-            }
-
-        // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       3
-                     );
-
         /* round 3: */
         t0 = Te0[s0 >> 24] ^ Te1[(s1 >> 16) & 0xff] ^ Te2[(s2 >>  8) & 0xff] ^ Te3[s3 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 8 ];
+            ^ INTERPRET_UINT32( round_keys )[ 12 ];
         t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 9 ];
+            ^ INTERPRET_UINT32( round_keys )[ 13 ];
         t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 10 ];
+            ^ INTERPRET_UINT32( round_keys )[ 14 ];
         t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 11 ];
+            ^ INTERPRET_UINT32( round_keys )[ 15 ];
 
         idx = 0;
         // reset the round key
-        for( idx = 0; idx < 16; ++idx )
+        for( idx = 0; idx < 8; ++idx )
             {
                 // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
+                INTERPRET_UINT32( round_keys )[ idx ]
+                    = INTERPRET_UINT32( round_keys )[ idx + 8 ];
             }
 
         // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       4
-                     );
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
 
         /* round 4: */
@@ -608,50 +580,27 @@ namespace aes_gpu
         s3 = Te0[t3 >> 24] ^ Te1[(t0 >> 16) & 0xff] ^ Te2[(t1 >>  8) & 0xff] ^ Te3[t2 & 0xff]
             ^ INTERPRET_UINT32( round_keys )[ 11 ];
 
-        idx = 0;
-        // reset the round key
-        for( idx = 0; idx < 16; ++idx )
-            {
-                // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
-            }
-
-        // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       5
-                     );
-
-
         /* round 5: */
         t0 = Te0[s0 >> 24] ^ Te1[(s1 >> 16) & 0xff] ^ Te2[(s2 >>  8) & 0xff] ^ Te3[s3 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 8 ];
+            ^ INTERPRET_UINT32( round_keys )[ 12 ];
         t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 9 ];
+            ^ INTERPRET_UINT32( round_keys )[ 13 ];
         t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 10 ];
+            ^ INTERPRET_UINT32( round_keys )[ 14 ];
         t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 11 ];
+            ^ INTERPRET_UINT32( round_keys )[ 15 ];
 
         idx = 0;
         // reset the round key
-        for( idx = 0; idx < 16; ++idx )
+        for( idx = 0; idx < 8; ++idx )
             {
                 // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
+                INTERPRET_UINT32( round_keys )[ idx ]
+                    = INTERPRET_UINT32( round_keys )[ idx + 8 ];
             }
 
         // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       6
-                     );
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
 
         /* round 6: */
@@ -664,49 +613,27 @@ namespace aes_gpu
         s3 = Te0[t3 >> 24] ^ Te1[(t0 >> 16) & 0xff] ^ Te2[(t1 >>  8) & 0xff] ^ Te3[t2 & 0xff]
             ^ INTERPRET_UINT32( round_keys )[ 11 ];
 
-        idx = 0;
-        // reset the round key
-        for( idx = 0; idx < 16; ++idx )
-            {
-                // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
-            }
-
-        // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       7
-                     );
-
         /* round 7: */
         t0 = Te0[s0 >> 24] ^ Te1[(s1 >> 16) & 0xff] ^ Te2[(s2 >>  8) & 0xff] ^ Te3[s3 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 8 ];
+            ^ INTERPRET_UINT32( round_keys )[ 12 ];
         t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 9 ];
+            ^ INTERPRET_UINT32( round_keys )[ 13 ];
         t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 10 ];
+            ^ INTERPRET_UINT32( round_keys )[ 14 ];
         t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 11 ];
+            ^ INTERPRET_UINT32( round_keys )[ 15 ];
 
         idx = 0;
         // reset the round key
-        for( idx = 0; idx < 16; ++idx )
+        for( idx = 0; idx < 8; ++idx )
             {
                 // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
+                INTERPRET_UINT32( round_keys )[ idx ]
+                    = INTERPRET_UINT32( round_keys )[ idx + 8 ];
             }
 
         // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       8
-                     );
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
         /* round 8: */
         s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
@@ -718,51 +645,28 @@ namespace aes_gpu
         s3 = Te0[t3 >> 24] ^ Te1[(t0 >> 16) & 0xff] ^ Te2[(t1 >>  8) & 0xff] ^ Te3[t2 & 0xff]
             ^ INTERPRET_UINT32( round_keys )[ 11 ];
 
-        idx = 0;
-        // reset the round key
-        for( idx = 0; idx < 16; ++idx )
-            {
-                // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
-            }
-
-        // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       9
-                     );
-
-
         /* round 9: */
         t0 = Te0[s0 >> 24] ^ Te1[(s1 >> 16) & 0xff] ^ Te2[(s2 >>  8) & 0xff] ^ Te3[s3 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 8 ];
+            ^ INTERPRET_UINT32( round_keys )[ 12 ];
         t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 9 ];
+            ^ INTERPRET_UINT32( round_keys )[ 13 ];
         t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 10 ];
+            ^ INTERPRET_UINT32( round_keys )[ 14 ];
         t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff]
-            ^ INTERPRET_UINT32( round_keys )[ 11 ];
+            ^ INTERPRET_UINT32( round_keys )[ 15 ];
         if (Nr > 10) {
 
         idx = 0;
         // reset the round key
-        for( idx = 0; idx < 16; ++idx )
+        for( idx = 0; idx < 8; ++idx )
             {
                 // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
+                INTERPRET_UINT32( round_keys )[ idx ]
+                    = INTERPRET_UINT32( round_keys )[ idx + 8 ];
             }
 
         // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       10
-                     );
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
 
             /* round 10: */
@@ -775,51 +679,28 @@ namespace aes_gpu
             s3 = Te0[t3 >> 24] ^ Te1[(t0 >> 16) & 0xff] ^ Te2[(t1 >>  8) & 0xff] ^ Te3[t2 & 0xff]
                 ^ INTERPRET_UINT32( round_keys )[ 11 ];
 
-            idx = 0;
-            // reset the round key
-            for( idx = 0; idx < 16; ++idx )
-                {
-                    // shift the bytes over by 16
-                    round_keys[ idx ] = round_keys[ idx + 16 ];
-                    round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                    round_keys[ idx + 32 ] = 0;
-                }
-
-            // get the key for the round
-            get_round_key( round_keys,
-                           sbox,
-                           &i,
-                           11
-                           );
-
-
             /* round 11: */
             t0 = Te0[s0 >> 24] ^ Te1[(s1 >> 16) & 0xff] ^ Te2[(s2 >>  8) & 0xff] ^ Te3[s3 & 0xff]
-                ^ INTERPRET_UINT32( round_keys )[ 8 ];
+                ^ INTERPRET_UINT32( round_keys )[ 12 ];
             t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff]
-                ^ INTERPRET_UINT32( round_keys )[ 9 ];
+                ^ INTERPRET_UINT32( round_keys )[ 13 ];
             t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff]
-                ^ INTERPRET_UINT32( round_keys )[ 10 ];
+                ^ INTERPRET_UINT32( round_keys )[ 14 ];
             t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff]
-                ^ INTERPRET_UINT32( round_keys )[ 11 ];
+                ^ INTERPRET_UINT32( round_keys )[ 15 ];
             if (Nr > 12) {
 
-                idx = 0;
-                // reset the round key
-                for( idx = 0; idx < 16; ++idx )
-                    {
-                        // shift the bytes over by 16
-                        round_keys[ idx ] = round_keys[ idx + 16 ];
-                        round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                        round_keys[ idx + 32 ] = 0;
-                    }
+        idx = 0;
+        // reset the round key
+        for( idx = 0; idx < 8; ++idx )
+            {
+                // shift the bytes over by 16
+                INTERPRET_UINT32( round_keys )[ idx ]
+                    = INTERPRET_UINT32( round_keys )[ idx + 8 ];
+            }
 
-                // get the key for the round
-                get_round_key( round_keys,
-                               sbox,
-                               &i,
-                               12
-                               );
+        // get the key for the round
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
 
                 /* round 12: */
@@ -833,52 +714,29 @@ namespace aes_gpu
                     ^ INTERPRET_UINT32( round_keys )[ 11 ];
 
 
-                idx = 0;
-                // reset the round key
-                for( idx = 0; idx < 16; ++idx )
-                    {
-                        // shift the bytes over by 16
-                        round_keys[ idx ] = round_keys[ idx + 16 ];
-                        round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                        round_keys[ idx + 32 ] = 0;
-                    }
-
-                // get the key for the round
-                get_round_key( round_keys,
-                               sbox,
-                               &i,
-                               13
-                               );
-
-
                 /* round 13: */
                 t0 = Te0[s0 >> 24] ^ Te1[(s1 >> 16) & 0xff] ^ Te2[(s2 >>  8) & 0xff] ^ Te3[s3 & 0xff]
-                    ^ INTERPRET_UINT32( round_keys )[ 8 ];
+                    ^ INTERPRET_UINT32( round_keys )[ 12 ];
                 t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff]
-                    ^ INTERPRET_UINT32( round_keys )[ 9 ];
+                    ^ INTERPRET_UINT32( round_keys )[ 13 ];
                 t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff]
-                    ^ INTERPRET_UINT32( round_keys )[ 10 ];
+                    ^ INTERPRET_UINT32( round_keys )[ 14 ];
                 t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff]
-                    ^ INTERPRET_UINT32( round_keys )[ 11 ];
+                    ^ INTERPRET_UINT32( round_keys )[ 15 ];
             }
         }
 
         idx = 0;
         // reset the round key
-        for( idx = 0; idx < 16; ++idx )
+        for( idx = 0; idx < 8; ++idx )
             {
                 // shift the bytes over by 16
-                round_keys[ idx ] = round_keys[ idx + 16 ];
-                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
-                round_keys[ idx + 32 ] = 0;
+                INTERPRET_UINT32( round_keys )[ idx ]
+                    = INTERPRET_UINT32( round_keys )[ idx + 8 ];
             }
 
         // get the key for the round
-        get_round_key( round_keys,
-                       sbox,
-                       &i,
-                       14
-                       );
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
 
         /*
@@ -890,26 +748,25 @@ namespace aes_gpu
             (Te3[(t1 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t2 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t3      ) & 0xff] & 0x000000ff) ^
-            rek[0];
-            INTERPRET_UINT32( round_keys )[ 8 ];
+            INTERPRET_UINT32( round_keys )[ 12 ];
         ct[ 1] =
             (Te2[(t1 >> 24)       ] & 0xff000000) ^
             (Te3[(t2 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t3 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t0      ) & 0xff] & 0x000000ff) ^
-            INTERPRET_UINT32( round_keys )[ 9 ];
+            INTERPRET_UINT32( round_keys )[ 13 ];
         ct[ 2] =
             (Te2[(t2 >> 24)       ] & 0xff000000) ^
             (Te3[(t3 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t0 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t1      ) & 0xff] & 0x000000ff) ^
-            INTERPRET_UINT32( round_keys )[ 11 ];
+            INTERPRET_UINT32( round_keys )[ 14 ];
         ct[ 3] =
             (Te2[(t3 >> 24)       ] & 0xff000000) ^
             (Te3[(t0 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t1 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t2      ) & 0xff] & 0x000000ff) ^
-            INTERPRET_UINT32( round_keys )[ 11 ];
+            INTERPRET_UINT32( round_keys )[ 15 ];
 
     }
 
