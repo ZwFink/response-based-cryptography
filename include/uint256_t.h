@@ -79,9 +79,11 @@ class uint256_t
     __device__ bool add( uint256_t& dest,
                          const uint256_t augend
                        ) const;
+    __device__ uint256_t operator+( const uint256_t& other ) const;
 
     // this must be device-only because uint256_t::add is used
-    __device__ void neg( uint256_t& dest );
+    __device__ void neg( uint256_t& dest ) const;
+    __device__ uint256_t operator-() const;
 
 
     std::uint8_t data[ UINT256_SIZE_IN_BYTES ];

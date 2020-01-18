@@ -362,11 +362,23 @@ __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
     return dest_32[ 7 ] < self_32[ 7 ];
 }
 
-__device__ void uint256_t::neg( uint256_t& dest )
+__device__ uint256_t uint256_t::operator+( const uint256_t& other ) const
 {
-    uint256_t complement = ~(*this);
+    uint256_t ret;
+    add( ret, other );
+    return ret;
+}
 
-    complement.add( dest, UINT256_ONE );
+__device__ void uint256_t::neg( uint256_t& dest ) const
+{
+    (~(*this)).add( dest, UINT256_ONE );
+}
+
+__device__ uint256_t uint256_t::operator-() const
+{
+    uint256_t tmp;
+    neg( tmp );
+    return tmp;
 }
 
 // intended for use with permutation creation in function decode_ordinal
