@@ -367,7 +367,7 @@ CUDA_CALLABLE_MEMBER INLINE void shift_rows( message_128 *message )
 
     }
 
-    DEVICE_ONLY
+    DEVICE_ONLY INLINE
     void get_round_key( std::uint8_t keys[ 48 ],
                         const std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ],
                         std::uint8_t *i,
@@ -847,7 +847,7 @@ namespace aes_gpu
                 get_round_key( round_keys,
                                sbox,
                                &i,
-                               3
+                               13
                                );
 
 
@@ -862,7 +862,24 @@ namespace aes_gpu
                     ^ INTERPRET_UINT32( round_keys )[ 11 ];
             }
         }
-        rek += Nr << 2;
+
+        idx = 0;
+        // reset the round key
+        for( idx = 0; idx < 16; ++idx )
+            {
+                // shift the bytes over by 16
+                round_keys[ idx ] = round_keys[ idx + 16 ];
+                round_keys[ idx + 16 ] = round_keys[ idx + 32 ];
+                round_keys[ idx + 32 ] = 0;
+            }
+
+        // get the key for the round
+        get_round_key( round_keys,
+                       sbox,
+                       &i,
+                       14
+                       );
+
 
         /*
          * apply last round and
@@ -874,26 +891,26 @@ namespace aes_gpu
             (Te0[(t2 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t3      ) & 0xff] & 0x000000ff) ^
             rek[0];
+            INTERPRET_UINT32( round_keys )[ 8 ];
         ct[ 1] =
             (Te2[(t1 >> 24)       ] & 0xff000000) ^
             (Te3[(t2 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t3 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t0      ) & 0xff] & 0x000000ff) ^
-            rek[1];
+            INTERPRET_UINT32( round_keys )[ 9 ];
         ct[ 2] =
             (Te2[(t2 >> 24)       ] & 0xff000000) ^
             (Te3[(t3 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t0 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t1      ) & 0xff] & 0x000000ff) ^
-            rek[2];
+            INTERPRET_UINT32( round_keys )[ 11 ];
         ct[ 3] =
             (Te2[(t3 >> 24)       ] & 0xff000000) ^
             (Te3[(t0 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t1 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t2      ) & 0xff] & 0x000000ff) ^
-            rek[3];
+            INTERPRET_UINT32( round_keys )[ 11 ];
 
-        rek -= Nr << 2;
     }
 
 
