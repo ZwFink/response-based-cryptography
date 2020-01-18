@@ -1,6 +1,8 @@
 // utility file for host driver funciton (main)
 
 #include "main_util.h"
+#include "aes_tables.h"
+#include "util.h"
 #include <stdio.h>
 
 __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
@@ -64,6 +66,7 @@ __device__ int validator( uint256_t *starting_perm,
                         )
 {
     aes_per_round::message_128 encrypted;
+    aes_tables tabs;
     int idx = 0;
     std::uint8_t match = 0;
     std::uint8_t match2 = 0;
@@ -78,15 +81,39 @@ __device__ int validator( uint256_t *starting_perm,
     __shared__ std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ];
     if( threadIdx.x < SBOX_SIZE_IN_BYTES )
         {
-            sbox[ threadIdx.x ] = Tsbox_256[ threadIdx.x ];
-        }
+            #if THREADS_PER_BLOCK == 128 
 
-    __syncthreads();
+            sbox[ 2 * threadIdx.x ] = Tsbox_256[ 2 * threadIdx.x ];
+            sbox[ ( 2 * threadIdx.x ) + 1 ] = Tsbox_256[ ( 2 * threadIdx.x ) + 1 ];
+
+            #elif THREADS_PER_BLOCK == 256
+
+            sbox[ threadIdx.x ] = Tsbox_256[ threadIdx.x ];
+
+            #endif
+        }
+    __shared__ uint Te0[256], Te1[256], Te2[256], Te3[256];
+    load_smem(Te0, cTe0, Te1, cTe1, Te2, cTe2, Te3, cTe3);
+    // NOTE: __syncthreads not used here because it's called in
+    // util::load_smem
+
+    tabs.Te0 = Te0;
+    tabs.Te1 = Te1;
+    tabs.Te2 = Te2;
+    tabs.Te3 = Te3;
 
     #else
     // just get a reference to it
     uint8_t *sbox = Tsbox_256;
+
+    tabs.Te0 = cTe0;
+    tabs.Te1 = cTe1;
+    tabs.Te2 = cTe2;
+    tabs.Te3 = cTe3;
+
     #endif 
+
+    tabs.sbox = sbox;
 
     uint256_iter iter ( *key_for_encryp,
                         *starting_perm,
@@ -97,11 +124,11 @@ __device__ int validator( uint256_t *starting_perm,
 
             ++total;
             // encrypt
-            aes_per_round::roundwise_encrypt( &encrypted,
-                                              &iter.corrupted_key,
-                                              user_id,
-                                              sbox
-                                            );
+            aes_gpu::encrypt( (std::uint32_t*) &(user_id->bits),
+                              (std::uint32_t*)&(encrypted.bits),
+                              (std::uint32_t*)&(starting_perm->data),
+                              &tabs
+                            );
 
             // check for match! 
             for( idx = 0; idx < 16; ++idx )
