@@ -4,6 +4,7 @@
 
 #include "uint256_t.h"
 #include "cuda_defs.h"
+#include "aes_tables.h"
 #include "sbox.h"
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 #define SBOX_SIZE_IN_BYTES 256
@@ -71,6 +72,20 @@ namespace aes_per_round
                             int round_no
                           );
 
+
 }; // namespace aes_per_round 
+
+
+namespace aes_gpu
+{
+    DEVICE_ONLY void expand_key( uint *expanded_loc,
+                                 uint *cipherKey
+                               );
+
+    DEVICE_ONLY void encrypt( const uint pt[4], uint ct[4], uint *rek,
+                              const aes_tables *aes_tabs
+                            );
+
+};
 
 #endif // AES_PER_ROUND_HH_INCLUDED 
