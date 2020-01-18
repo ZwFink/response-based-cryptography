@@ -20,16 +20,12 @@ __device__ void uint256_iter::next()
 {
 
     uint256_t t = curr_perm | ( curr_perm + UINT256_NEGATIVE_ONE );
-
-
-    uint8_t shift = curr_perm.ctz() + 1;
-
-    // add_tmp.set_all( 0x00 );
     uint256_t tmp;
 
     overflow = t.add( tmp, UINT256_ONE );
 
-    curr_perm = (tmp) | ((((~t) & -(~t)) + UINT256_NEGATIVE_ONE ) >> shift ); 
+    curr_perm = (tmp) | ((((~t) & -(~t)) + UINT256_NEGATIVE_ONE )
+                         >> ( curr_perm.ctz() + 1 ) ); 
     corrupted_key = key_uint ^ curr_perm;
 }
 
