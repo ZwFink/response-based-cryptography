@@ -20,8 +20,6 @@ class uint256_iter
 
     uint256_t curr_perm;
     uint256_t last_perm;
-    uint256_t t;
-    uint256_t tmp;
     uint256_t key_uint;
     uint256_t corrupted_key;
     bool overflow;
