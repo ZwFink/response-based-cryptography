@@ -42,6 +42,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
         result = validator( &starting_perm,
                             &ending_perm,
                             key_for_encryp,
+                            key_to_find,
                             user_id,
                             auth_cipher
                           );
@@ -54,6 +55,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,
+                          uint256_t *key_to_find,
                           const aes_per_round::message_128 *user_id,
                           const aes_per_round::message_128 *auth_cipher 
                         )
@@ -125,7 +127,7 @@ __device__ int validator( uint256_t *starting_perm,
 
             if( match == 16 )
                 {
-                    *key_for_encryp = iter.corrupted_key;
+                    key_to_find = iter.corrupted_key;
                     printf( "I found it!\n" );
                 }
 
