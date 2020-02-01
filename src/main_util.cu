@@ -25,7 +25,6 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
     int result = 0;
 
-   
     // only run thread if tid is less than cardinality of current keyspace
     if( tid < num_keys )
     {
@@ -47,12 +46,6 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                             auth_cipher
                           );
 
-        // if result is 1 then we found a key matching client's private key
-        // signal all threads to stop
-        // if( result )
-        //     {
-        //         *key_to_find = *key_for_encryp; 
-        //     }
         atomicAdd( (unsigned long long int*) iter_count, result );
     }
 
@@ -67,15 +60,9 @@ __device__ int validator( uint256_t *starting_perm,
 {
     aes_per_round::message_128 encrypted;
     aes_tables tabs;
-    int idx = 0;
+    std::uint8_t idx = 0;
     std::uint8_t match = 0;
-    std::uint8_t match2 = 0;
     int total = 0;
-
-    for( idx = 0; idx < 4; ++idx )
-        {
-            ((uint32_t*)&(encrypted.bits))[ idx ] = 0;
-        }
 
     #ifdef USE_SMEM
     __shared__ std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ];
@@ -124,9 +111,9 @@ __device__ int validator( uint256_t *starting_perm,
 
             ++total;
             // encrypt
-            aes_gpu::encrypt( (std::uint32_t*) &(user_id->bits),
-                              (std::uint32_t*)&(encrypted.bits),
-                              (std::uint32_t*)&(starting_perm->data),
+            aes_gpu::encrypt( (uint*)(user_id->bits),
+                              (uint*)(encrypted.bits),
+                              (uint*)(iter.corrupted_key.data),
                               &tabs
                             );
 
@@ -135,7 +122,6 @@ __device__ int validator( uint256_t *starting_perm,
                 {
                     match += ( encrypted.bits[ idx ] == auth_cipher->bits[ idx ] );
                 }
-            match2 += match == 16; // if all 16 bytes matched, we have a match!
 
             if( match == 16 )
                 {
@@ -148,14 +134,8 @@ __device__ int validator( uint256_t *starting_perm,
             // get next key
             iter.next();
 
-            for( idx = 0; idx < 4; ++idx )
-                {
-                    ((uint32_t*)&(encrypted.bits))[ idx ] = 0;
-                }
-
         }
     return total;
-    // return match2;
 }
 
 void warm_up_gpu( int device )
