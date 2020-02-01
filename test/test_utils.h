@@ -4,6 +4,9 @@
 #include <cuda.h>
 
 #include "uint256_t.h"
+#include "aes_tables.h"
+#include "sbox.h"
+#include "aes_per_round.h"
 #include "uint256_iterator.h"
 #include "perm_util.h"
 
@@ -150,11 +153,11 @@ namespace test_utils
                                          )
          {
 
-             get_perm_pair( starting_perm, ending_perm,
-                            tid, nthreads,
-                            2, 32,
-                            256
-                          );
+             // get_perm_pair( starting_perm, ending_perm,
+             //                tid, nthreads,
+             //                2, 32,
+             //                256
+             //              );
 
          }
 
@@ -175,6 +178,25 @@ namespace test_utils
             *count_ptr = c;
 
         }
+
+    __global__ void aes_encryption_test( uint cipher_location[ 4 ],
+                                         uint *encryp_key,
+                                         const uint plain_text[ 4 ]
+                                       )
+    {
+        aes_tables tabs;
+        tabs.Te0 = cTe0;
+        tabs.Te1 = cTe1;
+        tabs.Te2 = cTe2;
+        tabs.Te3 = cTe3;
+        tabs.sbox = Tsbox_256;
+
+        aes_gpu::encrypt( plain_text, cipher_location,
+                          encryp_key,
+                          &tabs
+                        );
+
+    }
 };
 
 #endif
