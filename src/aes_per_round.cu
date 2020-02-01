@@ -456,12 +456,13 @@ namespace aes_gpu
             (cTe4[(temp      ) & 0xff] & 0x0000ff00) ^
             (cTe4[(temp >> 24)       ] & 0x000000ff) ^
             Rcon[i];
+
         expanded_loc[ 9] = expanded_loc[ 1] ^ expanded_loc[ 8];
         expanded_loc[10] = expanded_loc[ 2] ^ expanded_loc[ 9];
         expanded_loc[11] = expanded_loc[ 3] ^ expanded_loc[10];
-        // if (++i == 7) {
-        //     return;
-        // }
+        if(i == 7) {
+            return;
+        }
         temp = expanded_loc[11];
         expanded_loc[12] = expanded_loc[ 4] ^
             (cTe4[(temp >> 24)       ] & 0xff000000) ^
@@ -490,7 +491,7 @@ namespace aes_gpu
         for( i = 0; i < 8; ++i )
             {
                 ( (uint32_t*)round_keys )[ i ]
-                    = ( (uint32_t*) rek )[ i ];
+                    = rek[ i ];
             }
 
 
@@ -532,7 +533,7 @@ namespace aes_gpu
         // get the key for the round
 
         expand_key( INTERPRET_UINT32( round_keys) , i );
-        
+
         /* round 2: */
         s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
             ^ INTERPRET_UINT32( round_keys )[ 8 ];
@@ -567,7 +568,6 @@ namespace aes_gpu
 
         // get the key for the round
         expand_key( INTERPRET_UINT32( round_keys) , ++i );
-
 
         /* round 4: */
         s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
@@ -604,7 +604,6 @@ namespace aes_gpu
         // get the key for the round
         expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
-
         /* round 6: */
         s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
             ^ INTERPRET_UINT32( round_keys )[ 8 ];
@@ -636,6 +635,7 @@ namespace aes_gpu
                     = INTERPRET_UINT32( round_keys )[ idx + 16 ];
 
             }
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
         /* round 8: */
         s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
@@ -670,6 +670,7 @@ namespace aes_gpu
 
             }
 
+        expand_key( INTERPRET_UINT32( round_keys) , ++i );
             /* round 10: */
             s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
                 ^ INTERPRET_UINT32( round_keys )[ 8 ];
@@ -705,8 +706,6 @@ namespace aes_gpu
 
         // get the key for the round
         expand_key( INTERPRET_UINT32( round_keys) , ++i );
-
-
                 /* round 12: */
                 s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff]
                     ^ INTERPRET_UINT32( round_keys )[ 8 ];
@@ -745,7 +744,6 @@ namespace aes_gpu
         // get the key for the round
         expand_key( INTERPRET_UINT32( round_keys) , ++i );
 
-
         /*
          * apply last round and
          * map cipher state to byte array block:
@@ -755,25 +753,25 @@ namespace aes_gpu
             (Te3[(t1 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t2 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t3      ) & 0xff] & 0x000000ff) ^
-            INTERPRET_UINT32( round_keys )[ 12 ];
+            INTERPRET_UINT32( round_keys )[ 8 ];
         ct[ 1] =
             (Te2[(t1 >> 24)       ] & 0xff000000) ^
             (Te3[(t2 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t3 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t0      ) & 0xff] & 0x000000ff) ^
-            INTERPRET_UINT32( round_keys )[ 13 ];
+            INTERPRET_UINT32( round_keys )[ 9 ];
         ct[ 2] =
             (Te2[(t2 >> 24)       ] & 0xff000000) ^
             (Te3[(t3 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t0 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t1      ) & 0xff] & 0x000000ff) ^
-            INTERPRET_UINT32( round_keys )[ 14 ];
+            INTERPRET_UINT32( round_keys )[ 10 ];
         ct[ 3] =
             (Te2[(t3 >> 24)       ] & 0xff000000) ^
             (Te3[(t0 >> 16) & 0xff] & 0x00ff0000) ^
             (Te0[(t1 >>  8) & 0xff] & 0x0000ff00) ^
             (Te1[(t2      ) & 0xff] & 0x000000ff) ^
-            INTERPRET_UINT32( round_keys )[ 15 ];
+            INTERPRET_UINT32( round_keys )[ 11 ];
 
     }
 
