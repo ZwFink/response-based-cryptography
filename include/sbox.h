@@ -6,7 +6,7 @@ using uchar = unsigned char;
 __constant__
 #endif
 __device__
-extern uchar Rcon[255];
+extern uint Rcon[10];
 
 #ifdef USE_CONSTANT
 __constant__
