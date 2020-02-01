@@ -127,7 +127,7 @@ __device__ int validator( uint256_t *starting_perm,
 
             if( match == 16 )
                 {
-                    key_to_find = iter.corrupted_key;
+                    *key_to_find = iter.corrupted_key;
                     printf( "I found it!\n" );
                 }
 
