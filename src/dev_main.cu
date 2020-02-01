@@ -81,9 +81,11 @@ int main(int argc, char * argv[])
     }
 
     message_128 cipher;
+    message_128 uid_msg;
     for (int i = 0 ; i < 16; i++)
     {
         cipher.bits[i] = (uint8_t) uid_hex[i];
+        uid_msg.bits[i] = (uint8_t) uid_hex[i];
     }
 
     //print_message(cipher);
@@ -101,25 +103,12 @@ int main(int argc, char * argv[])
 
     // corrupt bit_key by number of mismatches
     key_256 staging_key;
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 32; i++ )
     {
         staging_key.bits[i] = (uint8_t) bit_key.bits[i];
     }
     // this is subject to change...
     staging_key.bits[ 31 ] = flip_n_bits( bit_key.bits[ 31 ], mismatches );
-    //for( int x = 0; x < 32; ++x )
-    //    {
-    //        printf( "0x%02X ", staging_key.bits[ x ] );
-
-    //    }
-    //printf( "\n" );
-    //for( int x = 0; x < 32; ++x )
-    //    {
-    //        printf( "0x%02X ", bit_key.bits[ x ] );
-
-    //    }
-    //printf( "\n" );
-
 
     /* ok, we now have:
        - uid:          client's 128 bit message to encrypt
@@ -151,7 +140,7 @@ int main(int argc, char * argv[])
     *total_iter_count = 0;
 
 
-    if( cuda_utils::HtoD( dev_uid, uid, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
+    if( cuda_utils::HtoD( dev_uid, &uid_msg, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
         {
             std::cout << "Failure to transfer uid to device\n";
         }
