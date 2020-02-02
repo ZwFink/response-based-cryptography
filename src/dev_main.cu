@@ -45,8 +45,8 @@ int main(int argc, char * argv[])
     printf("\nNumber of blocks: %d",num_blocks);
     printf("\nNumber of threads per block: %d",THREADS_PER_BLOCK);
     printf("\nNumber of keys per thread: %d",keys_per_thread);
-    std::cout << "\nTotal number of keys: " << total_keys;
-    std::cout << "\nLast thread's number of keys: %d" << last_thread_numkeys;
+    printf("\nTotal number of keys: %d",total_keys);
+    printf("\nLast thread's number of keys: %d",last_thread_numkeys);
 
     if( last_thread_numkeys != keys_per_thread )
     {
@@ -115,6 +115,8 @@ int main(int argc, char * argv[])
        - cipher:       client's encrypted cipher text to check against 
        - staging_key:  corrupted version of bit_key
     */
+    printf("\nBegin authentication");
+    printf("\n====================\n\n");
     double start_time = omp_get_wtime();
         
     // send userid, cipher, and corrupted key to GPU global memory
