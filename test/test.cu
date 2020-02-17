@@ -164,6 +164,7 @@
      uint256_t a1;
      uint256_t a2;
      uint256_t result;
+     uint256_t to_comp;
 
      uint256_t *a1_dev = nullptr;
      uint256_t *a2_dev = nullptr;
@@ -206,7 +207,44 @@
 
              result_code = result == UINT256_MAX_INT;
              REQUIRE( result_code );
-         }
+         } 
+
+     SECTION( "65280 + 11141120 = 11206400" )
+         {
+             a1.set_all( 0 );
+             a2.set_all( 0 );
+             a1.set( 65280, 0 );
+             a2.set( 11141120, 0 );
+             result.set_all( 0 );
+             to_comp.set_all( 0 );
+             to_comp.set( 11206400, 0 );
+
+             if( test_utils::HtoD( a1_dev, &a1, sizeof( uint256_t ) ) != cudaSuccess )
+                 {
+                     std::cout << "Failure to transfer a1 to device\n";
+                 }
+
+             if( test_utils::HtoD( a2_dev, &a2, sizeof( uint256_t ) ) != cudaSuccess)
+                 {
+                     std::cout << "Failure to transfer a2 to device\n";
+                 }
+
+             if( test_utils::HtoD( result_dev, &result, sizeof( uint256_t ) ) != cudaSuccess)
+                 {
+                     std::cout << "Failure to transfer result to device\n";
+                 }
+
+             test_utils::add_knl<<<1,1>>>( a1_dev, a2_dev, result_dev );
+             cudaDeviceSynchronize();
+
+             if( test_utils::DtoH( &result, result_dev, sizeof( uint256_t ) ) != cudaSuccess)
+                 {
+                     std::cout << "Failure to transfer to host \n";
+                 }
+
+             result_code = result == to_comp;
+             REQUIRE( result_code );
+         } 
 
      SECTION( "1073741823 + 3221225472 = 4294967295" )
          {
@@ -260,6 +298,7 @@
 
      cudaFree( a1_dev );
      cudaFree( a2_dev );
+     cudaFree( result_dev );
 
  }
 
@@ -496,50 +535,143 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
 }
 
 
-/* The following test cases do not work!
 
-// TEST_CASE( "uint256_t_negation_gpu", "[uint256_t]" )
-// {
-//
-//     uint256_t a1;
-//     uint256_t a2;
-//
-//     uint256_t *a1_dev = nullptr;
-//     uint256_t *a2_dev = nullptr;
-//
-//     cudaMalloc( (void**) &a1_dev, sizeof( uint256_t ) );
-//     cudaMalloc( (void**) &a2_dev, sizeof( uint256_t ) );
-//
-//     bool result_code = false;
-//
-//     if( test_utils::HtoD( a1_dev, &a1, sizeof( uint256_t ) ) != cudaSuccess )
-//         {
-//             std::cout << "Failure to transfer a1 to device\n";
-//         }
-//
-//     if( test_utils::HtoD( a2_dev, &a2, sizeof( uint256_t ) ) != cudaSuccess)
-//         {
-//             std::cout << "Failure to transfer a2 to device\n";
-//         }
-//
-//     //test_utils::unary_op_kernel<uint256_t, &uint256_t::operator~><<<1,1>>>
-//     //     ( a1_dev,
-//     //       a2_dev
-//     //     );
-//     cudaDeviceSynchronize();
-//
-//     if( test_utils::DtoH( &a2, a2_dev, sizeof( uint256_t ) ) != cudaSuccess)
-//         {
-//             std::cout << "Failure to transfer to host \n";
-//         }
-//
-//     result_code = a2 == ~a1;
-//
-//     // REQUIRE( result_code );
-//
-//     cudaFree( a1_dev );
-//     cudaFree( a2_dev );
-// }
+ TEST_CASE( "uint256_t_negation_gpu", "[uint256_t]" )
+ {
+
+     uint256_t a1( 1, 0 );
+     uint256_t a2;
+
+     uint256_t *a1_dev = nullptr;
+     uint256_t *a2_dev = nullptr;
+
+     cudaMalloc( (void**) &a1_dev, sizeof( uint256_t ) );
+     cudaMalloc( (void**) &a2_dev, sizeof( uint256_t ) );
+
+     bool result_code = false;
+
+     if( test_utils::HtoD( a1_dev, &a1, sizeof( uint256_t ) ) != cudaSuccess )
+         {
+             std::cout << "Failure to transfer a1 to device\n";
+         }
+
+     if( test_utils::HtoD( a2_dev, &a2, sizeof( uint256_t ) ) != cudaSuccess)
+         {
+             std::cout << "Failure to transfer a2 to device\n";
+         }
+
+     //test_utils::unary_op_kernel<uint256_t, &uint256_t::operator~><<<1,1>>>
+     //     ( a1_dev,
+     //       a2_dev
+     //     );
+
+     cudaDeviceSynchronize();
+
+     if( test_utils::DtoH( &a2, a2_dev, sizeof( uint256_t ) ) != cudaSuccess)
+         {
+             std::cout << "Failure to transfer to host \n";
+         }
+
+     result_code = a2 == ~a1;
+
+     // REQUIRE( result_code );
+
+     cudaFree( a1_dev );
+     cudaFree( a2_dev );
+ }
+
+ TEST_CASE( "uint256_t_<<", "[uint256_t]" )
+ {
+
+     // test case 1
+     uint256_t large = UINT256_MAX_INT;
+     uint256_t shifted = large << 256;
+     bool success = shifted == UINT256_ZERO;
+     REQUIRE( success );
+
+
+     // test case 2
+     large.set_all( 0xFFFFFFFF );
+     shifted = large << 128;
+     for( int x = 0; x < UINT256_SIZE_IN_BYTES / 2; ++x )
+         {
+             REQUIRE( shifted[ x ] == 0x00000000 );
+         }
+     for( int x = UINT256_SIZE_IN_BYTES / 2; x < UINT256_SIZE_IN_BYTES; ++x )
+         {
+             REQUIRE( shifted[ x ] == 0xFFFFFFFF );
+         }
+
+
+     // test case 3
+     large.set_all( 0xFFFFFFFF );
+     shifted = large << 2;
+     for( int x = UINT256_SIZE_IN_BYTES-1; x > 0; --x )
+         {
+             REQUIRE( shifted[ x ] == 0xFFFFFFFF );
+         }
+     REQUIRE( shifted[ 0 ] == 0xFFFFFFFC );
+
+
+     // test case 4
+     large.set_all( 0xFFFFFFFF );
+     shifted = large << 1;
+     for( int x = UINT256_SIZE_IN_BYTES-1; x > 0; --x )
+         {
+             REQUIRE( shifted[ x ] == 0xFFFFFFFF );
+         }
+     REQUIRE( shifted[ 0 ] == 0xFFFFFFFE );
+ }
+
+ TEST_CASE( "uint256_t_>>", "[uint256_t]" )
+ {
+
+     uint256_t large = UINT256_MAX_INT;
+
+     uint256_t shifted = large >> 256;
+
+     bool success = shifted == UINT256_ZERO;
+
+     REQUIRE( success );
+
+     // reset it
+     large.set_all( 0xFFFFFFFF );
+
+     // check first bytes = 16 = 0xFF, last 16 = 0x00
+     shifted = large >> 128;
+
+
+     for( int x = 0; x < UINT256_SIZE_IN_BYTES / 2; ++x )
+         {
+             REQUIRE( shifted[ x ] == 0xFFFFFFFF );
+         }
+     for( int x = UINT256_SIZE_IN_BYTES / 2; x < UINT256_SIZE_IN_BYTES; ++x )
+         {
+             REQUIRE( shifted[ x ] == 0x00000000 );
+         }
+
+     large.set_all( 0xFFFFFFFF );
+     shifted = large >> 2;
+
+     for( int x = 0; x < UINT256_SIZE_IN_BYTES-1; ++x )
+         {
+             REQUIRE( shifted[ x ] == 0xFFFFFFFF );
+         }
+
+     REQUIRE( shifted[ UINT256_SIZE_IN_BYTES-1 ] == 0x3FFFFFFF );
+
+     large.set_all( 0xFFFFFFFF );
+
+     shifted = large >> 1;
+
+     for( int x = 0; x < UINT256_SIZE_IN_BYTES-1; ++x )
+         {
+             REQUIRE( shifted[ x ] == 0xFFFFFFFF );
+         }
+
+     REQUIRE( shifted[ UINT256_SIZE_IN_BYTES-1 ] == 0x7FFFFFFF );
+ }
+
 
  TEST_CASE( "uint256_t_ctz_popc", "[uint256_t]" )
  {
@@ -588,6 +720,7 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
 
      (*my_int_dev)[ 0 ] = 0x00000001;
      test_utils::ctz<<<1,1>>>( my_int_dev, z_count_dev );
+     cudaDeviceSynchronize();
      REQUIRE( *z_count_dev == 0 );
 
      (*my_int_dev)[ 0 ] = 0x00000002;
@@ -595,7 +728,7 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
      cudaDeviceSynchronize();
      REQUIRE( ( *z_count_dev == 1 ) );
 
-     my_int_dev->set_all( 0x00 );
+     my_int_dev->set_all( 0 );
 
      //(*my_int_dev)[ 8 ] = 0x00000001;
      //(*my_int_dev)[ 9 ] = 0x00000002; // to make sure we aren't reading downstream trailing zeroes
@@ -609,104 +742,7 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
      cudaFree( z_count_dev );
  }
 
-
- TEST_CASE( "uint256_t_<<", "[uint256_t]" )
- {
-
-     uint256_t large = UINT256_MAX_INT;
-
-     uint256_t shifted = large << 256;
-
-     bool success = shifted == UINT256_ZERO;
-
-     REQUIRE( success );
-
-     // reset it
-     large.set_all( 0xFF );
-
-     // check first bytes = 16 = 0xFF, last 16 = 0x00
-     shifted = large << 128;
-
-
-     for( int x = 0; x < UINT256_SIZE_IN_BYTES / 2; ++x )
-         {
-             REQUIRE( shifted[ x ] == 0x00 );
-         }
-     for( int x = UINT256_SIZE_IN_BYTES / 2; x < UINT256_SIZE_IN_BYTES; ++x )
-         {
-             REQUIRE( shifted[ x ] == 0xFF );
-         }
-
-     large.set_all( 0xFF );
-     shifted = large << 2;
-
-     for( int x = 31; x > 0; --x )
-         {
-             REQUIRE( shifted[ x ] == 0xFF );
-         }
-
-     REQUIRE( shifted[ 0 ] == 0xFC );
-
-     large.set_all( 0xFF );
-
-     shifted = large << 1;
-
-     for( int x = 31; x > 0; --x )
-         {
-             REQUIRE( shifted[ x ] == 0xFF );
-         }
-
-     REQUIRE( shifted[ 0 ] == 0xFE );
- }
-
- TEST_CASE( "uint256_t_>>", "[uint256_t]" )
- {
-
-     uint256_t large = UINT256_MAX_INT;
-
-     uint256_t shifted = large >> 256;
-
-     bool success = shifted == UINT256_ZERO;
-
-     REQUIRE( success );
-
-     // reset it
-     large.set_all( 0xFF );
-
-     // check first bytes = 16 = 0xFF, last 16 = 0x00
-     shifted = large >> 128;
-
-
-     for( int x = 0; x < UINT256_SIZE_IN_BYTES / 2; ++x )
-         {
-             REQUIRE( shifted[ x ] == 0xFF );
-         }
-     for( int x = UINT256_SIZE_IN_BYTES / 2; x < UINT256_SIZE_IN_BYTES; ++x )
-         {
-             REQUIRE( shifted[ x ] == 0x00 );
-         }
-
-     large.set_all( 0xFF );
-     shifted = large >> 2;
-
-     for( int x = 0; x < 31; ++x )
-         {
-             REQUIRE( shifted[ x ] == 0xFF );
-         }
-
-     REQUIRE( shifted[ 31 ] == 0x3F );
-
-     large.set_all( 0xFF );
-
-     shifted = large >> 1;
-
-     for( int x = 0; x < 31; ++x )
-         {
-             REQUIRE( shifted[ x ] == 0xFF );
-         }
-
-     REQUIRE( shifted[ 31 ] == 0x7F );
- }
+/* The following test case does not work!
 
  TEST_CASE( "uint256_t::neg", "[uint256_t]" )
  {

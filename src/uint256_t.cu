@@ -237,7 +237,7 @@ __device__ uint256_t uint256_t::operator+( const uint256_t& other ) const
     add( ret, other );
     return ret;
 }
-CUDA_CALLABLE_MEMBER std::uint8_t uint256_t::at( int loc )
+CUDA_CALLABLE_MEMBER std::uint32_t uint256_t::at( int loc )
 {
     return data[ loc ];
 }
