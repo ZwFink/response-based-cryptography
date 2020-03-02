@@ -17,6 +17,9 @@
 
 #include "cuda_defs.h"
 
+// Convention: data is stored in a 'little-endian' manner
+//             - the least significant byte is stored first
+
 typedef std::uint32_t uint256_data_t[ UINT256_SIZE_IN_BYTES ];
 
 namespace uint256_ctz_table

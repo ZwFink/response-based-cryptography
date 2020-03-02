@@ -3,6 +3,9 @@
 
 #include "uint256_t.h"
 
+// Convention: data is stored in a 'little-endian' manner
+//             - the least significant byte is stored first
+
 
 
 
