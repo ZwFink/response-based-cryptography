@@ -295,12 +295,14 @@ int uint256_t::ctz()
     int count_limit = 0;
     for( std::uint8_t idx = 0;
          ret == count_limit
-          && idx < UINT256_SIZE_IN_BYTES / 4;
+         && idx < UINT256_SIZE_IN_BYTES / 4;
          ++idx
        )
         {
             count_limit += sizeof( uint32_t ) * 8;
             ret += uint256_ctz_table::ctz( *((std::uint32_t*) data + idx ) );
+            //fprintf(stderr,"\ncount limit = %d\n",count_limit);
+            //fprintf(stderr,"\nret = %d\n",ret);
         }
 
     return ret;
@@ -339,6 +341,36 @@ bool uint256_t::operator>( const uint256_t& comp ) const
     return compare( comp ) > 0;
 }
 
+//bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
+//{
+//    uint256_t ret;
+//
+//    std::uint32_t *self_32   = (uint32_t*) &data;
+//    std::uint32_t *augend_32 = (uint32_t*) &augend.data;
+//    std::uint32_t *dest_32   = (uint32_t*) &dest.data;
+//
+//    __asm__ ("add.cc.u32      %0, %8, %16;\n\t"
+//             "addc.cc.u32     %1, %9, %17;\n\t"
+//             "addc.cc.u32     %2, %10, %18;\n\t"
+//             "addc.cc.u32     %3, %11, %19;\n\t"
+//             "addc.cc.u32     %4, %12, %20;\n\t"
+//             "addc.cc.u32     %5, %13, %21;\n\t"
+//             "addc.cc.u32     %6, %14, %22;\n\t"
+//             "addc.u32        %7, %15, %23;\n\t"
+//             : "=r"(dest_32[ 0 ]), "=r"(dest_32[ 1 ]), "=r"(dest_32[ 2 ]),   
+//               "=r"(dest_32[ 3 ]), "=r"(dest_32[ 4 ]), "=r"(dest_32[ 5 ]),   
+//               "=r"(dest_32[ 6 ]), "=r"(dest_32[ 7 ])
+//             : "r"(self_32[ 0 ]), "r"(self_32[ 1 ]), "r"(self_32[ 2 ]),   
+//               "r"(self_32[ 3 ]), "r"(self_32[ 4 ]), "r"(self_32[ 5 ]),   
+//               "r"(self_32[ 6 ]), "r"(self_32[ 7 ]),
+//               "r"(augend_32[ 0 ]), "r"(augend_32[ 1 ]), "r"(augend_32[ 2 ]),   
+//               "r"(augend_32[ 3 ]), "r"(augend_32[ 4 ]), "r"(augend_32[ 5 ]),   
+//               "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
+//             );
+//
+//    return dest_32[ 7 ] < self_32[ 7 ];
+//}
+
 unsigned char uint256_t::add( uint256_t *rop, 
                               uint256_t op2 ) 
 {
@@ -350,30 +382,31 @@ unsigned char uint256_t::add( uint256_t *rop,
 
     for(int i = 0; i < 4; ++i) 
     {
-        carry = _addcarry_u64( carry, 
-                               op1_64[i], 
-                               op2_64[i], 
-                               (long long unsigned int*) &rop_64[i]
-                             );
+      fprintf(stderr,"adding\n");
+      carry = _addcarry_u64( carry, 
+                             op1_64[i], 
+                             op2_64[i], 
+                             (long long unsigned int*) &(rop_64[i])
+                           );
     }
 
     return carry;
 }
 
-uint256_t uint256_t::operator+( const uint256_t &other ) const
+uint256_t uint256_t::operator+( const uint256_t &other )
 {
     uint256_t ret;
     (~(*this)).add( &ret, other );
     return ret;
 }
 
-void uint256_t::neg( uint256_t& dest ) const
+void uint256_t::neg( uint256_t &dest )
 {
     (~(*this)).add( &dest, UINT256_ONE );
 }
 
 
-uint256_t uint256_t::operator-() const
+uint256_t uint256_t::operator-()
 {
     uint256_t tmp;
     neg( tmp );

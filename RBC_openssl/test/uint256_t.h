@@ -19,12 +19,12 @@ using namespace std;
 
 typedef std::uint8_t uint256_data_t[ UINT256_SIZE_IN_BYTES ];
 
-namespace uint256_ctz_table
-{
-    extern std::uint8_t lookup[ 37 ];
-
-    int ctz( const std::uint32_t loc );
-}
+//namespace uint256_ctz_table
+//{
+//    extern std::uint8_t lookup[ 37 ];
+//
+//    int ctz( const std::uint32_t loc );
+//}
 
 class uint256_t
 {
@@ -83,11 +83,11 @@ class uint256_t
      unsigned char add( uint256_t *rop, 
                         uint256_t op2 );
 
-     uint256_t operator+( const uint256_t& other ) const;
+     uint256_t operator+( const uint256_t& other );
 
     // this must be device-only because uint256_t::add is used
-     void neg( uint256_t& dest ) const;
-     uint256_t operator-() const;
+     void neg( uint256_t& dest );
+     uint256_t operator-();
 
 
      std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
