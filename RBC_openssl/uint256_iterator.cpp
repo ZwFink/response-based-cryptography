@@ -30,14 +30,20 @@ void uint256_iter::next()
 
     overflow = t.add( &tmp, UINT256_ONE );
 
-    uint256_t tmp2( 0 );
-    uint256_t tmp3( 0 );
-    uint256_t tmp4( 0 );
+    //uint256_t tmp2( 0 );
+    //uint256_t tmp3( 0 );
+    //uint256_t tmp4( 0 );
 
+    //tmp2 = (~t) & -(~t);
+    //tmp2.add(&tmp3,UINT256_NEGATIVE_ONE);
+    //tmp4 = tmp3 >> shift;
+    //curr_perm = tmp | tmp4;
+
+    uint256_t tmp2( 0 );
     tmp2 = (~t) & -(~t);
-    tmp2.add(&tmp3,UINT256_NEGATIVE_ONE);
-    tmp4 = tmp3 >> shift;
-    curr_perm = tmp | tmp4;
+    tmp2.add(&tmp2,UINT256_NEGATIVE_ONE);
+    tmp2 = tmp2 >> shift;
+    curr_perm = tmp | tmp2;
 
     //curr_perm = (tmp) | ((((~t) & -(~t)) + UINT256_NEGATIVE_ONE ) >> shift); 
     corrupted_key = key_uint ^ curr_perm;

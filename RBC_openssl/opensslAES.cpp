@@ -4,7 +4,7 @@
 
 //#define N 10000000
 #define MAX_HAMMING_DIST 5
-#define NTHREADS 3
+#define NTHREADS 16
 
 int main(int argc, char **argv)
 {    
@@ -118,8 +118,8 @@ int main(int argc, char **argv)
     gettimeofday(&start, NULL);
  
     /// uncomment when running verbose
-    //#pragma omp parallel private(starting_perm,ending_perm,skey,server_ciphertext,server_ciphertext_len) reduction(+:count)
-    #pragma omp parallel private(starting_perm,ending_perm,skey,server_ciphertext,server_ciphertext_len)
+    #pragma omp parallel private(starting_perm,ending_perm,skey,server_ciphertext,server_ciphertext_len) reduction(+:count)
+    //#pragma omp parallel private(starting_perm,ending_perm,skey,server_ciphertext,server_ciphertext_len)
     {
 
         int tid = omp_get_thread_num();
@@ -159,8 +159,8 @@ int main(int argc, char **argv)
 
             // get next key
             iter.next();
-            /// uncomment when running verbose
-            //count++;
+            // uncomment when running verbose
+            count++;
         }
         //fprintf(stderr,"My tid: %d and my total: %d\n",tid,count);
     }
