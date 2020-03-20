@@ -3,8 +3,6 @@
 #include "opensslAES.h"
 
 //#define N 10000000
-#define MAX_HAMMING_DIST 5
-#define NTHREADS 16
 
 int main(int argc, char **argv)
 {    

@@ -10,7 +10,7 @@ rbc : opensslAES.o uint256_t.o uint256_iterator.o perm_util.o
 	$(CC) -O3 -fopenmp $(OBJS) $(LFLAGS) -o rbc -lgmp
 
 opensslAES.o : opensslAES.cpp opensslAES.h
-	$(CC) -fopenmp $(CFLAGS) opensslAES.cpp
+	$(CC) -fopenmp $(CFLAGS) -DMAX_HAMMING_DIST=5 -DNTHREADS=16 opensslAES.cpp
 
 uint256_t.o : uint256_t.cpp uint256_t.h
 	$(CC) $(CFLAGS) uint256_t.cpp
