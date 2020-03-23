@@ -136,10 +136,9 @@ int main(int argc, char **argv)
         while( !iter.end() )
         {
             // encrypt
-            unsigned char *skey = iter.corrupted_key.get_data_ptr(); 
             server_ciphertext_len = encrypt( plaintext,
                                              plaintext_len,
-                                             skey,
+                                             iter.corrupted_key.get_data_ptr(),
                                              iv,
                                              server_ciphertext
                                            );
@@ -221,9 +220,13 @@ void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
         uint8_t block = bit_idx / 8;
 
         server_key->set_bit( bit_idx ); // bitwise OR operation
+        //unsigned char *sk = server_key->get_data_ptr();
+        //unsigned char *ck = client_key->get_data_ptr();
         // only increment if we successfully flipped the bit
-        if( server_key->at( block ) != client_key->at( block ) )
+        if( server_key->at(block) != client_key->at(block) )
             i++;
+        else
+            srand(239);
     }
 }
 
