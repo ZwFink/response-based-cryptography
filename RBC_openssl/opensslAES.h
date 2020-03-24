@@ -1,4 +1,6 @@
 // opensslAES header file 
+#ifndef OPENSSL_AES_HH_INCLUDED
+#define OPENSSL_AES_HH_INCLUDED
 
 // built-in declarations
 #include <openssl/conf.h>
@@ -24,3 +26,6 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
             unsigned char *iv, unsigned char *ciphertext);
 int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
             unsigned char *iv, unsigned char *plaintext);
+
+
+#endif // OPENSSL_AES_HH_INCLUDED
