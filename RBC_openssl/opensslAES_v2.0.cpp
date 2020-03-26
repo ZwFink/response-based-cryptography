@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
     /* Server-side RBC */
 
-      // stuff for encryp/decryp
+     // stuff for encryp/decryp
     unsigned char *iv = (unsigned char *)"0123456789012345";
     unsigned char decryptedtext[128];
     int decryptedtext_len;
@@ -82,14 +82,14 @@ int main(int argc, char **argv)
     int final_count = 0;
     unsigned long long int total_keys = 0;
 
-    // key to be found for authentication
+     // key to be found for authentication
     uint256_t auth_key( 0 );
 
 
     omp_set_num_threads( NTHREADS );
     gettimeofday(&start, NULL);
 
-    // loop across mismatches
+     // loop across mismatches
     for(mismatches=1; mismatches<=hamming_dist; mismatches++)
     {
         count = 0;

@@ -8,7 +8,7 @@ all: rbc
 rbc: $(OBJS)
 	$(CC) $(CFLAGS) -fopenmp -std=c++11 -o $@ $^ $(LFLAGS)
 
-opensslAES.o: opensslAES_v2.0.cpp opensslAES.h
+opensslAES.o: opensslAES.cpp opensslAES.h
 	$(CC) -fopenmp $(CFLAGS) -DMAX_HAMMING_DIST=5 -DNTHREADS=16 -c -o $@ $<
 
 uint256_t.o: uint256_t.cpp uint256_t.h
