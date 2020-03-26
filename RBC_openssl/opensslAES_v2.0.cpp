@@ -6,7 +6,9 @@
 
 int main(int argc, char **argv)
 {    
+
     /* Parse args */
+
     if( argc != 3 )
     {
         fprintf(stderr,"Must enter two arguments: ./rbc [hamming-distance] [verbose: 0 or 1]\n");
@@ -21,65 +23,33 @@ int main(int argc, char **argv)
         fprintf(stderr,"Hamming distance must be between 0 and 5 inclusive\n");
         return -2;
     }
-    
-    /* BEGIN CLIENT SIDE WORK */
-    
-    // random 256 bit key - used by the client for encryption
-    uint256_t client_key( 0 );
-    srand(7236); // for randomly generating keys 
-    for( uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
-    {
-        uint8_t temp = rand() % 10;
-        client_key.set(temp,i);
-    }
+
+
+    /* Make Client Data */    
+
+    ClientData cl_data = make_client_data();
+    uint256_t client_key = cl_data.key;
     unsigned char *ckey = (unsigned char *) client_key.get_data_ptr();
-
-
-    // 128 bit IV (initialization vector)
-    unsigned char *iv = (unsigned char *)"0123456789012345";
-
-
-    // message to be encrypted - from the client
-    unsigned char *plaintext =
-        (unsigned char *)"00000000000000001111111111111111";
-
-
-    // buffer for ciphertext
-    // - ensure the buffer is long enough for the ciphertext which may
-    //   be longer than the plaintext, depending on the algorithm and mode
+    unsigned char *plaintext = cl_data.plaintext;
+    int plaintext_len = cl_data.plaintext_len;
     unsigned char client_ciphertext[128];
-
-    // buffer for the decrypted text
-    unsigned char decryptedtext[128];
-
-    int decryptedtext_len;
-    int plaintext_len=strlen ((char *)plaintext);
-
-    // create and initialize the contexts
-    EVP_CIPHER_CTX *ctx;
-    if(!(ctx = EVP_CIPHER_CTX_new()))
-        handleErrors();
+    memcpy( client_ciphertext, cl_data.ciphertext, sizeof(client_ciphertext) );
+    int ciphertext_len = cl_data.ciphertext_len;
     
-    // last private ciphertext len so if we fix the key we can validate 
-    // decryption works
-    int ciphertext_len;
 
-    // encrypt plaintext with our random key 
-    ciphertext_len = encrypt(plaintext,plaintext_len,ckey,iv,client_ciphertext);
+    /* Server-side RBC */
 
-    /* END CLIENT SIDE WORK */
+      // stuff for encryp/decryp
+    unsigned char *iv = (unsigned char *)"0123456789012345";
+    unsigned char decryptedtext[128];
+    int decryptedtext_len;
 
-
-
-    /* START SERVER SIDE WORK */
-
-    // get server-side key
+     // get server-side key
     uint256_t server_key( 0 );
     server_key.copy( client_key );
     rand_flip_n_bits( &server_key, &client_key, hamming_dist );
 
-
-    // initializations
+     // initializations
     if( verbose )
     {
         printf("\n------------------------------");
@@ -135,7 +105,6 @@ int main(int argc, char **argv)
             printf("\n  Extra Keys = %lu",extra_keys);
         }
  
-        /// uncomment when running verbose
         #pragma omp parallel private(starting_perm,ending_perm,server_ciphertext,server_ciphertext_len) reduction(+:count)
         {
 
@@ -184,8 +153,8 @@ int main(int argc, char **argv)
 
     } // end loop across mismatches
 
-    gettimeofday(&end, NULL);
 
+    gettimeofday(&end, NULL);
 
     if( verbose ) 
     {
@@ -193,7 +162,6 @@ int main(int argc, char **argv)
         printf("\nResulting Authentication Key:\n");
         auth_key.dump();
     }
-
 
 
     double elapsed = ((end.tv_sec*1000000.0 + end.tv_usec) -
@@ -234,6 +202,52 @@ int main(int argc, char **argv)
     return 0;
 }
 
+ClientData make_client_data()
+{
+    // random 256 bit key - used by the client for encryption
+    uint256_t client_key( 0 );
+    srand(7236); // for randomly generating keys 
+    for( uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
+    {
+        uint8_t temp = rand() % 10;
+        client_key.set(temp,i);
+    }
+
+    // 128 bit IV (initialization vector)
+    unsigned char *iv = (unsigned char *)"0123456789012345";
+
+    // message to be encrypted - from the client
+    unsigned char *plaintext =
+        (unsigned char *)"00000000000000001111111111111111";
+
+    int plaintext_len = strlen( (char *)plaintext );
+
+    // buffer for ciphertext
+    // - ensure the buffer is long enough for the ciphertext which may
+    //   be longer than the plaintext, depending on the algorithm and mode
+    unsigned char ciphertext[128];
+
+    // last private ciphertext len so if we fix the key we can validate 
+    // decryption works
+    int ciphertext_len;
+
+    // encrypt plaintext with our random key 
+    ciphertext_len = encrypt(plaintext,
+                             plaintext_len,
+                             client_key.get_data_ptr(),
+                             iv,
+                             ciphertext);
+
+    // gather return information
+    ClientData ret_info;
+    ret_info.key.copy(client_key);
+    ret_info.plaintext = plaintext;
+    ret_info.plaintext_len = plaintext_len;
+    memcpy(ret_info.ciphertext,ciphertext,sizeof(ret_info.ciphertext));
+    ret_info.ciphertext_len = ciphertext_len;
+    
+    return ret_info;
+}
 
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
 {
