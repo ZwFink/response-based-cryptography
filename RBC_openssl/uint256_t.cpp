@@ -7,9 +7,6 @@
 
 namespace uint256_ctz_table
 {
-    //#ifdef USE_CONSTANT
-    //__constant__
-    //#endif
     
     std::uint8_t lookup[ 37 ] = 
     {
@@ -25,39 +22,19 @@ namespace uint256_ctz_table
 
 }
 
+
+/* Constructors */
+
+
 uint256_t::uint256_t()
 {
     set_all( 0 );
-}
-
-void uint256_t::set_all( std::uint8_t val )
-{
-    for( std::uint8_t x = 0; x < UINT256_SIZE_IN_BYTES; ++x )
-        {
-            data[ x ] = val;
-        }
 }
 
 uint256_t::uint256_t( std::uint8_t set )
 {
     set_all( set );
 }
-std::uint8_t uint256_t::at( int loc )
-{
-    return data[ loc ];
-}
-
-uint256_data_t& uint256_t::get_data()
-{
-    return data;
-}
-
-std::uint8_t *uint256_t::get_data_ptr()
-{
-    return data;
-}
-
-
 
 uint256_t::uint256_t( std::uint8_t set, std::uint8_t index )
 {
@@ -65,22 +42,6 @@ uint256_t::uint256_t( std::uint8_t set, std::uint8_t index )
     data[ index ] = set;
 }
 
-void uint256_t::set( std::uint8_t set, std::uint8_t index )
-{
-    data[ index ] = set;
-}
-
-
-void uint256_t::from_string( const unsigned char *string )
-{
-    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES; ++index )
-        {
-            data[ index ] = string[ index ];
-        }
-}
-
-
-// copy constructor
 void uint256_t::copy( const uint256_t& copied )
 {
     for( std::uint8_t idx = 0; idx < UINT256_SIZE_IN_BYTES; ++idx )
@@ -89,22 +50,38 @@ void uint256_t::copy( const uint256_t& copied )
     }
 }
 
-// PRECONDITION: 0 <= idx <= 3
-void uint256_t::copy_64( uint64_t ref, uint8_t idx )
+
+/* Methods */
+
+
+ // manipulate data
+void uint256_t::set_all( std::uint8_t val )
 {
-    uint64_t *data_ptr = (uint64_t *) &data;
-    
-    data_ptr[ idx ] |= ref; // bitwise OR 
+    for( std::uint8_t x = 0; x < UINT256_SIZE_IN_BYTES; ++x )
+        {
+            data[ x ] = val;
+        }
 }
 
-const std::uint8_t& uint256_t::operator[]( std::uint8_t idx ) const
+void uint256_t::set( std::uint8_t set, std::uint8_t index )
 {
-    return data[ idx ];
+    data[ index ] = set;
 }
 
-std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
+void uint256_t::set_bit( std::uint8_t bit_idx )
 {
-    return data[ idx ];
+    std::uint8_t block = bit_idx / 8;
+    std::uint8_t ndx_in_block = bit_idx - ( block * 8 );
+   
+    data[ block ] |= ( 1 << ndx_in_block );
+}
+
+void uint256_t::from_string( const unsigned char *string )
+{
+    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES; ++index )
+        {
+            data[ index ] = string[ index ];
+        }
 }
 
 uint256_t uint256_t::operator~() const
@@ -166,57 +143,12 @@ uint256_t uint256_t::operator|( const uint256_t& comp ) const
     return ret;
 }
 
-bool uint256_t::operator==( const uint256_t& comp ) const
-{
-    bool ret = true;
-    for( uint8_t byte = 0; byte < UINT256_SIZE_IN_BYTES; ++byte )
-        {
-            ret = ret && ( data[ byte ] == comp[ byte ] );
-        }
-    return ret;
-}
 void uint256_t::operator=( const uint256_t& set )
 {
     for( std::uint8_t a = 0; a < UINT256_SIZE_IN_BYTES / 4; ++a )
         {
             *((uint32_t*)data + a )  = *((uint32_t*)set.data + a );
         }
-}
-
-bool uint256_t::operator!=( const uint256_t& comp ) const
-{
-    return !( *this == comp );
-}
-
-void uint256_t::dump_hex()
-{
-    char buff[ 163 ] = { 0 };
-
-    for( int x = 0; x < 32; ++x )
-        {
-            snprintf( buff + ( x * 5 ), 
-                      6,
-                      "0x%02x ", data[ x ]
-                    );
-                    
-        }
-    printf( "%s\n", buff );
-}
-
-
-void uint256_t::dump()
-{
-    for( const auto& x : data )
-        {
-            std::cout
-               << "0x"
-               << std::setfill('0')
-               << std::setw(2)
-               << std::hex
-               << unsigned( x )
-               << " ";
-        }
-    std::cout << "\n"; 
 }
 
 uint256_t uint256_t::operator>>( int shift ) const
@@ -233,7 +165,7 @@ uint256_t uint256_t::operator>>( int shift ) const
             ret[ byte - limb_shifts ] = data[ byte ];
         }
 
-    // leading limbs are alread zero
+    // leading limbs are already zero
 
     for( byte = 0; byte < UINT256_SIZE_IN_BYTES - 1; ++byte )
         {
@@ -261,7 +193,7 @@ uint256_t uint256_t::operator<<( int shift ) const
             ret[ byte + limb_shifts ] = data[ byte ];
         }
 
-    // trailing limbs are alread zero
+    // trailing limbs are already zero
 
     for( byte = UINT256_SIZE_IN_BYTES - 1; byte > 0; --byte )
         {
@@ -274,73 +206,7 @@ uint256_t uint256_t::operator<<( int shift ) const
 
 }
 
-int uint256_t::popc()
-{
-    int total_ones = 0;
-    std::uint32_t *current = nullptr;
-
-    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES / 4; ++index )
-        {
-            current = (std::uint32_t*) data + index;
-            total_ones += __builtin_popcount( *current );
-        }
-
-    return total_ones;
-}
-
-
-int uint256_t::ctz()
-{
-    int ret = 0;
-    int count_limit = 0;
-    for( std::uint8_t idx = 0;
-         ret == count_limit
-          && idx < UINT256_SIZE_IN_BYTES / 4;
-         ++idx
-       )
-        {
-            count_limit += sizeof( uint32_t ) * 8;
-            ret += uint256_ctz_table::ctz( *((std::uint32_t*) data + idx ) );
-        }
-
-    return ret;
-}
-
-void uint256_t::to_32_bit_arr( std::uint32_t* dest )
-{
-    memcpy( dest, &(data), 32 );
-}
-
-int uint256_t::compare( const uint256_t& comp ) const
-{
-    std::uint32_t *my_data = (std::uint32_t*) &data;
-    std::uint32_t *comp_data = (std::uint32_t*) &comp.data;
-
-    int result = 0;
-
-    for( int index = ( UINT256_SIZE_IN_BYTES / 4 ) - 1;
-         !result && index >= 0;
-         --index
-       )
-        {
-            result = ( my_data[ index ] > comp_data[ index ] )
-                     - ( my_data[ index ] < comp_data[ index ] );
-        }
-    return result;
-}
-
-bool uint256_t::operator<( const uint256_t& comp ) const
-{
-    return compare( comp ) < 0;
-}
-
-bool uint256_t::operator>( const uint256_t& comp ) const
-{
-    return compare( comp ) > 0;
-}
-
-unsigned char uint256_t::add( uint256_t *rop, 
-                              uint256_t op2 ) 
+unsigned char uint256_t::add( uint256_t *rop, uint256_t op2 ) 
 {
     unsigned char carry = 0;
 
@@ -372,7 +238,6 @@ void uint256_t::neg( uint256_t& dest ) const
     (~(*this)).add( &dest, UINT256_ONE );
 }
 
-
 uint256_t uint256_t::operator-() const
 {
     uint256_t tmp;
@@ -380,13 +245,142 @@ uint256_t uint256_t::operator-() const
     return tmp;
 }
 
-// intended for use with permutation creation in function decode_ordinal
-void uint256_t::set_bit( std::uint8_t bit_idx )
+
+ // access data
+std::uint8_t uint256_t::at( int loc )
 {
-    std::uint8_t block = bit_idx / 8;
-    std::uint8_t ndx_in_block = bit_idx - ( block * 8 );
-   
-    data[ block ] |= ( 1 << ndx_in_block );
+    return data[ loc ];
 }
+
+const std::uint8_t& uint256_t::operator[]( std::uint8_t idx ) const
+{
+    return data[ idx ];
+}
+
+std::uint8_t& uint256_t::operator[]( std::uint8_t idx )
+{
+    return data[ idx ];
+}
+
+uint256_data_t& uint256_t::get_data()
+{
+    return data;
+}
+
+std::uint8_t *uint256_t::get_data_ptr()
+{
+    return data;
+}
+
+
+ // compare data
+bool uint256_t::operator==( const uint256_t& comp ) const
+{
+    bool ret = true;
+    for( uint8_t byte = 0; byte < UINT256_SIZE_IN_BYTES; ++byte )
+        {
+            ret = ret && ( data[ byte ] == comp[ byte ] );
+        }
+    return ret;
+}
+
+bool uint256_t::operator!=( const uint256_t& comp ) const
+{
+    return !( *this == comp );
+}
+
+bool uint256_t::operator<( const uint256_t& comp ) const
+{
+    return compare( comp ) < 0;
+}
+
+bool uint256_t::operator>( const uint256_t& comp ) const
+{
+    return compare( comp ) > 0;
+}
+
+int uint256_t::compare( const uint256_t& comp ) const
+{
+    std::uint32_t *my_data = (std::uint32_t*) &data;
+    std::uint32_t *comp_data = (std::uint32_t*) &comp.data;
+
+    int result = 0;
+
+    for( int index = ( UINT256_SIZE_IN_BYTES / 4 ) - 1;
+         !result && index >= 0;
+         --index
+       )
+        {
+            result = ( my_data[ index ] > comp_data[ index ] )
+                     - ( my_data[ index ] < comp_data[ index ] );
+        }
+    return result;
+}
+
+ // print data
+void uint256_t::dump_hex()
+{
+    char buff[ 163 ] = { 0 };
+
+    for( int x = 0; x < 32; ++x )
+        {
+            snprintf( buff + ( x * 5 ), 
+                      6,
+                      "0x%02x ", data[ x ]
+                    );
+                    
+        }
+    printf( "%s\n", buff );
+}
+
+
+void uint256_t::dump()
+{
+    for( const auto& x : data )
+        {
+            std::cout
+               << "0x"
+               << std::setfill('0')
+               << std::setw(2)
+               << std::hex
+               << unsigned( x )
+               << " ";
+        }
+    std::cout << "\n"; 
+}
+
+
+ // get data information
+int uint256_t::popc()
+{
+    int total_ones = 0;
+    std::uint32_t *current = nullptr;
+
+    for( std::uint8_t index = 0; index < UINT256_SIZE_IN_BYTES / 4; ++index )
+        {
+            current = (std::uint32_t*) data + index;
+            total_ones += __builtin_popcount( *current );
+        }
+
+    return total_ones;
+}
+
+int uint256_t::ctz()
+{
+    int ret = 0;
+    int count_limit = 0;
+    for( std::uint8_t idx = 0;
+         ret == count_limit
+          && idx < UINT256_SIZE_IN_BYTES / 4;
+         ++idx
+       )
+        {
+            count_limit += sizeof( uint32_t ) * 8;
+            ret += uint256_ctz_table::ctz( *((std::uint32_t*) data + idx ) );
+        }
+
+    return ret;
+}
+
 
 

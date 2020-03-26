@@ -5,6 +5,7 @@
 
 class uint256_iter
 {
+
  public:
 
     uint256_iter( const uint256_t& key,

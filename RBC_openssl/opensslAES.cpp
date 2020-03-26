@@ -2,14 +2,15 @@
 
 #include "opensslAES.h"
 
-//#define N 10000000
 
 int main(int argc, char **argv)
 {    
+
     /* Parse args */
+
     if( argc != 3 )
     {
-        fprintf(stderr,"Must enter two arguments: ./rbc [hamming-distance] [verbose: 0 or 1]\n");
+        fprintf(stderr,"Must run program as follows: ./rbc [hamming-distance] [verbose: 0 or 1]\n");
         return -1;
     } 
 
@@ -21,67 +22,35 @@ int main(int argc, char **argv)
         fprintf(stderr,"Hamming distance must be between 0 and 5 inclusive\n");
         return -2;
     }
-    
-    /* BEGIN CLIENT SIDE WORK */
-    
-    // random 256 bit key - used by the client for encryption
-    uint256_t client_key( 0 );
-    srand(7236); // for randomly generating keys 
-    for( uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
-    {
-        uint8_t temp = rand() % 10;
-        client_key.set(temp,i);
-    }
+
+
+    /* Make Client Data */    
+
+    ClientData cl_data = make_client_data();
+    uint256_t client_key = cl_data.key;
     unsigned char *ckey = (unsigned char *) client_key.get_data_ptr();
-
-
-    // 128 bit IV (initialization vector)
-    unsigned char *iv = (unsigned char *)"0123456789012345";
-
-
-    // message to be encrypted - from the client
-    unsigned char *plaintext =
-        (unsigned char *)"00000000000000001111111111111111";
-
-
-    // buffer for ciphertext
-    // - ensure the buffer is long enough for the ciphertext which may
-    //   be longer than the plaintext, depending on the algorithm and mode
+    unsigned char *plaintext = cl_data.plaintext;
+    int plaintext_len = cl_data.plaintext_len;
     unsigned char client_ciphertext[128];
+    memcpy( client_ciphertext, cl_data.ciphertext, sizeof(client_ciphertext) );
+    int ciphertext_len = cl_data.ciphertext_len;
+   
 
-    // buffer for the decrypted text
+    /* Server-side RBC */
+
+     // stuff for encryption/decryption
+    unsigned char *iv = (unsigned char *)"0123456789012345";
     unsigned char decryptedtext[128];
-
     int decryptedtext_len;
-    int plaintext_len=strlen ((char *)plaintext);
 
-    // create and initialize the contexts
-    EVP_CIPHER_CTX *ctx;
-    if(!(ctx = EVP_CIPHER_CTX_new()))
-        handleErrors();
-    
-    // last private ciphertext len so if we fix the key we can validate 
-    // decryption works
-    int ciphertext_len;
-
-    // encrypt plaintext with our random key 
-    ciphertext_len = encrypt(plaintext,plaintext_len,ckey,iv,client_ciphertext);
-
-    /* END CLIENT SIDE WORK */
-
-
-
-    /* START SERVER SIDE WORK */
-
-    // get server-side key
+     // get server-side key (simulated server-side PUF image)
     uint256_t server_key( 0 );
     server_key.copy( client_key );
     rand_flip_n_bits( &server_key, &client_key, hamming_dist );
 
-    // initializations
+     // initializations
     struct timeval start, end;
     uint256_t starting_perm(0), ending_perm(0);
-    unsigned char *skey;
     unsigned char server_ciphertext[128];
     int server_ciphertext_len;
     int count = 0;
@@ -95,11 +64,11 @@ int main(int argc, char **argv)
         printf("\n------------------------------");
         printf("\nClient Key:\n");
         client_key.dump();
-        printf("Server's Corrupted Key:\n");
+        printf("\nServer Corrupted Key:\n");
         server_key.dump();
-        printf("\nClient Cipher Text:\n");
+        printf("\nClient Cipher Text (shared):\n");
         for(int i=0; i<16; ++i) fprintf(stderr,"0x%02X ",client_ciphertext[i]);
-        printf("\nShared Plain Text (Client-Server):\n");
+        printf("\n\nClient Plain Text (shared):\n");
         printf("%s",plaintext);
         printf("\n------------------------------\n\n");
     
@@ -110,21 +79,18 @@ int main(int argc, char **argv)
         printf("\nKeys Per Thread = %Ld",keys_per_thread);
         printf("\nExtra Keys = %lu\n\n",extra_keys);
     }
-    
 
     omp_set_num_threads( NTHREADS );
     gettimeofday(&start, NULL);
  
-    /// uncomment when running verbose
-    #pragma omp parallel private(starting_perm,ending_perm,skey,server_ciphertext,server_ciphertext_len) reduction(+:count)
-    //#pragma omp parallel private(starting_perm,ending_perm,skey,server_ciphertext,server_ciphertext_len)
+    #pragma omp parallel private(starting_perm,ending_perm,server_ciphertext,server_ciphertext_len) reduction(+:count)
     {
 
-        int tid = omp_get_thread_num();
+        uint16_t tid = omp_get_thread_num();
 
         get_perm_pair( &starting_perm, 
                        &ending_perm, 
-                       (size_t) tid, 
+                       tid, 
                        NTHREADS,
                        hamming_dist,
                        keys_per_thread,
@@ -147,19 +113,14 @@ int main(int argc, char **argv)
             if(equal(server_ciphertext,server_ciphertext+16,client_ciphertext))
             {
                 printf("Thread %d found the client key!\n",tid);
-                //iter.corrupted_key.dump();
-                //fprintf(stderr, "\nServer Cipher Text:\n");
-                //for(int i=0; i<16; ++i) 
-                //    fprintf(stderr,"0x%02X ",server_ciphertext[i]);
-                //fprintf(stderr,"\n");
             }
 
             // get next key
             iter.next();
-            // uncomment when running verbose
+
+            // update total keys iterated
             count++;
         }
-        //fprintf(stderr,"My tid: %d and my total: %d\n",tid,count);
     }
 
     gettimeofday(&end, NULL);
@@ -168,10 +129,10 @@ int main(int argc, char **argv)
     if( verbose ) printf("Total keys iterated: %d\n",count);
 
 
-    double  elapsed = ((end.tv_sec*1000000.0 + end.tv_usec) -
+    double elapsed = ((end.tv_sec*1000000.0 + end.tv_usec) -
             (start.tv_sec*1000000.0 + start.tv_usec)) / 1000000.00;
 
-    printf("Time to compute %Ld keys: %f (keys/second: %f)\n", num_keys, elapsed, num_keys*1.0/(elapsed));
+    printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n", num_keys, elapsed, num_keys*1.0/(elapsed));
 
     if( verbose ) printf("------------------------------\n\n");
 
@@ -207,6 +168,53 @@ int main(int argc, char **argv)
 }
 
 
+ClientData make_client_data()
+{
+    // random 256 bit key - used by the client for encryption
+    uint256_t client_key( 0 );
+    srand(7236); // for randomly generating keys 
+    for( uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
+    {
+        uint8_t temp = rand() % 10;
+        client_key.set(temp,i);
+    }
+
+    // 128 bit IV (initialization vector)
+    unsigned char *iv = (unsigned char *)"0123456789012345";
+
+    // message to be encrypted - from the client
+    unsigned char *plaintext =
+        (unsigned char *)"00000000000000001111111111111111";
+
+    int plaintext_len = strlen( (char *)plaintext );
+
+    // buffer for ciphertext
+    // - ensure the buffer is long enough for the ciphertext which may
+    //   be longer than the plaintext, depending on the algorithm and mode
+    unsigned char ciphertext[128];
+
+    // last private ciphertext len so if we fix the key we can validate 
+    // decryption works
+    int ciphertext_len;
+
+    // encrypt plaintext with our random key 
+    ciphertext_len = encrypt(plaintext,
+                             plaintext_len,
+                             client_key.get_data_ptr(),
+                             iv,
+                             ciphertext);
+
+    // gather return information
+    ClientData ret_info;
+    ret_info.key.copy(client_key);
+    ret_info.plaintext = plaintext;
+    ret_info.plaintext_len = plaintext_len;
+    memcpy(ret_info.ciphertext,ciphertext,sizeof(ret_info.ciphertext));
+    ret_info.ciphertext_len = ciphertext_len;
+    
+    return ret_info;
+}
+
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
 {
     srand(238); // for randomly generating keys 
@@ -220,8 +228,7 @@ void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
         uint8_t block = bit_idx / 8;
 
         server_key->set_bit( bit_idx ); // bitwise OR operation
-        //unsigned char *sk = server_key->get_data_ptr();
-        //unsigned char *ck = client_key->get_data_ptr();
+
         // only increment if we successfully flipped the bit
         if( server_key->at(block) != client_key->at(block) )
             i++;
@@ -239,7 +246,6 @@ void generate256bitKey(unsigned char * genString)
 
     
     for (int i=0; i<32; i++) {
-        fprintf(stderr,"\nhere");
         int temp = rand() % 10;
         genString[i] = alphabet[temp];
     }

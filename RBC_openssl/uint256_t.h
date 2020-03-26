@@ -1,5 +1,6 @@
 #ifndef UINT256_T_HH_INCLUDED
 #define UINT256_T_HH_INCLUDED
+
 #define UINT256_SIZE_IN_BYTES 32
 #define UINT256_SIZE_IN_BITS 256
 #define UINT256_LIMB_SIZE 8
@@ -28,70 +29,60 @@ namespace uint256_ctz_table
 
 class uint256_t
 {
+
  public:
+
+     /* Constructors */
+
      uint256_t();
-     //~uint256_t() = default;
-     void set_all( std::uint8_t value );
-     std::uint8_t at( int loc );
      uint256_t( std::uint8_t set );
-     uint256_data_t& get_data();
-     std::uint8_t *get_data_ptr();
-     // set the member at index to set
      uint256_t( std::uint8_t set, std::uint8_t index );
-     void set( std::uint8_t set, std::uint8_t index );
-
      void copy( const uint256_t& copied );
-    // copy 64 bit integer into member starting at index
-     void copy_64( uint64_t ref, uint8_t index );
 
+     /* Methods */
+
+       // manipulate data
+     void set_all( std::uint8_t value );
+     void set( std::uint8_t set, std::uint8_t index );
+     void set_bit( std::uint8_t bit_idx );
      void from_string( const unsigned char *string );
-
+     uint256_t operator~() const;
      uint256_t operator&( const uint256_t& comp ) const;
-     uint256_t operator|( const uint256_t& comp ) const;
      uint256_t operator^( const uint256_t& comp ) const;
-
+     uint256_t operator|( const uint256_t& comp ) const;
+     void operator=( const uint256_t& set );
      uint256_t operator<<( int shift ) const;
      uint256_t operator>>( int shift ) const;
-
-     uint256_t operator~() const;
-
-     std::uint8_t& operator[]( std::uint8_t idx );
-     const std::uint8_t& operator[]( std::uint8_t idx ) const;
-
-     bool operator==( const uint256_t& comp ) const;
-     bool operator!=( const uint256_t& comp ) const;
-
-     int compare( const uint256_t& comp ) const;
-     bool operator<( const uint256_t& comp ) const;
-     bool operator>( const uint256_t& comp ) const;
-
-
-
-     void operator=( const uint256_t& set );
-     void dump();
-     void dump_hex();
-
-     int ctz();
-     int popc();
-
-     void to_32_bit_arr( std::uint32_t* dest );
-
-     void set_bit( std::uint8_t bit_idx );
-
-     //bool add( uint256_t& dest, const uint256_t augend ) const;
-
-     unsigned char add( uint256_t *rop, 
-                        uint256_t op2 );
-
+     unsigned char add( uint256_t *rop, uint256_t op2 );
      uint256_t operator+( const uint256_t& other ) const;
-
-    // this must be device-only because uint256_t::add is used
      void neg( uint256_t& dest ) const;
      uint256_t operator-() const;
 
+       // access data
+     std::uint8_t at( int loc );
+     std::uint8_t& operator[]( std::uint8_t idx );
+     const std::uint8_t& operator[]( std::uint8_t idx ) const;
+     uint256_data_t& get_data();
+     std::uint8_t *get_data_ptr();
+
+       // compare data
+     bool operator==( const uint256_t& comp ) const;
+     bool operator!=( const uint256_t& comp ) const;
+     bool operator<( const uint256_t& comp ) const;
+     bool operator>( const uint256_t& comp ) const;
+     int compare( const uint256_t& comp ) const;
+
+       // print data
+     void dump_hex();
+     void dump();
+
+       // get data information
+     int ctz();
+     int popc();
+
+
 
      std::uint8_t data[ UINT256_SIZE_IN_BYTES ];
-
 };
 
 #endif // UINT256_T_HH_INCLUDED

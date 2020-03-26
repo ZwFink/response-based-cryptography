@@ -4,16 +4,12 @@
 #include <iostream>
 
 
-void decode_ordinal( uint256_t *perm, 
-                     const uint64_t ordinal, 
-                     size_t mismatches
-                   )
+void decode_ordinal( uint256_t *perm, const uint64_t ordinal, uint8_t mismatches )
 {
    uint64_t binom = 0;
    uint64_t wkg_ord = ordinal;
-   perm->set_all( 0 );
 
-   for( size_t bit = UINT256_SIZE_IN_BITS-1; mismatches > 0; bit-- )
+   for( uint8_t bit = UINT256_SIZE_IN_BITS-1; mismatches > 0; bit-- )
    {
       binom = get_bin_coef( bit, mismatches );
 
@@ -30,30 +26,23 @@ void decode_ordinal( uint256_t *perm,
 
 void assign_first_permutation( uint256_t *perm, int mismatches )
 {
-   for( int i = 0; i < mismatches; ++i ) perm->set_bit( i );
+   for( int i=0; i<mismatches; ++i ) perm->set_bit( i );
 }
 
 void assign_last_permutation( uint256_t *perm, int mismatches )
 {
-
-   // set perm to the first key
    assign_first_permutation(perm, mismatches);
 
-   // Then find the last key by shifting the first
-   // Equiv to: perm << (key_length - mismatches)
-   // E.g. if key_length = 256 and mismatches = 5,
-   //      we want to shift left 256 - 5 = 251 times.
    *perm = *perm << (UINT256_SIZE_IN_BITS - mismatches);
 }
 
-// Precondition: starting_perm and ending_perm have been initialized
 void get_perm_pair( uint256_t *starting_perm, 
                     uint256_t *ending_perm,
-                    std::size_t tid,        
-                    std::size_t num_threads,
-                    const int mismatches,           
-                    const std::size_t keys_per_thread,
-                    const std::uint64_t extra_keys
+                    uint16_t tid,        
+                    uint16_t num_threads,
+                    const uint8_t mismatches,           
+                    const std::uint64_t keys_per_thread,
+                    const std::uint16_t extra_keys
                   )
 {
    uint64_t strt_ordinal   = 0;
@@ -88,7 +77,6 @@ void get_perm_pair( uint256_t *starting_perm,
         } 
         else
         {
-           //ending_ordinal = ( total_perms / num_threads ) * (tid + 1);
            ending_ordinal = strt_ordinal + ( keys_per_thread - 1 );
         
            decode_ordinal(ending_perm, ending_ordinal, mismatches);
@@ -96,7 +84,7 @@ void get_perm_pair( uint256_t *starting_perm,
     }
 }
 
-uint64_t get_bin_coef(size_t n, size_t k)
+uint64_t get_bin_coef(uint16_t n, uint16_t k)
 {  
     uint64_t ret = 1;  
   

@@ -18,34 +18,22 @@ uint256_iter::uint256_iter()
 
 void uint256_iter::next()
 {
-    uint256_t aug( 0 );
+    uint256_t aug;
     curr_perm.add(&aug, UINT256_NEGATIVE_ONE);
-
     uint256_t t = curr_perm | aug;
-
 
     uint8_t shift = curr_perm.ctz() + 1;
 
-    uint256_t tmp( 0 );
+    uint256_t tmp1;
+    overflow = t.add( &tmp1, UINT256_ONE );
 
-    overflow = t.add( &tmp, UINT256_ONE );
-
-    //uint256_t tmp2( 0 );
-    //uint256_t tmp3( 0 );
-    //uint256_t tmp4( 0 );
-
-    //tmp2 = (~t) & -(~t);
-    //tmp2.add(&tmp3,UINT256_NEGATIVE_ONE);
-    //tmp4 = tmp3 >> shift;
-    //curr_perm = tmp | tmp4;
-
-    uint256_t tmp2( 0 );
+    uint256_t tmp2;
     tmp2 = (~t) & -(~t);
     tmp2.add(&tmp2,UINT256_NEGATIVE_ONE);
     tmp2 = tmp2 >> shift;
-    curr_perm = tmp | tmp2;
 
-    //curr_perm = (tmp) | ((((~t) & -(~t)) + UINT256_NEGATIVE_ONE ) >> shift); 
+    curr_perm = tmp1 | tmp2;
+
     corrupted_key = key_uint ^ curr_perm;
 }
 
@@ -56,10 +44,5 @@ void uint256_iter::get( uint256_t& dest )
 
 bool uint256_iter::end()
 {
-    //if (curr_perm.compare( last_perm ) > 0)
-    //{
-    //    curr_perm.dump();
-    //    last_perm.dump();
-    //}
     return curr_perm.compare( last_perm ) > 0 || overflow;
 }
