@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
     if( hamming_dist < 0 || hamming_dist > MAX_HAMMING_DIST )
     {
-        fprintf(stderr,"Hamming distance must be between 0 and 5 inclusive\n");
+        fprintf(stderr,"Hamming distance must be between 0 and %d inclusive\n",MAX_HAMMING_DIST);
         return -2;
     }
 
