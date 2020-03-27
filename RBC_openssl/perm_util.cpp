@@ -1,7 +1,6 @@
 // utility file for permutation delimination
 
 #include "perm_util.h"
-#include <iostream>
 
 
 void decode_ordinal( uint256_t *perm, const uint64_t ordinal, uint8_t mismatches )

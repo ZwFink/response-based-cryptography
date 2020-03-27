@@ -19,7 +19,7 @@
 #include "perm_util.h"
 
 // structs
-typedef struct ClientData
+struct ClientData
 {
     uint256_t key;
 
@@ -27,9 +27,7 @@ typedef struct ClientData
     int plaintext_len;
 
     unsigned char ciphertext[128];
-    int ciphertext_len;
-
-} ClientData;
+};
 
 // utility functions
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n);
@@ -40,6 +38,11 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
             unsigned char *iv, unsigned char *plaintext);
 ClientData make_client_data();
+void print_prelim_info(ClientData client, uint256_t server_key);
+void print_rbc_info(int mismatches,
+                    long long unsigned int num_keys, 
+                    long long unsigned int keys_per_thread, 
+                    long unsigned int extra_keys);
 
 
 #endif // OPENSSL_AES_HH_INCLUDED

@@ -15,6 +15,10 @@
 #include <x86intrin.h>
 #include <cstdint>
 
+#include <iostream>
+#include <iomanip>
+#include <bits/stdc++.h>
+
 using namespace std;
 
 
