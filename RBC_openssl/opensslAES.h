@@ -2,6 +2,7 @@
 #ifndef OPENSSL_AES_HH_INCLUDED
 #define OPENSSL_AES_HH_INCLUDED
 
+
 // built-in declarations
 #include <openssl/conf.h>
 #include <openssl/evp.h>
@@ -12,22 +13,23 @@
 #include <iostream>
 #include <sys/time.h>
 
+
 // local declarations
 #include "omp.h"
 #include "uint256_t.h"
 #include "uint256_iterator.h"
 #include "perm_util.h"
 
+
 // structs
 struct ClientData
 {
     uint256_t key;
-
     unsigned char *plaintext;
     int plaintext_len;
-
     unsigned char ciphertext[128];
 };
+
 
 // utility functions
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n);
