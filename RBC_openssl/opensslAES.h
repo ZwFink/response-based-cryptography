@@ -12,10 +12,10 @@
 #include <stdlib.h>
 #include <iostream>
 #include <sys/time.h>
+#include <omp.h>
 
 
 // local declarations
-#include "omp.h"
 #include "uint256_t.h"
 #include "uint256_iterator.h"
 #include "perm_util.h"
