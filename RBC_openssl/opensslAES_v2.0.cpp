@@ -2,7 +2,6 @@
 
 #include "opensslAES.h"
 
-//#define N 10000000
 
 int main(int argc, char **argv)
 {    
@@ -130,6 +129,17 @@ int main(int argc, char **argv)
 
     if( verbose ) 
     {
+        //Decrypt the ciphertext
+        decryptedtext_len = decrypt(client.ciphertext, client.ciphertext_len, 
+                                    (unsigned char *)auth_key.get_data_ptr(), iv, decryptedtext);
+
+        //Add a NULL terminator. We are expecting printable text 
+        decryptedtext[decryptedtext_len] = '\0';
+
+        // Show the decrypted text 
+        printf("\nDecrypted text is:\n");
+        printf("%s\n", decryptedtext);    
+
         printf("\nResulting Authentication Key:\n");
         auth_key.dump();
     }
@@ -141,34 +151,8 @@ int main(int argc, char **argv)
     printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n", final_count, elapsed, final_count*1.0/(elapsed));
 
     if( verbose ) printf("------------------------------\n\n");
+   
 
-    
-
-    /////////////////////////////////
-
-    //Uncomment this to print the cipher text and decrypt
-    
-    //Do something useful with the ciphertext here
-    
-    /*
-    printf("Ciphertext is:\n");
-    BIO_dump_fp (stdout, (const char *)client_ciphertext, ciphertext_len);
-
-
-
-
-
-    //Decrypt the ciphertext
-    decryptedtext_len = decrypt(client_ciphertext, ciphertext_len, ckey, iv,
-                                decryptedtext);
-
-    //Add a NULL terminator. We are expecting printable text 
-    decryptedtext[decryptedtext_len] = '\0';
-
-    // Show the decrypted text 
-    printf("Decrypted text is:\n");
-    printf("%s\n", decryptedtext);    
-    */
 
     return 0;
 }
@@ -228,14 +212,13 @@ ClientData make_client_data()
 
     // last private ciphertext len so if we fix the key we can validate 
     // decryption works
-    int ciphertext_len;
 
     // encrypt plaintext with our random key 
-    ciphertext_len = encrypt(ret.plaintext,
-                             ret.plaintext_len,
-                             ret.key.get_data_ptr(),
-                             iv,
-                             ret.ciphertext);
+    ret.ciphertext_len = encrypt(ret.plaintext,
+                                 ret.plaintext_len,
+                                 ret.key.get_data_ptr(),
+                                 iv,
+                                 ret.ciphertext);
 
     return ret;
 }

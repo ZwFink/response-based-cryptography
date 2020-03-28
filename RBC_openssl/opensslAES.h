@@ -28,6 +28,7 @@ struct ClientData
     unsigned char *plaintext;
     int plaintext_len;
     unsigned char ciphertext[128];
+    int ciphertext_len;
 };
 
 

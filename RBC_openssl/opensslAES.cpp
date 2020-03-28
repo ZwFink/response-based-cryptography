@@ -102,43 +102,34 @@ int main(int argc, char **argv)
         }
     }
 
+
     gettimeofday(&end, NULL);
 
 
     if( verbose ) 
     {
-        printf("\n\nResulting Authentication Key:\n");
+        //Decrypt the ciphertext
+        decryptedtext_len = decrypt(client.ciphertext, client.ciphertext_len, 
+                                    (unsigned char *)auth_key.get_data_ptr(), iv, decryptedtext);
+
+        //Add a NULL terminator. We are expecting printable text 
+        decryptedtext[decryptedtext_len] = '\0';
+
+        // Show the decrypted text 
+        printf("\n\nDecrypted text is:\n");
+        printf("%s\n", decryptedtext);    
+
+        printf("\nResulting Authentication Key:\n");
         auth_key.dump();
     }
-
 
     double elapsed = ((end.tv_sec*1000000.0 + end.tv_usec) -
             (start.tv_sec*1000000.0 + start.tv_usec)) / 1000000.00;
 
-    printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n", count, elapsed, count*1.0/(elapsed));
+    printf("\n\nTime to compute %Ld keys: %f (keys/second: %f)\n", count, elapsed, count*1.0/(elapsed));
 
-    if( verbose ) printf("------------------------------\n\n");
-
-    
-
-    /////////////////////////////////
-
-    //Uncomment this to print the cipher text and decrypt
-    
-    //Do something useful with the ciphertext here
-    
-    /*
-    //Decrypt the ciphertext
-    decryptedtext_len = decrypt(client_ciphertext, ciphertext_len, client.key.get_data_ptr(), iv,
-                                decryptedtext);
-
-    //Add a NULL terminator. We are expecting printable text 
-    decryptedtext[decryptedtext_len] = '\0';
-
-    // Show the decrypted text 
-    printf("Decrypted text is:\n");
-    printf("%s\n", decryptedtext);    
-    */
+    if( verbose )
+        printf("------------------------------\n\n");
 
     return 0;
 }
@@ -189,7 +180,7 @@ ClientData make_client_data()
     unsigned char *iv = (unsigned char *)"0123456789012345";
 
     // message to be encrypted - from the client
-    ret.plaintext = (unsigned char *)"00000000000000001111111111111111";
+    ret.plaintext = (unsigned char *)"0000000011111111";
 
     ret.plaintext_len = strlen( (char *)ret.plaintext );
 
@@ -199,14 +190,13 @@ ClientData make_client_data()
 
     // last private ciphertext len so if we fix the key we can validate 
     // decryption works
-    int ciphertext_len;
 
     // encrypt plaintext with our random key 
-    ciphertext_len = encrypt(ret.plaintext,
-                             ret.plaintext_len,
-                             ret.key.get_data_ptr(),
-                             iv,
-                             ret.ciphertext);
+    ret.ciphertext_len = encrypt(ret.plaintext,
+                                 ret.plaintext_len,
+                                 ret.key.get_data_ptr(),
+                                 iv,
+                                 ret.ciphertext);
 
     return ret;
 }
