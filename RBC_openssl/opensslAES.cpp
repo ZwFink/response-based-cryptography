@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     /* Do RBC Authentication */
 
       // stuff for encryption/decryption
-    unsigned char *iv = (unsigned char *)"0123456789012345";
+    unsigned char *iv = (unsigned char *)"0123456789014444";
     unsigned char decryptedtext[128];
     int decryptedtext_len;
 
