@@ -233,40 +233,28 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
     
     // get our target ordinal for creating our target permutation
     int target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
+    int target_ordinal = 0;
        // handle the case where we have extra keys
-    if( target_rank <= extra_keys ) keys_per_thread++;
-    int target_ordinal = ((target_rank*keys_per_thread)-1) + 
-                         ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
+    if( extra_keys > 0 )
+    {
+        keys_per_thread++;
+        if( target_rank >= extra_keys )
+            target_ordinal = ( (target_rank-extra_keys)*(keys_per_thread-1) + extra_keys*(keys_per_thread) - 1 )
+                                  + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
+        else
+            target_ordinal = ( target_rank*keys_per_thread - 1 )
+                                 + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
+    }
+    else
+        target_ordinal = ( target_rank*keys_per_thread - 1 )
+                             + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
 
     // get our target permutation
     uint256_t target_perm( 0 );
     decode_ordinal( &target_perm, target_ordinal, hamming_dist ); 
 
     // set server key to the middle of our key space distribution
-    for(uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
-    {
-        uint8_t OR_op_wont_work = server_key->at(i) & target_perm.at(i);            
-
-        if( OR_op_wont_work )
-        {
-            for(uint8_t bit=0; bit<8; ++bit)
-            {
-                uint8_t target_bit_is_set = target_perm.at(i) & (1 << bit);
-                uint8_t skey_bit_is_set = server_key->at(i) & (1 << bit);
-
-                if( target_bit_is_set && skey_bit_is_set ) 
-                    // turn this bit off
-                    server_key->get_data_ptr()[i] &= ~(1 << bit);
-
-                else if( target_bit_is_set )
-                    // turn this bit on
-                    server_key->set_bit((i*8)+bit);
-            }
-        }
-
-        else 
-            server_key->get_data_ptr()[i] |= target_perm.get_data_ptr()[i];
-    }
+    *server_key = *server_key ^ target_perm;
 }
 
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
