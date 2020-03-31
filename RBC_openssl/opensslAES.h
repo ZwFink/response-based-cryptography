@@ -34,6 +34,7 @@ struct ClientData
 
 // utility functions
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n);
+void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks );
 void generate256bitKey(unsigned char * genString);
 void handleErrors(void);
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,

@@ -39,7 +39,7 @@ int main(int argc, char **argv)
       // get server-side key (simulated server-side PUF image)
     uint256_t server_key( 0 );
     server_key.copy( client.key );
-    select_middle_key( &server_key, hamming_dist );
+    select_middle_key( &server_key, hamming_dist, NTHREADS );
     //rand_flip_n_bits( &server_key, &client.key, hamming_dist );
 
       // initializations
@@ -169,17 +169,12 @@ ClientData make_client_data()
 {
     ClientData ret;
 
-    if( MID_KEY_BENCHMARK )
-        ret.key.set_all( 0 );
-    else
+    // random 256 bit key - used by the client for encryption
+    srand(7235); // for randomly generating keys 
+    for( uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
     {
-        // random 256 bit key - used by the client for encryption
-        srand(7235); // for randomly generating keys 
-        for( uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
-        {
-            uint8_t temp = rand() % 10;
-            ret.key.set(temp,i);
-        }
+        uint8_t temp = rand() % 10;
+        ret.key.set(temp,i);
     }
 
     // 128 bit IV (initialization vector)
@@ -207,17 +202,15 @@ ClientData make_client_data()
     return ret;
 }
 
-void select_middle_key( uint256_t *server_key, int hamming_dist )
+void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
 {
-    /* Assumption: client_key is zero */
-
     // get key space metrics
     uint64_t num_keys = get_bin_coef( 256, hamming_dist );
-    uint16_t extra_keys = num_keys % NTHREADS;
-    uint32_t keys_per_thread = num_keys / NTHREADS; 
+    uint16_t extra_keys = num_keys % num_ranks;
+    uint32_t keys_per_thread = num_keys / num_ranks; 
     
     // get our target ordinal for creating our target permutation
-    int target_rank = ( NTHREADS%2==0 ? (NTHREADS/2)-1 : (NTHREADS/2) );
+    int target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
        // handle the case where we have extra keys
     if( target_rank <= extra_keys ) keys_per_thread++;
     int target_ordinal = ((target_rank*keys_per_thread)-1) + 
@@ -227,11 +220,31 @@ void select_middle_key( uint256_t *server_key, int hamming_dist )
     uint256_t target_perm( 0 );
     decode_ordinal( &target_perm, target_ordinal, hamming_dist ); 
 
-    // set server key to the middle of key space distribution
+    // set server key to the middle of our key space distribution
     for(uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
-        // note: this bitwise OR operation is why we must set client/server keys to zero since
-        //       otherwise we can not guarantee both a middle key and our target hamming distance
-        server_key->get_data_ptr()[i] |= target_perm.get_data_ptr()[i];
+    {
+        uint8_t OR_op_wont_work = server_key->at(i) & target_perm.at(i);            
+
+        if( OR_op_wont_work )
+        {
+            for(uint8_t bit=0; bit<8; ++bit)
+            {
+                uint8_t target_bit_is_set = target_perm.at(i) & (1 << bit);
+                uint8_t skey_bit_is_set = server_key->at(i) & (1 << bit);
+
+                if( target_bit_is_set && skey_bit_is_set ) 
+                    // turn this bit off
+                    server_key->get_data_ptr()[i] &= ~(1 << bit);
+
+                else if( target_bit_is_set )
+                    // turn this bit on
+                    server_key->set_bit((i*8)+bit);
+            }
+        }
+
+        else 
+            server_key->get_data_ptr()[i] |= target_perm.get_data_ptr()[i];
+    }
 }
 
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
