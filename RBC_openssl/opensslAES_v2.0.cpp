@@ -287,7 +287,6 @@ void generate256bitKey(unsigned char * genString)
 
     
     for (int i=0; i<32; i++) {
-        fprintf(stderr,"\nhere");
         int temp = rand() % 10;
         genString[i] = alphabet[temp];
     }
