@@ -228,12 +228,12 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
 {
     // get key space metrics
     uint64_t num_keys = get_bin_coef( 256, hamming_dist );
-    uint16_t extra_keys = num_keys % num_ranks;
+    uint32_t extra_keys = num_keys % num_ranks;
     uint32_t keys_per_thread = num_keys / num_ranks; 
     
     // get our target ordinal for creating our target permutation
-    int target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
-    int target_ordinal = 0;
+    uint32_t target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
+    uint64_t target_ordinal = 0;
        // handle the case where we have extra keys
     if( extra_keys > 0 )
     {
@@ -270,8 +270,6 @@ void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
         uint8_t block = bit_idx / 8;
 
         server_key->set_bit( bit_idx ); // bitwise OR operation
-        //unsigned char *sk = server_key->get_data_ptr();
-        //unsigned char *ck = client_key->get_data_ptr();
         // only increment if we successfully flipped the bit
         if( server_key->at(block) != client_key->at(block) )
             i++;

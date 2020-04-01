@@ -206,12 +206,12 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
 {
     // get key space metrics
     uint64_t num_keys = get_bin_coef( 256, hamming_dist );
-    uint16_t extra_keys = num_keys % num_ranks;
+    uint32_t extra_keys = num_keys % num_ranks;
     uint32_t keys_per_thread = num_keys / num_ranks; 
     
     // get our target ordinal for creating our target permutation
-    int target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
-    int target_ordinal = 0;
+    uint32_t target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
+    uint64_t target_ordinal = 0;
        // handle the case where we have extra keys
     if( extra_keys > 0 )
     {
