@@ -173,8 +173,8 @@ void print_rbc_info(int mismatches,
 {
     printf("\n  Hamming Distance: %d",mismatches);
     printf("\n  Keys to Iterate = %Ld",num_keys);
-    printf("\n  Keys Per Thread = %Ld",keys_per_thread);
-    printf("\n  Extra Keys = %lu",extra_keys);
+    //printf("\n  Keys Per Thread = %Ld",keys_per_thread);
+    //printf("\n  Extra Keys = %lu",extra_keys);
 }
 
 void print_prelim_info(ClientData client, uint256_t server_key)

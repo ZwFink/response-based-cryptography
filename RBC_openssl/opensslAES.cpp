@@ -224,20 +224,12 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
         target_ordinal = num_keys%2==0 ? (num_keys/2)-1 : num_keys/2;
     else
     {
-        // handle the case where we have extra keys
-        if( extra_keys > 0 )
-        {
-            keys_per_thread++;
-            if( target_rank >= extra_keys )
-                target_ordinal = ( (target_rank-extra_keys)*(keys_per_thread-1) + extra_keys*(keys_per_thread) - 1 )
-                                      + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
-            else
-                target_ordinal = ( target_rank*keys_per_thread - 1 )
-                                     + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
-        }
+        uint64_t target_rank_num_keys = keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2);
+            // handle the case where we have extra keys
+        if( target_rank < extra_keys )
+            target_ordinal = target_rank*keys_per_thread + target_rank_num_keys;
         else
-            target_ordinal = ( target_rank*keys_per_thread - 1 )
-                                 + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
+            target_ordinal = target_rank*keys_per_thread + extra_keys + target_rank_num_keys;
     }
 
     // get our target permutation
