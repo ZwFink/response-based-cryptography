@@ -51,8 +51,13 @@ int main(int argc, char **argv)
     long long unsigned int count = 0;
     int mismatches = hamming_dist;
     long long unsigned int num_keys = get_bin_coef( 256, hamming_dist );
-    long unsigned int extra_keys = num_keys % NTHREADS;
-    long long unsigned int keys_per_thread = num_keys / NTHREADS; 
+    long unsigned int extra_keys = 0;
+    long long unsigned int keys_per_thread = 1;
+    if( NTHREADS < num_keys )
+    {
+        extra_keys = num_keys % NTHREADS;
+        keys_per_thread = num_keys / NTHREADS; 
+    }
     if( verbose )
     {
         print_prelim_info( client, server_key );
@@ -67,39 +72,42 @@ int main(int argc, char **argv)
 
         uint16_t tid = omp_get_thread_num();
 
-        get_perm_pair( &starting_perm, 
-                       &ending_perm, 
-                       tid, 
-                       NTHREADS,
-                       hamming_dist,
-                       keys_per_thread,
-                       extra_keys
-                     );
-
-        uint256_iter iter( server_key, starting_perm, ending_perm );
-
-        while( !iter.end() )
+        if( tid < num_keys )
         {
-            // encrypt
-            server_ciphertext_len = encrypt( client.plaintext,
-                                             client.plaintext_len,
-                                             iter.corrupted_key.get_data_ptr(),
-                                             iv,
-                                             server_ciphertext
-                                           );
+            get_perm_pair( &starting_perm, 
+                           &ending_perm, 
+                           tid, 
+                           NTHREADS,
+                           hamming_dist,
+                           keys_per_thread,
+                           extra_keys
+                         );
 
-            // check for match! 
-            if(equal(server_ciphertext,server_ciphertext+16,client.ciphertext))
+            uint256_iter iter( server_key, starting_perm, ending_perm );
+
+            while( !iter.end() )
             {
-                printf("\n  *** Client key found! ***");
-                auth_key.copy(iter.corrupted_key);
+                // encrypt
+                server_ciphertext_len = encrypt( client.plaintext,
+                                                 client.plaintext_len,
+                                                 iter.corrupted_key.get_data_ptr(),
+                                                 iv,
+                                                 server_ciphertext
+                                               );
+
+                // check for match! 
+                if(equal(server_ciphertext,server_ciphertext+16,client.ciphertext))
+                {
+                    printf("\n  *** Client key found! ***by Thread %d",tid);
+                    auth_key.copy(iter.corrupted_key);
+                }
+
+                // get next key
+                iter.next();
+
+                // update total keys iterated
+                count++;
             }
-
-            // get next key
-            iter.next();
-
-            // update total keys iterated
-            count++;
         }
     }
 
@@ -207,25 +215,30 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
     // get key space metrics
     uint64_t num_keys = get_bin_coef( 256, hamming_dist );
     uint32_t extra_keys = num_keys % num_ranks;
-    uint32_t keys_per_thread = num_keys / num_ranks; 
+    uint64_t keys_per_thread = num_keys / num_ranks;
     
     // get our target ordinal for creating our target permutation
     uint32_t target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
     uint64_t target_ordinal = 0;
-       // handle the case where we have extra keys
-    if( extra_keys > 0 )
+    if( NTHREADS > num_keys ) // edge case, when hamming distance == 1
+        target_ordinal = num_keys%2==0 ? (num_keys/2)-1 : num_keys/2;
+    else
     {
-        keys_per_thread++;
-        if( target_rank >= extra_keys )
-            target_ordinal = ( (target_rank-extra_keys)*(keys_per_thread-1) + extra_keys*(keys_per_thread) - 1 )
-                                  + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
+        // handle the case where we have extra keys
+        if( extra_keys > 0 )
+        {
+            keys_per_thread++;
+            if( target_rank >= extra_keys )
+                target_ordinal = ( (target_rank-extra_keys)*(keys_per_thread-1) + extra_keys*(keys_per_thread) - 1 )
+                                      + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
+            else
+                target_ordinal = ( target_rank*keys_per_thread - 1 )
+                                     + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
+        }
         else
             target_ordinal = ( target_rank*keys_per_thread - 1 )
                                  + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
     }
-    else
-        target_ordinal = ( target_rank*keys_per_thread - 1 )
-                             + ( keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2) );
 
     // get our target permutation
     uint256_t target_perm( 0 );
