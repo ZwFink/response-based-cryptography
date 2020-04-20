@@ -96,10 +96,8 @@ int main(int argc, char * argv[])
     // make the sbox
     uint8_t sbox[256];
     aes_cpu::initialize_aes_sbox(sbox);
-    //print_sbox(sbox);
     
     aes_cpu::encrypt_ecb( &cipher, &bit_key );
-    //print_message(cipher);
 
     // corrupt bit_key by number of mismatches
     key_256 staging_key;
@@ -127,9 +125,11 @@ int main(int argc, char * argv[])
     host_key = &host_key_value;
     uint256_t *dev_found_key = nullptr;
     uint256_t host_found_key;
-    for( uint8_t i=0; i < 32; i++ )
+    uint256_t original_key;
+    for( uint8_t i=0; i < 8; i++ )
     { 
-        host_key->set( staging_key.bits[i], i );
+        host_key->data[ i ] = bytes_to_int( (std::uint8_t*)(staging_key.bits + ( i * 4 ) ) );
+        original_key.data[ i ] = bytes_to_int( (std::uint8_t*)(bit_key.bits + ( i * 4 ) ) );
     }
 
     cudaMalloc( (void**) &dev_uid, sizeof( aes_per_round::message_128 ) );
@@ -140,6 +140,37 @@ int main(int argc, char * argv[])
     std::uint64_t *total_iter_count = nullptr;
     cudaMallocManaged( (void**) &total_iter_count, sizeof( std::uint64_t ) );
     *total_iter_count = 0;
+
+    std::cout << "Original key: ";
+    original_key.dump();
+    printf( "Original: 0x%X%X%X%X%X%X%X%X\n",
+            original_key.data[ 0 ],
+            original_key.data[ 1 ],
+            original_key.data[ 2 ],
+            original_key.data[ 3 ],
+            original_key.data[ 4 ],
+            original_key.data[ 5 ],
+            original_key.data[ 6 ],
+            original_key.data[ 7 ]
+
+            );
+
+
+    std::cout << "Corrupted key: ";
+    host_key_value.dump();
+
+    printf( "Corrupted: 0x%X%X%X%X%X%X%X%X\n",
+            host_key_value.data[ 0 ],
+            host_key_value.data[ 1 ],
+            host_key_value.data[ 2 ],
+            host_key_value.data[ 3 ],
+            host_key_value.data[ 4 ],
+            host_key_value.data[ 5 ],
+            host_key_value.data[ 6 ],
+            host_key_value.data[ 7 ]
+
+            );
+
 
 
     if( cuda_utils::HtoD( dev_uid, &uid_msg, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
