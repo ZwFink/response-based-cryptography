@@ -211,10 +211,6 @@ __device__ uint256_t uint256_t::operator-() const
 }
 __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
 {
-    std::uint32_t *self_32   = (uint32_t*) &data;
-    std::uint32_t *augend_32 = (uint32_t*) &augend.data;
-    std::uint32_t *dest_32   = (uint32_t*) &dest.data;
-
     asm ("add.cc.u32      %0, %8, %16;\n\t"
          "addc.cc.u32     %1, %9, %17;\n\t"
          "addc.cc.u32     %2, %10, %18;\n\t"
@@ -223,18 +219,18 @@ __device__ bool uint256_t::add( uint256_t& dest, const uint256_t augend ) const
          "addc.cc.u32     %5, %13, %21;\n\t"
          "addc.cc.u32     %6, %14, %22;\n\t"
          "addc.u32        %7, %15, %23;\n\t"
-         : "=r"(dest_32[ 0 ]), "=r"(dest_32[ 1 ]), "=r"(dest_32[ 2 ]),   
-           "=r"(dest_32[ 3 ]), "=r"(dest_32[ 4 ]), "=r"(dest_32[ 5 ]),   
-           "=r"(dest_32[ 6 ]), "=r"(dest_32[ 7 ])
-         : "r"(self_32[ 0 ]), "r"(self_32[ 1 ]), "r"(self_32[ 2 ]),   
-           "r"(self_32[ 3 ]), "r"(self_32[ 4 ]), "r"(self_32[ 5 ]),   
-           "r"(self_32[ 6 ]), "r"(self_32[ 7 ]),
-           "r"(augend_32[ 0 ]), "r"(augend_32[ 1 ]), "r"(augend_32[ 2 ]),   
-           "r"(augend_32[ 3 ]), "r"(augend_32[ 4 ]), "r"(augend_32[ 5 ]),   
-           "r"(augend_32[ 6 ]), "r"(augend_32[ 7 ])
+         : "=r"(dest.data[ 0 ]), "=r"(dest.data[ 1 ]), "=r"(dest.data[ 2 ]),   
+           "=r"(dest.data[ 3 ]), "=r"(dest.data[ 4 ]), "=r"(dest.data[ 5 ]),   
+           "=r"(dest.data[ 6 ]), "=r"(dest.data[ 7 ])
+         : "r"(this->data[ 0 ]), "r"(this->data[ 1 ]), "r"(this->data[ 2 ]),   
+           "r"(this->data[ 3 ]), "r"(this->data[ 4 ]), "r"(this->data[ 5 ]),   
+           "r"(this->data[ 6 ]), "r"(this->data[ 7 ]),
+           "r"(augend.data[ 0 ]), "r"(augend.data[ 1 ]), "r"(augend.data[ 2 ]),   
+           "r"(augend.data[ 3 ]), "r"(augend.data[ 4 ]), "r"(augend.data[ 5 ]),   
+           "r"(augend.data[ 6 ]), "r"(augend.data[ 7 ])
         );
 
-    return dest_32[ 7 ] < self_32[ 7 ];
+    return dest.data[ 7 ] < this->data[ 7 ];
 }
 __device__ uint256_t uint256_t::operator+( const uint256_t& other ) const
 {
@@ -360,6 +356,7 @@ CUDA_CALLABLE_MEMBER void uint256_t::to_32_bit_arr( std::uint32_t* dest )
 {
     memcpy( dest, &(data), 32 );
 }
+
 
 
 
