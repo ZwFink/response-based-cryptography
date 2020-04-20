@@ -38,6 +38,8 @@
 
 void warm_up_gpu( int device );
 
+__host__ __device__ uint bytes_to_int( const std::uint8_t *bytes );
+
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,

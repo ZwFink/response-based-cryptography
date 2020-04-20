@@ -52,6 +52,12 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
 }
 
+__host__ __device__ uint bytes_to_int( const std::uint8_t *bytes )
+{
+    uint ret_val;
+    ret_val =  ((int)bytes[3] << 24) | ((int)bytes[2] << 16) | ((int)bytes[1] << 8) | ((int)bytes[0]);
+    return ret_val;
+}
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,
@@ -60,7 +66,23 @@ __device__ int validator( uint256_t *starting_perm,
                           const aes_per_round::message_128 *auth_cipher 
                         )
 {
-    aes_per_round::message_128 encrypted;
+    // aes_per_round::message_128 encrypted;
+
+    uint userid[ 4 ];
+    uint cyphertext[ 4 ];
+    uint authcipher[ 4 ];
+
+    userid[ 0 ] = bytes_to_int( user_id->bits );
+    userid[ 1 ] = bytes_to_int( user_id->bits + 4 );
+    userid[ 2 ] = bytes_to_int( user_id->bits + 8 );
+    userid[ 3 ] = bytes_to_int( user_id->bits + 12 );
+
+    authcipher[ 0 ] = bytes_to_int( auth_cipher->bits );
+    authcipher[ 1 ] = bytes_to_int( auth_cipher->bits + 4 );
+    authcipher[ 2 ] = bytes_to_int( auth_cipher->bits + 8 );
+    authcipher[ 3 ] = bytes_to_int( auth_cipher->bits + 12 );
+
+
     aes_tables tabs;
     std::uint8_t idx = 0;
     std::uint8_t match = 0;
@@ -113,19 +135,72 @@ __device__ int validator( uint256_t *starting_perm,
 
             ++total;
             // encrypt
-            aes_gpu::encrypt( (uint*)(user_id->bits),
-                              (uint*)(encrypted.bits),
+            aes_gpu::encrypt( userid,
+                              cyphertext,
                               (uint*)(iter.corrupted_key.data),
                               &tabs
                             );
 
             // check for match! 
-            for( idx = 0; idx < 16; ++idx )
+            for( idx = 0; idx < 4; ++idx )
                 {
-                    match += ( encrypted.bits[ idx ] == auth_cipher->bits[ idx ] );
+                    match += ( cyphertext[ idx ] == authcipher[ idx ] );
                 }
 
-            if( match == 16 )
+
+            printf( "Cipher: 0x%X%X%X%X\n",
+                    cyphertext[ 0 ],
+                    cyphertext[ 1 ],
+                    cyphertext[ 2 ],
+                    cyphertext[ 3 ]
+                    );
+
+            printf( "Corrupted (Device): 0x%X%X%X%X%X%X%X%X\nCipher: 0x%X%X%X%X\nPlaintext: 0x%X%X%X%X\n",
+                    iter.corrupted_key.data[ 0 ],
+                    iter.corrupted_key.data[ 1 ],
+                    iter.corrupted_key.data[ 2 ],
+                    iter.corrupted_key.data[ 3 ],
+                    iter.corrupted_key.data[ 4 ],
+                    iter.corrupted_key.data[ 5 ],
+                    iter.corrupted_key.data[ 6 ],
+                    iter.corrupted_key.data[ 7 ],
+                    cyphertext[ 0 ],
+                    cyphertext[ 1 ],
+                    cyphertext[ 2 ],
+                    cyphertext[ 3 ],
+                    userid[ 0 ],
+                    userid[ 1 ],
+                    userid[ 2 ],
+                    userid[ 3 ]
+
+                    );
+            printf( "To Find: 0x%X%X%X%X%X%X%X%X\n",
+                    key_to_find->data[ 0 ],
+                    key_to_find->data[ 1 ],
+                    key_to_find->data[ 2 ],
+                    key_to_find->data[ 3 ],
+                    key_to_find->data[ 4 ],
+                    key_to_find->data[ 5 ],
+                    key_to_find->data[ 6 ],
+                    key_to_find->data[ 7 ]
+
+                    );
+
+            printf( "For encryp: 0x%X%X%X%X%X%X%X%X\n",
+                    key_for_encryp->data[ 0 ],
+                    key_for_encryp->data[ 1 ],
+                    key_for_encryp->data[ 2 ],
+                    key_for_encryp->data[ 3 ],
+                    key_for_encryp->data[ 4 ],
+                    key_for_encryp->data[ 5 ],
+                    key_for_encryp->data[ 6 ],
+                    key_for_encryp->data[ 7 ]
+
+                    );
+
+
+
+            if( match == 4 )
                 {
                     *key_to_find = iter.corrupted_key;
                     printf( "I found it!\n" );
