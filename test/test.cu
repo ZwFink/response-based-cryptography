@@ -506,6 +506,7 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
     pt[ 2 ] = 0x8899aabb;
     pt[ 3 ] = 0xccddeeff;
 
+
     ct[ 0 ] = 0;
     ct[ 1 ] = 0;
     ct[ 2 ] = 0;
@@ -523,6 +524,28 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
     test_utils::aes_encryption_test<<<1,1>>>( ct, key, pt );
 
     cudaDeviceSynchronize();
+
+    printf( "Key: 0x%X%X%X%X%X%X%X%X\n",
+            key[ 0 ],
+            key[ 1 ],
+            key[ 2 ],
+            key[ 3 ],
+            key[ 4 ],
+            key[ 5 ],
+            key[ 6 ],
+            key[ 7 ]
+
+
+
+            );
+    printf( "Plaintext: 0x%X%X%X%X\n",
+            pt[ 0 ],
+            pt[ 1 ],
+            pt[ 2 ],
+            pt[ 3 ]
+            );
+
+
 
     printf( "0x%X\n", ct[ 0 ] );
     printf( "0x%X\n", ct[ 1 ] );
@@ -742,7 +765,6 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
      cudaFree( z_count_dev );
  }
 
-/* The following test case does not work!
 
  TEST_CASE( "uint256_t::neg", "[uint256_t]" )
  {
@@ -753,31 +775,18 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
      uint256_t *a_dev = nullptr;
      uint256_t *c_dev = nullptr;
 
-     cudaMalloc( (void**) &a_dev, sizeof( uint256_t ) );
-     cudaMalloc( (void**) &c_dev, sizeof( uint256_t ) );
+     cudaMallocManaged( &a_dev, sizeof( uint256_t ) );
+     cudaMallocManaged( &c_dev, sizeof( uint256_t ) );
 
-     if( test_utils::HtoD( a_dev, &a, sizeof( uint256_t ) ) != cudaSuccess )
-         {
-             std::cout << "Failure to transfer a to device\n";
-         }
-     if( test_utils::HtoD( c_dev, &c, sizeof( uint256_t ) ) != cudaSuccess )
-         {
-             std::cout << "Failure to transfer c to device\n";
-         }
+     *a_dev = a;
+     *c_dev = c;
 
      test_utils::neg_knl<<<1,1>>>( a_dev, c_dev );
+     cudaDeviceSynchronize();
 
-
-     if( test_utils::DtoH( &c, c_dev, sizeof( uint256_t ) ) != cudaSuccess )
-         {
-             std::cout << "Failure to transfer c to device\n";
-         }
-
-     bool result = c == b;
+     bool result = *c_dev == b;
      REQUIRE( result );
  }
-
-End the test cases that do not work */
 
 
 
