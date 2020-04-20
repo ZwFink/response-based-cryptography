@@ -7,7 +7,7 @@
 
 #define UINT256_MAX_INT uint256_t( 0xFFFFFFFF )
 #define UINT256_ZERO uint256_t( 0x00000000 )
-#define UINT256_ONE uint256_t( 0x00000001, 0 )
+#define UINT256_ONE uint256_t( 1, 0 )
 #define UINT256_NEGATIVE_ONE UINT256_MAX_INT
 
 #include <cstddef>
