@@ -54,11 +54,13 @@ CUDA_CALLABLE_MEMBER void uint256_t::set_all( std::uint32_t val )
 }
 // initialization constructor - set specified index of data to specified value
 CUDA_CALLABLE_MEMBER uint256_t::uint256_t( std::uint32_t set, std::uint8_t index )
+    : uint256_t()
 {
     data[ index ] = set;
 }
 // alternative method to set value at index
-CUDA_CALLABLE_MEMBER void uint256_t::set( std::uint32_t set, std::uint8_t index ){
+CUDA_CALLABLE_MEMBER void uint256_t::set( std::uint32_t set, std::uint8_t index )
+{
     data[ index ] = set;
 }
 // conversion from string
@@ -85,7 +87,7 @@ __host__ void uint256_t::dump()
             std::cout
                << "0x"
                << std::setfill('0')
-               << std::setw(2)
+               << std::setw(8)
                << std::hex
                << unsigned( x )
                << " ";
