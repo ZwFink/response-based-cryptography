@@ -33,7 +33,6 @@ int main(int argc, char * argv[])
     message_128 uid_msg;
     for( int i=0; i<16; i++ )
     {
-        // uid_msg.bits[i] = client.plaintext[i] - '0';
         uid_msg.bits[i] = client.plaintext[i];
     }
 
@@ -112,7 +111,7 @@ int main(int argc, char * argv[])
         }
 
       // run rbc kernel - fixed hamming distance (currently)
-    for( int i=hamming_dist; i <= hamming_dist; i++ )
+    for( int i=1; i <= hamming_dist; i++ )
     {
        kernel_rbc_engine<<<num_blocks, THREADS_PER_BLOCK>>>( dev_key,
                                                              auth_key,
@@ -135,14 +134,25 @@ int main(int argc, char * argv[])
 
 
 
-    printf("\nResulting Authentication Key:\n");
-    auth_key->dump();
+
 
     double elapsed = ((end.tv_sec*1000000.0 + end.tv_usec) -
                      (start.tv_sec*1000000.0 + start.tv_usec)) / 1000000.00;
 
+    printf("\nResulting Authentication Key:\n");
+    auth_key->dump();
+
     printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n",*total_iter_count,elapsed,*total_iter_count*1.0/(elapsed));
 
+
+    if( *auth_key == client.key )
+        {
+            std::cout << "SUCCESS: The keys match!\n";
+        }
+    else
+        {
+            std::cout << "ERROR: The keys do not match.\n";
+        }
 
 
     return 0;
