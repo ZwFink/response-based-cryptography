@@ -80,7 +80,6 @@ __device__ int validator( uint256_t *starting_perm,
     authcipher[ 2 ] = bytes_to_int( auth_cipher->bits + 8 );
     authcipher[ 3 ] = bytes_to_int( auth_cipher->bits + 12 );
 
-
     aes_tables tabs;
     std::uint8_t idx = 0;
     std::uint8_t match = 0;
@@ -128,6 +127,7 @@ __device__ int validator( uint256_t *starting_perm,
                         *starting_perm,
                         *ending_perm
                       );
+
     while( !iter.end() )
         {
 
@@ -144,26 +144,6 @@ __device__ int validator( uint256_t *starting_perm,
                 {
                     match += ( cyphertext[ idx ] == authcipher[ idx ] );
                 }
-
-            printf( "Corrupted (Device): 0x%X%X%X%X%X%X%X%X\nCipher: 0x%X%X%X%X\nPlaintext: 0x%X%X%X%X\n",
-                    iter.corrupted_key.data[ 0 ],
-                    iter.corrupted_key.data[ 1 ],
-                    iter.corrupted_key.data[ 2 ],
-                    iter.corrupted_key.data[ 3 ],
-                    iter.corrupted_key.data[ 4 ],
-                    iter.corrupted_key.data[ 5 ],
-                    iter.corrupted_key.data[ 6 ],
-                    iter.corrupted_key.data[ 7 ],
-                    cyphertext[ 0 ],
-                    cyphertext[ 1 ],
-                    cyphertext[ 2 ],
-                    cyphertext[ 3 ],
-                    userid[ 0 ],
-                    userid[ 1 ],
-                    userid[ 2 ],
-                    userid[ 3 ]
-
-                    );
 
            if( match == 4 )
                 {
