@@ -5,7 +5,7 @@
 #include "uint256_t.h"
 #include "cuda_defs.h"
 
-__device__ void decode_ordinal( uint256_t *perm, const uint64_t ordinal, size_t mismatches );
+__device__ __host__ void decode_ordinal( uint256_t *perm, const uint64_t ordinal, int mismatches );
 __device__ void assign_first_permutation( uint256_t *perm, int mismatches );
 __device__ void assign_last_permutation( uint256_t *perm, int mismatches );
 __device__ void get_perm_pair( uint256_t *starting_perm, 
