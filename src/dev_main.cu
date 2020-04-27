@@ -31,7 +31,7 @@ int main(int argc, char * argv[])
     struct ClientData client = make_client_data();
     message_128 cipher;
     message_128 uid_msg;
-    for( int i=0; i<16; i++)
+    for( int i=0; i<16; i++ )
     {
         // uid_msg.bits[i] = client.plaintext[i] - '0';
         uid_msg.bits[i] = client.plaintext[i];
@@ -47,24 +47,6 @@ int main(int argc, char * argv[])
     
     /* Do RBC Authentication */
 
-      // get server-side key (simulated server-side PUF image)
-    uint256_t server_key( 0 );
-    server_key.copy( client.key );
-    // rand_flip_n_bits( &server_key, &client.key, hamming_dist );
-    server_key.data[ 0 ] = 0x00000021;
-    server_key.data[ 1 ] = 0x00000004;
-    server_key.data[ 2 ] = 0x00000000;
-    server_key.data[ 3 ] = 0x00000004;
-    server_key.data[ 4 ] = 0x00000006;
-    server_key.data[ 5 ] = 0x00000006;
-    server_key.data[ 6 ] = 0x00000004;
-    server_key.data[ 7 ] = 0x00000005;
-    uint256_t *host_key = &server_key;
-
-    uint256_t *auth_key( 0 );
-    if( verbose ) 
-        print_prelim_info( client, server_key );
-
       // initializations
     struct timeval start, end;
     std::uint64_t total_keys    = get_bin_coef(UINT256_SIZE_IN_BITS,hamming_dist);
@@ -76,10 +58,22 @@ int main(int argc, char * argv[])
     std::uint64_t last_thread_numkeys = keys_per_thread + total_keys
                                         - keys_per_thread * total_threads;
     std::uint64_t extra_keys = last_thread_numkeys - keys_per_thread;
+    uint256_t *auth_key( 0 );
+    uint256_t server_key( 0 );
+
+      // get server-side key (simulated server-side PUF image)
+    server_key.copy( client.key );
+    select_middle_key( &server_key, hamming_dist, total_threads );
+    //rand_flip_n_bits( &server_key, &client.key, hamming_dist );
+    uint256_t *host_key = &server_key;
+
     if( verbose ) 
+    {
+        print_prelim_info( client, server_key );
         print_rbc_info( num_blocks, 
                         keys_per_thread, total_keys, 
                         last_thread_numkeys, extra_keys );
+    }
 
       // turn on gpu
     printf("\n\nTurning on the GPU...\n");
@@ -240,6 +234,36 @@ ClientData make_client_data()
                                  ret.ciphertext);
 
     return ret;
+}
+
+void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
+{
+    // get key space metrics
+    uint64_t num_keys = get_bin_coef( 256, hamming_dist );
+    uint32_t extra_keys = num_keys % num_ranks;
+    uint64_t keys_per_thread = num_keys / num_ranks;
+    
+    // get our target ordinal for creating our target permutation
+    uint32_t target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
+    uint64_t target_ordinal = 0;
+    if( num_ranks > num_keys ) // edge case, when hamming distance == 1
+        target_ordinal = num_keys%2==0 ? (num_keys/2)-1 : num_keys/2;
+    else
+    {
+        uint64_t target_rank_num_keys = keys_per_thread%2==0 ? (keys_per_thread/2)-1 : (keys_per_thread/2);
+            // handle the case where we have extra keys
+        if( target_rank < extra_keys )
+            target_ordinal = target_rank*keys_per_thread + target_rank_num_keys;
+        else
+            target_ordinal = target_rank*keys_per_thread + extra_keys + target_rank_num_keys;
+    }
+
+    // get our target permutation
+    uint256_t target_perm( 0 );
+    decode_ordinal( &target_perm, target_ordinal, hamming_dist ); 
+
+    // set server key to the middle of our key space distribution
+    *server_key = *server_key ^ target_perm;
 }
 
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)

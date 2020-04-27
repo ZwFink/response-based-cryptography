@@ -2,7 +2,7 @@
 
 #include "perm_util.h"
 
-__device__ void decode_ordinal( uint256_t *perm, const uint64_t ordinal, uint8_t mismatches )
+__device__ __host__ void decode_ordinal( uint256_t *perm, const uint64_t ordinal, int mismatches )
 {
    uint64_t binom = 0;
    uint64_t wkg_ord = ordinal;
