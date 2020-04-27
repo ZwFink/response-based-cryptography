@@ -153,11 +153,17 @@ namespace test_utils
                                          )
          {
 
-             // get_perm_pair( starting_perm, ending_perm,
-             //                tid, nthreads,
-             //                2, 32,
-             //                256
-             //              );
+             assert( !( 32640 % nthreads ) )
+             get_perm_pair( starting_perm,
+                            ending_perm,
+                            tid,
+                            nthreads,
+                            2,
+                            32640 / nthreads,
+                            256,
+                            0,
+                            0
+                          );
 
          }
 

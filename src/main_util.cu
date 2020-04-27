@@ -145,14 +145,6 @@ __device__ int validator( uint256_t *starting_perm,
                     match += ( cyphertext[ idx ] == authcipher[ idx ] );
                 }
 
-
-            printf( "Cipher: 0x%X%X%X%X\n",
-                    cyphertext[ 0 ],
-                    cyphertext[ 1 ],
-                    cyphertext[ 2 ],
-                    cyphertext[ 3 ]
-                    );
-
             printf( "Corrupted (Device): 0x%X%X%X%X%X%X%X%X\nCipher: 0x%X%X%X%X\nPlaintext: 0x%X%X%X%X\n",
                     iter.corrupted_key.data[ 0 ],
                     iter.corrupted_key.data[ 1 ],
@@ -172,33 +164,8 @@ __device__ int validator( uint256_t *starting_perm,
                     userid[ 3 ]
 
                     );
-            printf( "To Find: 0x%X%X%X%X%X%X%X%X\n",
-                    key_to_find->data[ 0 ],
-                    key_to_find->data[ 1 ],
-                    key_to_find->data[ 2 ],
-                    key_to_find->data[ 3 ],
-                    key_to_find->data[ 4 ],
-                    key_to_find->data[ 5 ],
-                    key_to_find->data[ 6 ],
-                    key_to_find->data[ 7 ]
 
-                    );
-
-            printf( "For encryp: 0x%X%X%X%X%X%X%X%X\n",
-                    key_for_encryp->data[ 0 ],
-                    key_for_encryp->data[ 1 ],
-                    key_for_encryp->data[ 2 ],
-                    key_for_encryp->data[ 3 ],
-                    key_for_encryp->data[ 4 ],
-                    key_for_encryp->data[ 5 ],
-                    key_for_encryp->data[ 6 ],
-                    key_for_encryp->data[ 7 ]
-
-                    );
-
-
-
-            if( match == 4 )
+           if( match == 4 )
                 {
                     *key_to_find = iter.corrupted_key;
                     printf( "I found it!\n" );

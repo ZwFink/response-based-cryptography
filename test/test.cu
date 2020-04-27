@@ -410,7 +410,7 @@
  {
 
      // key, first_perm, last_perm
-     uint256_t a( 0xAF ), b( 0x00 ), c( 0x00 );
+     uint256_t a( 0xAF ), b( 0 ), c( 0 );
      uint256_t *a_dev, *b_dev, *c_dev;
      uint256_iter *iter_ptr;
      int *count_ptr;
@@ -442,7 +442,7 @@
                                                          );
 
              cudaDeviceSynchronize();
-             // REQUIRE( *count_ptr == 32640 );
+             REQUIRE( *count_ptr == 32640 );
          }
      SECTION( "All of the keys are generated when there are two threads" )
          {
@@ -518,7 +518,7 @@ TEST_CASE( "AES Encryption", "[aes_per_round]" )
     key[ 3 ] = 0x0c0d0e0f;
     key[ 4 ] = 0x10111213;
     key[ 5 ] = 0x14151617;
-    key[ 6 ] = 0x18191a1b;
+    key[ 6 ] = 0x18191a1f;
     key[ 7 ] = 0x1c1d1e1f;
 
     test_utils::aes_encryption_test<<<1,1>>>( ct, key, pt );
