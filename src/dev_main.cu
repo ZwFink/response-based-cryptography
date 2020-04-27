@@ -111,34 +111,6 @@ int main(int argc, char * argv[])
             std::cout << "Failure to transfer corrupted_key to device\n";
         }
 
-    std::cout << "Original key: ";
-    client.key.dump();
-    printf( "Original: 0x%04X%04X%04X%04X%04X%04X%04X%04X\n",
-            client.key.data[ 0 ],
-            client.key.data[ 1 ],
-            client.key.data[ 2 ],
-            client.key.data[ 3 ],
-            client.key.data[ 4 ],
-            client.key.data[ 5 ],
-            client.key.data[ 6 ],
-            client.key.data[ 7 ]
-          );
-
-
-    std::cout << "Corrupted key: ";
-    server_key.dump();
-    printf( "Corrupted: 0x%04X%04X%04X%04X%04X%04X%04X%04X\n",
-            server_key.data[ 0 ],
-            server_key.data[ 1 ],
-            server_key.data[ 2 ],
-            server_key.data[ 3 ],
-            server_key.data[ 4 ],
-            server_key.data[ 5 ],
-            server_key.data[ 6 ],
-            server_key.data[ 7 ]
-         );
-	
-
       // run rbc kernel - fixed hamming distance (currently)
     for( int i=hamming_dist; i <= hamming_dist; i++ )
     {
@@ -206,7 +178,6 @@ ClientData make_client_data()
     //ret.plaintext = (unsigned char *)"0000000000000000";
 
     ret.plaintext_len = strlen( (char *)ret.plaintext );
-    std::cout << "Plaintext len: " << ret.plaintext_len << std::endl;
 
     // buffer for ciphertext
     // - ensure the buffer is long enough for the ciphertext which may
