@@ -15,7 +15,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::size_t threads_per_block,
                                    const std::size_t keys_per_thread,
                                    std::uint64_t num_keys,
-                                   std::uint64_t extra_keys,
+                                   std::uint16_t extra_keys,
                                    std::uint64_t *iter_count
                                  )
 {
@@ -30,13 +30,11 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     {
         get_perm_pair( &starting_perm, 
                        &ending_perm, 
-                       (std::size_t) tid, 
-                       (std::size_t) num_blocks * threads_per_block,
+                       (uint64_t) tid, 
+                       (uint64_t) num_blocks * threads_per_block,
                        mismatch,
                        keys_per_thread,
-                       key_sz_bits,
-                       extra_keys,
-                       num_keys
+                       extra_keys
                      );
         
         result = validator( &starting_perm,

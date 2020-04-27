@@ -1,205 +1,141 @@
-#include <iostream>
-#include <omp.h>
 #include "main.h"
-#include "perm_util.h"
+
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 #define OPS_PER_THREAD 12800
 
-unsigned char flip_n_bits( unsigned char val,
-                           int n
-)
-{
-    int mismatches = n;
-    unsigned char mask_left = 0xFF << ( 8 - mismatches );
-    unsigned char mask_right = 0xFF >> ( mismatches );
-
-    return ( mask_left & ~val ) | ( mask_right & val );
-                      
-}
 
 int main(int argc, char * argv[])
 {
-    if( argc != 4 )
+    
+    /* Parse args */
+    
+    if( argc != 3 )
     {
-        printf("\nERROR: must enter 3 args only [ uid, key, mismatches ]\n");
+        printf("\nERROR: must enter 2 args only [ hamming-distance, verbose ]\n");
         return 0;
     }
 
-    // parse args
-    char * uid     = argv[1];
-    char * key     = argv[2];
-    int mismatches = atoi(argv[3]);
+    int hamming_dist = atoi(argv[1]);
+    int verbose = atoi(argv[2]);
 
-    // partition key space
-    std::uint64_t extra_keys    = 0;
-    std::uint64_t total_keys    = get_bin_coef(UINT256_SIZE_IN_BITS,mismatches);
-    std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD; 
-    std::uint64_t num_blocks    = total_keys / ops_per_block; // kernel arg
-    ++num_blocks;
-   
-    std::uint64_t total_threads    = num_blocks * THREADS_PER_BLOCK;
-    std::uint64_t keys_per_thread  = total_keys / total_threads;
-    std::uint64_t last_thread_numkeys = keys_per_thread + total_keys - keys_per_thread*total_threads;
-    
-    printf("\nNumber of blocks: %d",num_blocks);
-    printf("\nNumber of threads per block: %d",THREADS_PER_BLOCK);
-    printf("\nNumber of keys per thread: %d",keys_per_thread);
-    printf("\nTotal number of keys: %d",total_keys);
-    printf("\nLast thread's number of keys: %d",last_thread_numkeys);
-
-    if( last_thread_numkeys != keys_per_thread )
+    if( hamming_dist < 0 || hamming_dist > MAX_HAMMING_DIST )
     {
-        extra_keys = last_thread_numkeys - keys_per_thread;
-
-        printf("\n\nWarning: num keys not divisible by num threads");
-        printf("\nLeftover keys = %d", extra_keys);
-        printf("\nThe first %d threads will handle leftover keys",extra_keys);
+        fprintf(stderr,"Hamming distance must be between 0 and %d inclusive\n",MAX_HAMMING_DIST);
     }
 
-    else
-    {
-        printf("\nTotal number of threads evenly divides total number of keys");   
-        printf("\nLeftover keys = %d",extra_keys);
-    }
 
-    ////////////////
-    // turn on gpu
-    printf("\nTurning on the GPU...\n");
-    warm_up_gpu( 0 );
+    /* Make Client Data */
 
-    uint8_t key_hex[32];
-    uint8_t uid_hex[16];
-
-    hex2bin(key,key_hex);
-    hex2bin(uid, uid_hex);
-
-    key_256 bit_key;
-    for (int i = 0 ; i < 32; i++)
-    {
-        bit_key.bits[i] = (uint8_t) key_hex[i];
-    }
-
+    struct ClientData client = make_client_data();
     message_128 cipher;
     message_128 uid_msg;
-    for (int i = 0 ; i < 16; i++)
+    for( int i=0; i<16; i++)
     {
-        cipher.bits[i] = (uint8_t) uid_hex[i];
-        uid_msg.bits[i] = (uint8_t) uid_hex[i];
+        cipher.bits[i] = (uint8_t) client.ciphertext[i];
+        uid_msg.bits[i] = client.plaintext[i] - '0';
     }
 
-    //print_message(cipher);
-
-    //print_key_256(bit_key);
     
+    /* Do RBC Authentication */
 
-    // make the sbox
-    uint8_t sbox[256];
-    aes_cpu::initialize_aes_sbox(sbox);
-    
-    aes_cpu::encrypt_ecb( &cipher, &bit_key );
+      // get server-side key (simulated server-side PUF image)
+    uint256_t server_key( 0 );
+    server_key.copy( client.key );
+    rand_flip_n_bits( &server_key, &client.key, hamming_dist );
+    uint256_t *host_key = &server_key;
 
-    // corrupt bit_key by number of mismatches
-    key_256 staging_key;
-    for (int i = 0; i < 32; i++ )
-    {
-        staging_key.bits[i] = (uint8_t) bit_key.bits[i];
-    }
-    // this is subject to change...
-    staging_key.bits[ 31 ] = flip_n_bits( bit_key.bits[ 31 ], mismatches );
+    uint256_t *auth_key( 0 );
+    if( verbose ) 
+        print_prelim_info( client, server_key );
 
-    /* ok, we now have:
-       - uid:          client's 128 bit message to encrypt
-       - cipher:       client's encrypted cipher text to check against 
-       - staging_key:  corrupted version of bit_key
-    */
-    printf("\nBegin authentication");
-    printf("\n====================\n\n");
-    double start_time = omp_get_wtime();
+      // initializations
+    struct timeval start, end;
+    std::uint64_t total_keys    = get_bin_coef(UINT256_SIZE_IN_BITS,hamming_dist);
+    std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD; 
+    std::uint64_t num_blocks    = total_keys / ops_per_block;
+    ++num_blocks;
+    std::uint64_t total_threads   = num_blocks * THREADS_PER_BLOCK;
+    std::uint64_t keys_per_thread = total_keys / total_threads;
+    std::uint64_t last_thread_numkeys = keys_per_thread + total_keys
+                                        - keys_per_thread * total_threads;
+    std::uint64_t extra_keys = last_thread_numkeys - keys_per_thread;
+    if( verbose ) 
+        print_rbc_info( num_blocks, 
+                        keys_per_thread, total_keys, 
+                        last_thread_numkeys, extra_keys );
+
+      // turn on gpu
+    printf("\n\nTurning on the GPU...\n");
+    warm_up_gpu( 0 );
+    printf("\n");
         
-    // send userid, cipher, and corrupted key to GPU global memory
-    uint256_t host_key_value;
-    aes_per_round::message_128 * dev_uid = nullptr;
-    aes_per_round::message_128 * dev_cipher = nullptr;
-    uint256_t *dev_key = nullptr, * host_key = nullptr;
-    host_key = &host_key_value;
-    uint256_t *dev_found_key = nullptr;
-    uint256_t host_found_key;
-    uint256_t original_key;
-    for( uint8_t i=0; i < 8; i++ )
-    { 
-        host_key->data[ i ] = bytes_to_int( (std::uint8_t*)(staging_key.bits + ( i * 4 ) ) );
-        original_key.data[ i ] = bytes_to_int( (std::uint8_t*)(bit_key.bits + ( i * 4 ) ) );
-    }
 
-    cudaMalloc( (void**) &dev_uid, sizeof( aes_per_round::message_128 ) );
+    gettimeofday(&start, NULL);
+
+
+      // set up device
+    aes_per_round::message_128 * dev_plaintext = nullptr;
+    aes_per_round::message_128 * dev_cipher = nullptr;
+    uint256_t *dev_key = nullptr;
+
+    cudaMalloc( (void**) &dev_plaintext, sizeof( aes_per_round::message_128 ) );
     cudaMalloc( (void**) &dev_cipher, sizeof( aes_per_round::message_128 ) );
     cudaMalloc( (void**) &dev_key, sizeof( uint256_t ) );
-    cudaMalloc( (void**) &dev_found_key, sizeof( uint256_t ) );
 
     std::uint64_t *total_iter_count = nullptr;
     cudaMallocManaged( (void**) &total_iter_count, sizeof( std::uint64_t ) );
     *total_iter_count = 0;
+    cudaMallocManaged( (void**) &auth_key, sizeof( uint256_t ) );
 
-    std::cout << "Original key: ";
-    original_key.dump();
-    printf( "Original: 0x%X%X%X%X%X%X%X%X\n",
-            original_key.data[ 0 ],
-            original_key.data[ 1 ],
-            original_key.data[ 2 ],
-            original_key.data[ 3 ],
-            original_key.data[ 4 ],
-            original_key.data[ 5 ],
-            original_key.data[ 6 ],
-            original_key.data[ 7 ]
-
-            );
-
-
-    std::cout << "Corrupted key: ";
-    host_key_value.dump();
-
-    printf( "Corrupted: 0x%X%X%X%X%X%X%X%X\n",
-            host_key_value.data[ 0 ],
-            host_key_value.data[ 1 ],
-            host_key_value.data[ 2 ],
-            host_key_value.data[ 3 ],
-            host_key_value.data[ 4 ],
-            host_key_value.data[ 5 ],
-            host_key_value.data[ 6 ],
-            host_key_value.data[ 7 ]
-
-            );
-
-
-
-    if( cuda_utils::HtoD( dev_uid, &uid_msg, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
+    if( cuda_utils::HtoD( dev_plaintext, &uid_msg, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
         {
             std::cout << "Failure to transfer uid to device\n";
         }
-
     if( cuda_utils::HtoD( dev_cipher, &cipher, sizeof( aes_per_round::message_128 ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer cipher to device\n";
         }
-
     if( cuda_utils::HtoD( dev_key, host_key, sizeof( uint256_t ) ) != cudaSuccess)
         {
             std::cout << "Failure to transfer corrupted_key to device\n";
         }
 
-    if( cuda_utils::HtoD( dev_found_key, &host_found_key, sizeof( uint256_t ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer client_key_to_find to device\n";
-        }
+    std::cout << "Original key: ";
+    client.key.dump();
+    printf( "Original: 0x%X%X%X%X%X%X%X%X\n",
+            client.key.data[ 0 ],
+            client.key.data[ 1 ],
+            client.key.data[ 2 ],
+            client.key.data[ 3 ],
+            client.key.data[ 4 ],
+            client.key.data[ 5 ],
+            client.key.data[ 6 ],
+            client.key.data[ 7 ]
+          );
 
+
+    std::cout << "Corrupted key: ";
+    server_key.dump();
+    printf( "Corrupted: 0x%X%X%X%X%X%X%X%X\n",
+            server_key.data[ 0 ],
+            server_key.data[ 1 ],
+            server_key.data[ 2 ],
+            server_key.data[ 3 ],
+            server_key.data[ 4 ],
+            server_key.data[ 5 ],
+            server_key.data[ 6 ],
+            server_key.data[ 7 ]
+         );
 	
-    for( int i=mismatches; i <= mismatches; i++ ) // fixed
+
+      // run rbc kernel - fixed hamming distance (currently)
+    for( int i=hamming_dist; i <= hamming_dist; i++ )
     {
        kernel_rbc_engine<<<num_blocks, THREADS_PER_BLOCK>>>( dev_key,
-                                                             dev_found_key,
+                                                             auth_key,
                                                              i,
-                                                             dev_uid,
+                                                             dev_plaintext,
                                                              dev_cipher,
                                                              UINT256_SIZE_IN_BITS,
                                                              num_blocks,
@@ -212,25 +148,186 @@ int main(int argc, char * argv[])
        cudaDeviceSynchronize();
     }
 
-    cudaError_t res = cudaSuccess;
-    
-    std::cout << "\nNum keys: " << total_keys << "\n";
-    std::cout << "Iterated: " << *total_iter_count << "\n";
-    std::cout << "Num_keys - Iterated: " << total_keys-*total_iter_count << "\n\n";
-    if( ( res = cuda_utils::DtoH( &host_found_key, dev_found_key, sizeof( uint256_t ) ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer client_key_to_find to host \n";
-            std::cout << "Failed with code: " << res << "\n";
-        }
 
-    double end_time = omp_get_wtime() ;
+    gettimeofday(&end, NULL);
 
-    std::cout << "Elapsed: " << end_time - start_time << "\n";
 
-    host_found_key.dump();
+
+    printf("\nResulting Authentication Key:\n");
+    auth_key->dump();
+
+    double elapsed = ((end.tv_sec*1000000.0 + end.tv_usec) -
+                     (start.tv_sec*1000000.0 + start.tv_usec)) / 1000000.00;
+
+    printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n",*total_iter_count,elapsed,*total_iter_count*1.0/(elapsed));
+
+
 
     return 0;
-
 } 
 
+unsigned char flip_n_bits( unsigned char val, int n )
+{
+    int hamming_dist = n;
+    unsigned char mask_left = 0xFF << ( 8 - hamming_dist );
+    unsigned char mask_right = 0xFF >> ( hamming_dist );
+
+    return ( mask_left & ~val ) | ( mask_right & val );
+                      
+}
+
+ClientData make_client_data()
+{
+    ClientData ret;
+
+    // random 256 bit key - used by the client for encryption
+    srand(7236); // for randomly generating keys 
+    for( uint8_t i=0; i<UINT256_SIZE_IN_BYTES; ++i)
+    {
+        uint8_t temp = rand() % 10;
+        ret.key.set(temp,i);
+    }
+
+    // 128 bit IV (initialization vector)
+    unsigned char *iv = (unsigned char *)"0123456789012345";
+
+    // message to be encrypted - from the client
+    ret.plaintext = (unsigned char *)"0000000011111111";
+    //ret.plaintext = (unsigned char *)"0000000000000000";
+
+    ret.plaintext_len = strlen( (char *)ret.plaintext );
+
+    // buffer for ciphertext
+    // - ensure the buffer is long enough for the ciphertext which may
+    //   be longer than the plaintext, depending on the algorithm and mode
+
+    // last private ciphertext len so if we fix the key we can validate 
+    // decryption works
+
+    // encrypt plaintext with our random key 
+    ret.ciphertext_len = encrypt(ret.plaintext,
+                                 ret.plaintext_len,
+                                 (uint8_t*)ret.key.get_data_ptr(),
+                                 iv,
+                                 ret.ciphertext);
+
+    return ret;
+}
+
+void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
+{
+    srand(238); // for randomly generating keys 
+
+    int hamming_dist = n;
+    int i=0;
+
+    while( i<hamming_dist ) // loop until we flipped hamming_dist number of bits
+    { 
+        uint8_t bit_idx = rand() % UINT256_SIZE_IN_BITS;
+        uint8_t block = bit_idx / UINT256_SIZE_IN_BYTES;
+
+        server_key->set_bit( bit_idx ); // bitwise OR operation
+
+        // only increment if we successfully flipped the bit
+        if( server_key->at(block) != client_key->at(block) )
+            i++;
+        else
+            srand(239);
+    }
+}
+
+void handleErrors(void)
+{
+    ERR_print_errors_fp(stderr);
+    abort();
+}
+
+int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+            unsigned char *iv, unsigned char *ciphertext)
+{
+    EVP_CIPHER_CTX *ctx;
+
+    int len;
+
+    int ciphertext_len;
+
+    /* Create and initialise the context */
+    if(!(ctx = EVP_CIPHER_CTX_new()))
+        handleErrors();
+
+    /*
+     * Initialise the encryption operation. IMPORTANT - ensure you use a key
+     * and IV size appropriate for your cipher
+     * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+     * IV size for *most* modes is the same as the block size. For AES this
+     * is 128 bits
+     */
+
+    //MG- comment CBC
+    // if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    //     handleErrors();
+    //ECB mode  
+    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, iv))
+        handleErrors();  
+
+    /*
+     * Provide the message to be encrypted, and obtain the encrypted output.
+     * EVP_EncryptUpdate can be called multiple times if necessary
+     */
+    if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+        handleErrors();
+    ciphertext_len = len;
+
+    /*
+     * Finalise the encryption. Further ciphertext bytes may be written at
+     * this stage.
+     */
+    if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
+        handleErrors();
+    ciphertext_len += len;
+
+    /* Clean up */
+    EVP_CIPHER_CTX_free(ctx);
+
+    return ciphertext_len;
+}
+
+void print_prelim_info(ClientData client, uint256_t server_key)
+{ 
+    printf("\n----------------------------");
+    printf("\nPreliminary Information");
+    printf("\n----------------------------");
+    printf("\nClient Key:\n");
+    client.key.dump();
+    printf("\nServer Corrupted Key:\n");
+    server_key.dump();
+    printf("\nClient Cipher Text (shared):\n");
+    for(int i=0; i<16; ++i) printf("0x%02X ",client.ciphertext[i]);
+    printf("\n\nClient Plain Text (shared):\n");
+    printf("%s",client.plaintext);
+    printf("\n----------------------------\n\n");
+
+    printf("\n----------------------------");
+    printf("\nBegin RBC");
+    printf("\n----------------------------");
+}
+
+void print_rbc_info(long unsigned int num_blocks,
+                    long unsigned int keys_per_thread,
+                    long long unsigned int total_keys,
+                    long unsigned int last_thread_numkeys,
+                    int extra_keys)
+{
+    printf("\n  Number of blocks: %d",num_blocks);
+    printf("\n  Number of threads per block: %d",THREADS_PER_BLOCK);
+    printf("\n  Number of keys per thread: %d",keys_per_thread);
+    printf("\n  Total number of keys: %d",total_keys);
+    printf("\n  Last thread's number of keys: %d\n",last_thread_numkeys);
+
+    if( last_thread_numkeys != keys_per_thread )
+    {
+        printf("    Warning: num keys not divisible by num threads");
+        printf("\n    Extra keys = %d\n\n", extra_keys);
+    }
+}
 

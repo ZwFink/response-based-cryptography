@@ -58,7 +58,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::size_t threads_per_block,
                                    const std::size_t keys_per_thread,
                                    std::uint64_t num_keys,
-                                   std::uint64_t extra_keys,
+                                   std::uint16_t extra_keys,
                                    std::uint64_t *iter_count
                                  );
 

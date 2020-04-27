@@ -2,19 +2,12 @@
 
 #include "perm_util.h"
 
-
-// COMPLETED
-__device__ void decode_ordinal( uint256_t *perm, 
-                                const uint64_t ordinal, 
-                                size_t mismatches, // 0-6
-                                int key_sz_bits    // 256
-                              )
+__device__ void decode_ordinal( uint256_t *perm, const uint64_t ordinal, uint8_t mismatches )
 {
    uint64_t binom = 0;
    uint64_t wkg_ord = ordinal;
-   perm->set_all( 0 );
 
-   for( size_t bit = key_sz_bits-1; mismatches > 0; bit-- )
+   for( uint8_t bit = UINT256_SIZE_IN_BITS-1; mismatches > 0; bit-- )
    {
       binom = get_bin_coef( bit, mismatches );
 
@@ -29,140 +22,81 @@ __device__ void decode_ordinal( uint256_t *perm,
    }
 }
 
-// COMPLETED
 __device__ void assign_first_permutation( uint256_t *perm, int mismatches )
 {
-   // Chris P's implementation: currently not working correctly
-   //// set the value of perm to 1
-   //perm->set_bit( 0 );
-
-   //*perm = *perm << mismatches; // shift left
-	//
-   //perm->add( *perm, UINT256_NEGATIVE_ONE ); // add negative one
-
-   // New implementation:
-   for( int i = 0; i < mismatches; ++i )
-   {
-      perm->set_bit( i );
-   }
+   for( int i=0; i<mismatches; ++i ) perm->set_bit( i );
 }
 
-// COMPLETED
-__device__ void assign_last_permutation( uint256_t *perm,
-                                         int mismatches,
-                                         int key_sz_bits )
+__device__ void assign_last_permutation( uint256_t *perm, int mismatches )
 {
+   assign_first_permutation(perm, mismatches);
 
-   // set perm to the first key
-   assign_first_permutation( perm, mismatches );
-
-   // Then find the last key by shifting the first
-   // Equiv to: perm << (key_length - mismatches)
-   // E.g. if key_length = 256 and mismatches = 5,
-   //      we want to shift left 256 - 5 = 251 times.
-   *perm = *perm << (key_sz_bits - mismatches);
+   *perm = *perm << (UINT256_SIZE_IN_BITS - mismatches);
 }
 
-// COMPLETED
-// Precondition: starting_perm and ending_perm have been initialized
 __device__ void get_perm_pair( uint256_t *starting_perm, 
                                uint256_t *ending_perm,
-                               std::size_t pair_index,        // thread num
-                               std::size_t pair_count,        // num threads
-                               const int mismatches,           
-                               const std::size_t keys_per_thread,
-                               std::size_t key_sz_bits,        
-                               const std::uint64_t extra_keys,
-                               const std::uint64_t total_perms
+                               uint64_t tid,        
+                               uint64_t num_threads,
+                               const uint8_t mismatches,           
+                               const std::uint64_t keys_per_thread,
+                               const std::uint16_t extra_keys
                              )
 {
    uint64_t strt_ordinal   = 0;
    uint64_t ending_ordinal = 0;
 
-    if( pair_index < extra_keys )
+    if( tid < extra_keys )
     {
-        if( pair_index == 0 )
+        if( tid == 0 )
         {
-           assign_first_permutation( starting_perm, mismatches );
+           assign_first_permutation(starting_perm, mismatches);
         } 
         else
         {
-           strt_ordinal = ( keys_per_thread * pair_index ) + 1;
+           strt_ordinal = ( keys_per_thread * tid ) + 1;
 
-           decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
+           decode_ordinal(starting_perm, strt_ordinal, mismatches);
         }
 
         ending_ordinal = strt_ordinal + keys_per_thread;
         
-        decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
+        decode_ordinal(ending_perm, ending_ordinal, mismatches);
     }
     else
     {
+        strt_ordinal = ( keys_per_thread * tid ) + extra_keys;
 
-        strt_ordinal = ( keys_per_thread * pair_index ) + extra_keys;
+        decode_ordinal(starting_perm, strt_ordinal, mismatches);
 
-        decode_ordinal(starting_perm, strt_ordinal, mismatches, key_sz_bits);
-
-        if( pair_index == pair_count - 1 )
+        if( tid == num_threads - 1 )
         {
-           assign_last_permutation( ending_perm, mismatches, key_sz_bits );
+           assign_last_permutation(ending_perm, mismatches);
         } 
         else
         {
-           //ending_ordinal = ( total_perms / pair_count ) * (pair_index + 1);
            ending_ordinal = strt_ordinal + ( keys_per_thread - 1 );
         
-           decode_ordinal(ending_perm, ending_ordinal, mismatches, key_sz_bits);
+           decode_ordinal(ending_perm, ending_ordinal, mismatches);
         }
     }
 }
 
-// Returns value of Binomial Coefficient C(n, k)  
-// ref: https://www.geeksforgeeks.org/space-and-time-efficient-binomial-coefficient/
-CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(size_t n, size_t k)
+CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(uint16_t n, uint16_t k)
 {  
     uint64_t ret = 1;  
-    int i;
   
     // Since C(n, k) = C(n, n-k)  
-    if ( k > n - k )  
-        k = n - k;  
-  
-    // Calculate value of  
-    // [n * (n-1) *---* (n-k+1)] / [k * (k-1) *----* 1]  
-    //if( k >= 4 )
-    //{
-    //    // IMPLEMENT: pipelining technique to increase 
-    //    //            the number of operations per cycle
-    //    //            also increases register usage (dropping occupancy) 
-    //    //            unroll "4" specifically
-    //    for (i = 0; i < k; i+=4)  
-    //    {  
-    //        ret *= (n - i);  
-    //        ret /= (i + 1);  
+    if( k > n-k )  
+        k = n-k;  
 
-    //        ret *= (n - (i+1));  
-    //        ret /= ((i+1) + 1);  
-
-    //        ret *= (n - (i+2));  
-    //        ret /= ((i+2) + 1);  
-
-    //        ret *= (n - (i+3));  
-    //        ret /= ((i+3) + 1);  
-    //    }  
-    //}
-    //else 
-    //{
-
-    for (i = 0; i < k; ++i)  
+    for( int i=0; i<k; ++i )  
     {  
-        ret *= (n - i);  
-        ret /= (i + 1);  
+        ret *= (n-i);  
+        ret /= (i+1);  
     }
 
-    //}
-  
     return ret;  
 }  
 
-                             
+

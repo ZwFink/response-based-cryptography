@@ -26,6 +26,7 @@ CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -DTHREADS_PER_BLOC
 DEBUGFLAGS := -O0 -g --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
 
+LFLAGS := -lcrypto -lssl
 CCTESTFLAGS := -Itest/ -Ilib/ -Isrc/
 TT?=128
 MODE?=HYBRID
@@ -63,7 +64,7 @@ gbench: AES_gmem.o uint.o sbox.o aes_per_round.o uint_iter.o benchmark.o util.o
 	$(NVCC) $(CCFLAGS) -o $@ $^
 
 sbench: benchmark.o util_main.o $(GENERAL_OBJECTS)
-	$(NVCC) $(CCFLAGS) -o $@ $^
+	$(NVCC) $(CCFLAGS) -o $@ $^ $(LFLAGS)
 
 util.o: $(UTIL_FILES)
 	$(NVCC) $(CCFLAGS) -c -o $@ $<
@@ -75,7 +76,7 @@ AES_smem.o: $(AES_FILES) $(UINT_FILES)
 	$(NVCC) $(CCFLAGS) -DTTABLE=$(TT) -D$(MODE) -DUSE_SMEM -c -o $@ $<
 
 benchmark.o: dev_main.cu main.h
-	$(NVCC) $(CCFLAGS) -DNBLOCKS=$(NBLCKS) -DBLOCKSIZE=$(BLOCKSZ) -c -o $@ $< 
+	$(NVCC) $(CCFLAGS) -DMAX_HAMMING_DIST=5 -c -o $@ $< 
 
 .PHONY: clean clobber debug
 
