@@ -79,6 +79,8 @@ CUDA_CALLABLE_MEMBER void uint256_t::set_bit( std::uint8_t bit_idx )
    
     data[ block ] |= ( 1 << ndx_in_block );
 }
+
+
 // host method only - for printing
 __host__ void uint256_t::dump()
 {
@@ -192,7 +194,7 @@ CUDA_CALLABLE_MEMBER void uint256_t::operator=( const uint256_t& set )
 {
     for( std::uint8_t a = 0; a < UINT256_SIZE_IN_BYTES; ++a )
     {
-        *(data + a) = *(set.data + a);
+        data[ a ] = set.data[ a ];
     }
 }
 CUDA_CALLABLE_MEMBER bool uint256_t::operator!=( const uint256_t& comp ) const
