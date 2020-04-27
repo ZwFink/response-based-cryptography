@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include <iostream>
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
 #define OPS_PER_THREAD 12800
@@ -32,17 +33,32 @@ int main(int argc, char * argv[])
     message_128 uid_msg;
     for( int i=0; i<16; i++)
     {
-        cipher.bits[i] = (uint8_t) client.ciphertext[i];
-        uid_msg.bits[i] = client.plaintext[i] - '0';
+        // uid_msg.bits[i] = client.plaintext[i] - '0';
+        uid_msg.bits[i] = client.plaintext[i];
     }
 
+    for( int i = 0; i < 16; i +=4 )
+        {
+            cipher.bits[ i ] = (uint8_t) client.ciphertext[ i + 3 ];
+            cipher.bits[ i + 1 ] = (uint8_t) client.ciphertext[ i + 2 ];
+            cipher.bits[ i + 2 ] = (uint8_t) client.ciphertext[ i + 1 ];
+            cipher.bits[ i + 3 ] = (uint8_t) client.ciphertext[ i + 0 ];
+        }
     
     /* Do RBC Authentication */
 
       // get server-side key (simulated server-side PUF image)
     uint256_t server_key( 0 );
     server_key.copy( client.key );
-    rand_flip_n_bits( &server_key, &client.key, hamming_dist );
+    // rand_flip_n_bits( &server_key, &client.key, hamming_dist );
+    server_key.data[ 0 ] = 0x00000021;
+    server_key.data[ 1 ] = 0x00000004;
+    server_key.data[ 2 ] = 0x00000000;
+    server_key.data[ 3 ] = 0x00000004;
+    server_key.data[ 4 ] = 0x00000006;
+    server_key.data[ 5 ] = 0x00000006;
+    server_key.data[ 6 ] = 0x00000004;
+    server_key.data[ 7 ] = 0x00000005;
     uint256_t *host_key = &server_key;
 
     uint256_t *auth_key( 0 );
@@ -103,7 +119,7 @@ int main(int argc, char * argv[])
 
     std::cout << "Original key: ";
     client.key.dump();
-    printf( "Original: 0x%X%X%X%X%X%X%X%X\n",
+    printf( "Original: 0x%04X%04X%04X%04X%04X%04X%04X%04X\n",
             client.key.data[ 0 ],
             client.key.data[ 1 ],
             client.key.data[ 2 ],
@@ -117,7 +133,7 @@ int main(int argc, char * argv[])
 
     std::cout << "Corrupted key: ";
     server_key.dump();
-    printf( "Corrupted: 0x%X%X%X%X%X%X%X%X\n",
+    printf( "Corrupted: 0x%04X%04X%04X%04X%04X%04X%04X%04X\n",
             server_key.data[ 0 ],
             server_key.data[ 1 ],
             server_key.data[ 2 ],
@@ -196,6 +212,7 @@ ClientData make_client_data()
     //ret.plaintext = (unsigned char *)"0000000000000000";
 
     ret.plaintext_len = strlen( (char *)ret.plaintext );
+    std::cout << "Plaintext len: " << ret.plaintext_len << std::endl;
 
     // buffer for ciphertext
     // - ensure the buffer is long enough for the ciphertext which may
@@ -203,11 +220,22 @@ ClientData make_client_data()
 
     // last private ciphertext len so if we fix the key we can validate 
     // decryption works
+    uint8_t key[ 32 ];
+
+    for( int idx = 0; idx < 8; ++idx )
+        {
+            int offset = idx * 4;
+            int value = ret.key.data[ idx ];
+            key[ offset + 0 ] = ((value>>24)&0xFF);
+            key[ offset + 1 ] = ((value>>16)&0xFF);
+            key[ offset + 2 ] = ((value>>8)&0xFF);
+            key[ offset + 3 ] = ((value)&0xFF);
+        }
 
     // encrypt plaintext with our random key 
     ret.ciphertext_len = encrypt(ret.plaintext,
                                  ret.plaintext_len,
-                                 (uint8_t*)ret.key.get_data_ptr(),
+                                 key,
                                  iv,
                                  ret.ciphertext);
 
