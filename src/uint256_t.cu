@@ -7,8 +7,6 @@
 //             - the least significant byte is stored first
 
 
-
-
 // namespace below has not been adapted
 namespace uint256_ctz_table
 {
@@ -28,11 +26,6 @@ namespace uint256_ctz_table
         return lookup[ ( -loc & loc ) % 37 ];
     }
 }
-
-
-
-
-/* Constructors and methods */
 
 // default constructor
 uint256_t::uint256_t()
@@ -244,7 +237,6 @@ CUDA_CALLABLE_MEMBER std::uint32_t uint256_t::at( int loc )
 {
     return data[ loc ];
 }
-// shifts are suspect for hidden bugs
 CUDA_CALLABLE_MEMBER uint256_t uint256_t::operator>>( int shift ) const
 {
     uint256_t ret;
