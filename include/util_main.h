@@ -38,6 +38,8 @@
 
 void warm_up_gpu( int device );
 
+__host__ __device__ uint bytes_to_int( const std::uint8_t *bytes );
+
 __device__ int validator( uint256_t *starting_perm,
                           uint256_t *ending_perm,
                           uint256_t *key_for_encryp,
@@ -56,8 +58,9 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::size_t threads_per_block,
                                    const std::size_t keys_per_thread,
                                    std::uint64_t num_keys,
-                                   std::uint64_t extra_keys,
-                                   std::uint64_t *iter_count
+                                   std::uint16_t extra_keys,
+                                   std::uint64_t *iter_count,
+                                   int *key_found_flag
                                  );
 
 #endif // MAIN_UTIL_HH_INCLUDED
