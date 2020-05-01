@@ -19,7 +19,7 @@
 #include "AES.h"
 #include "aes_per_round.h"
 #include "cuda_utils.h"
-#include "main_util.h"
+#include "util_main.h"
 #include "uint256_t.h"
 #include "aes_cpu.h"
 #include "perm_util.h"
