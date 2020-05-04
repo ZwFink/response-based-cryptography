@@ -11,14 +11,15 @@ int main(int argc, char * argv[])
     
     /* Parse args */
     
-    if( argc != 3 )
+    if( argc != 4 )
     {
-        printf("\nERROR: must enter 2 args only [ hamming-distance, verbose ]\n");
+        printf("\nERROR: must enter 3 args only [ hamming-distance, verbose, num-devices ]\n");
         return 0;
     }
 
     int hamming_dist = atoi(argv[1]);
     int verbose = atoi(argv[2]);
+    int num_devices = atoi(argv[3]);
 
     if( hamming_dist < 0 || hamming_dist > MAX_HAMMING_DIST )
     {
@@ -43,7 +44,7 @@ int main(int argc, char * argv[])
             cipher.bits[ i + 2 ] = (uint8_t) client.ciphertext[ i + 1 ];
             cipher.bits[ i + 3 ] = (uint8_t) client.ciphertext[ i + 0 ];
         }
-    
+   
 
     /* Do RBC Authentication */
 
@@ -58,19 +59,21 @@ int main(int argc, char * argv[])
     std::uint64_t last_thread_numkeys = keys_per_thread + total_keys
                                         - keys_per_thread * total_threads;
     std::uint64_t extra_keys = last_thread_numkeys - keys_per_thread;
+    int offset = total_threads / num_devices;
+    int lower_lim=0, upper_lim=0;
         // host variables 
     uint256_t server_key( 0 );
     server_key.copy( client.key );
     select_middle_key( &server_key, hamming_dist, total_threads );
     uint256_t *host_server_key = &server_key;
-    uint256_t *auth_key( 0 );
-    std::uint64_t *total_iter_count = nullptr;
-    int *key_found_flag = nullptr;
+    uint256_t *auth_key[ num_devices ];
+    std::uint64_t *total_iter_count[ num_devices ];
+    int *key_found_flag[ num_devices ];
         // device variables
-    aes_per_round::message_128 * dev_plaintext = nullptr;
-    aes_per_round::message_128 * dev_cipher    = nullptr;
-    uint256_t *dev_server_key = nullptr;
-
+    uint256_t *dev_server_key[ num_devices ];
+    aes_per_round::message_128 * dev_plaintext[ num_devices ];
+    aes_per_round::message_128 * dev_cipher[ num_devices ];
+    
     if( verbose ) 
     {
         print_prelim_info( client, server_key );
@@ -80,74 +83,94 @@ int main(int argc, char * argv[])
     }
 
       // turn on gpu
-    printf("\n\nTurning on the GPU...\n");
-    warm_up_gpu( 0 );
+    printf("\n\nTurning on the GPUs...\n");
+    for( int dev=0; dev<num_devices; ++dev ) warm_up_gpu( dev );
     printf("\n");
         
+    long long unsigned int total_iterations = 0;
 
     gettimeofday(&start, NULL);
 
-
-      // set up device
-    cudaMalloc( (void**) &dev_plaintext, sizeof( aes_per_round::message_128 ) );
-    cudaMalloc( (void**) &dev_cipher, sizeof( aes_per_round::message_128 ) );
-    cudaMalloc( (void**) &dev_server_key, sizeof( uint256_t ) );
-
-    cudaMallocManaged( (void**) &total_iter_count, sizeof( std::uint64_t ) );
-    *total_iter_count = 0;
-    cudaMallocManaged( (void**) &auth_key, sizeof( uint256_t ) );
-    cudaMallocManaged( (void**) &key_found_flag, sizeof( int ) );
-    *key_found_flag = 0;
-
-    if( cuda_utils::HtoD( dev_plaintext, &uid_msg, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
-        {
-            std::cout << "Failure to transfer uid to device\n";
-        }
-    if( cuda_utils::HtoD( dev_cipher, &cipher, sizeof( aes_per_round::message_128 ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer cipher to device\n";
-        }
-    if( cuda_utils::HtoD( dev_server_key, host_server_key, sizeof( uint256_t ) ) != cudaSuccess)
-        {
-            std::cout << "Failure to transfer corrupted_key to device\n";
-        }
-
-      // run rbc kernel 
-    for( int i=1; i <= hamming_dist; i++ )
+      // set up devices
+    for( int dev=0; dev<num_devices; ++dev )
     {
-       kernel_rbc_engine<<<num_blocks, THREADS_PER_BLOCK>>>( dev_server_key,
-                                                             auth_key,
-                                                             i,
-                                                             dev_plaintext,
-                                                             dev_cipher,
-                                                             UINT256_SIZE_IN_BITS,
-                                                             num_blocks,
-                                                             THREADS_PER_BLOCK,
-                                                             keys_per_thread,
-                                                             total_keys,
-                                                             extra_keys,
-                                                             total_iter_count,
-                                                             key_found_flag
-                                                           );
-       cudaDeviceSynchronize();
+        cudaSetDevice( dev );
+        cudaMalloc( (void**) &dev_plaintext[dev], sizeof( aes_per_round::message_128 ) );
+        cudaMalloc( (void**) &dev_cipher[dev], sizeof( aes_per_round::message_128 ) );
+        cudaMalloc( (void**) &dev_server_key[dev], sizeof( uint256_t ) );
+        cudaMallocManaged( (void**) &total_iter_count[dev], sizeof( std::uint64_t ) );
+        *total_iter_count[dev] = 0;
+        cudaMallocManaged( (void**) &auth_key[dev], sizeof( uint256_t ) );
+        cudaMallocManaged( (void**) &key_found_flag[dev], sizeof( int ) );
+        *key_found_flag[dev] = 0;
+
+        if( cuda_utils::HtoD( dev_plaintext[dev], &uid_msg, sizeof( aes_per_round::message_128 ) ) != cudaSuccess )
+            {
+                std::cout << "Failure to transfer uid to device\n";
+            }
+        if( cuda_utils::HtoD( dev_cipher[dev], &cipher, sizeof( aes_per_round::message_128 ) ) != cudaSuccess)
+            {
+                std::cout << "Failure to transfer cipher to device\n";
+            }
+        if( cuda_utils::HtoD( dev_server_key[dev], host_server_key, sizeof( uint256_t ) ) != cudaSuccess)
+            {
+                std::cout << "Failure to transfer corrupted_key to device\n";
+            }
     }
 
+      // run rbc kernel 
+    for( int curr_hamming_dist = hamming_dist; curr_hamming_dist <= hamming_dist; ++curr_hamming_dist )
+    {
+        int dev = 0;
+        omp_set_num_threads( num_devices );
+        #pragma omp parallel for private(dev,lower_lim,upper_lim)
+        for( dev=0; dev<num_devices; dev++ )
+        {
+            lower_lim = dev * offset;
+            upper_lim = lower_lim + offset;
 
+            cudaSetDevice( dev );
+            kernel_rbc_engine<<<num_blocks, THREADS_PER_BLOCK>>>( dev_server_key[dev],
+                                                                  auth_key[dev],
+                                                                  curr_hamming_dist,
+                                                                  dev_plaintext[dev],
+                                                                  dev_cipher[dev],
+                                                                  UINT256_SIZE_IN_BITS,
+                                                                  num_blocks,
+                                                                  THREADS_PER_BLOCK,
+                                                                  keys_per_thread,
+                                                                  total_keys,
+                                                                  extra_keys,
+                                                                  total_iter_count[dev],
+                                                                  key_found_flag[dev],
+                                                                  lower_lim,
+                                                                  upper_lim
+                                                                );
+            cudaDeviceSynchronize();
+            if( EARLY_EXIT && *auth_key[dev] == client.key ) for(int i=0; i<num_devices; ++i) *key_found_flag[i]=1;
+        }
+
+        for( int dev=0; dev<num_devices; ++dev ) total_iterations += *total_iter_count[dev];
+    }
 
     gettimeofday(&end, NULL);
-
 
 
     double elapsed = ((end.tv_sec*1000000.0 + end.tv_usec) -
                      (start.tv_sec*1000000.0 + start.tv_usec)) / 1000000.00;
 
-    printf("\nResulting Authentication Key:\n");
-    auth_key->dump();
+    if( verbose )
+    {
+        printf("\nResulting Authentication Key:\n");
+        for( int dev=0; dev<num_devices; ++dev ) auth_key[dev]->dump();
+    }
 
-    printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n",(long long unsigned int)*total_iter_count,elapsed,*total_iter_count*1.0/(elapsed));
+    printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n",total_iterations,elapsed,total_iterations*1.0/(elapsed));
 
+    int success = 0;
+    for( int dev=0; dev<num_devices; ++dev ) if( *auth_key[dev] == client.key ) success=1;
 
-    if( *auth_key == client.key )
+    if( success )
         {
             std::cout << "SUCCESS: The keys match!\n";
         }
@@ -156,9 +179,6 @@ int main(int argc, char * argv[])
             std::cout << "ERROR: The keys do not match.\n";
         }
 
-
-    //cudaFree(total_iter_count);
-    //cudaFree(auth_key);
 
     return 0;
 } 
@@ -228,7 +248,6 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
     uint64_t num_keys = get_bin_coef( 256, hamming_dist );
     uint32_t extra_keys = num_keys % num_ranks;
     uint64_t keys_per_thread = num_keys / num_ranks;
-    fprintf(stderr,"\nKEYS_PER_THREAD == %llu\n",keys_per_thread);
     
     // get our target ordinal for creating our target permutation
     uint32_t target_rank = ( num_ranks%2==0 ? (num_ranks/2)-1 : (num_ranks/2) );
@@ -244,6 +263,8 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks )
         else
             target_ordinal = target_rank*keys_per_thread + extra_keys + target_rank_num_keys;
     }
+
+    //fprintf(stderr,"\n\nTARGET: rank = %lu, ordinal = %llu\n\n",target_rank,target_ordinal);
 
     // get our target permutation
     uint256_t target_perm( 0 );

@@ -17,46 +17,16 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    std::uint64_t num_keys,
                                    std::uint16_t extra_keys,
                                    std::uint64_t *iter_count,
-                                   int *key_found_flag
+                                   int *key_found_flag,
+                                   const int lower_limit,
+                                   const int upper_limit
                                  )
 {
     unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x );
 
-    uint256_t starting_perm, ending_perm;
-
     if( tid < num_keys )
     {
-        get_perm_pair( &starting_perm, 
-                       &ending_perm, 
-                       (uint64_t) tid, 
-                       (uint64_t) num_blocks * threads_per_block,
-                       mismatch,
-                       keys_per_thread,
-                       extra_keys
-                     );
-        
-        uint userid[ 4 ];
-        uint cyphertext[ 4 ];
-        uint authcipher[ 4 ];
-
-        userid[ 0 ] = bytes_to_int( user_id->bits );
-        userid[ 1 ] = bytes_to_int( user_id->bits + 4 );
-        userid[ 2 ] = bytes_to_int( user_id->bits + 8 );
-        userid[ 3 ] = bytes_to_int( user_id->bits + 12 );
-
-        authcipher[ 0 ] = bytes_to_int( auth_cipher->bits );
-        authcipher[ 1 ] = bytes_to_int( auth_cipher->bits + 4 );
-        authcipher[ 2 ] = bytes_to_int( auth_cipher->bits + 8 );
-        authcipher[ 3 ] = bytes_to_int( auth_cipher->bits + 12 );
-
         aes_tables tabs;
-        std::uint8_t idx = 0;
-        std::uint8_t match = 0;
-        int total = 0;
-        //__shared__ int key_found;
-        //key_found = 0;
-        //__syncthreads();
-
         #ifdef USE_SMEM
         __shared__ std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ];
         if( threadIdx.x < SBOX_SIZE_IN_BYTES )
@@ -76,11 +46,11 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
         load_smem(Te0, cTe0, Te1, cTe1, Te2, cTe2, Te3, cTe3);
         // NOTE: __syncthreads not used here because it's called in
         // util::load_smem
+
         tabs.Te0 = Te0;
         tabs.Te1 = Te1;
         tabs.Te2 = Te2;
         tabs.Te3 = Te3;
-        
 
         #else
         // just get a reference to it
@@ -93,49 +63,81 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
         #endif 
 
-        tabs.sbox = sbox;
 
-        uint256_iter iter ( *key_for_encryp,
-                            starting_perm,
-                            ending_perm
-                          );
+        if( lower_limit <= tid && tid < upper_limit )
+        {    
+            uint256_t starting_perm, ending_perm;
+            tabs.sbox = sbox;
+            std::uint8_t idx = 0;
+            std::uint8_t match = 0;
+            int total = 0;
 
-        while( !iter.end() )
-            {
+            uint userid[ 4 ];
+            uint cyphertext[ 4 ];
+            uint authcipher[ 4 ];
 
-                ++total;
-                // encrypt
-                aes_gpu::encrypt( userid,
-                                  cyphertext,
-                                  (uint*)(iter.corrupted_key.data),
-                                  &tabs
-                                );
+            userid[ 0 ] = bytes_to_int( user_id->bits );
+            userid[ 1 ] = bytes_to_int( user_id->bits + 4 );
+            userid[ 2 ] = bytes_to_int( user_id->bits + 8 );
+            userid[ 3 ] = bytes_to_int( user_id->bits + 12 );
 
-                // check for match! 
-                for( idx = 0; idx < 4; ++idx )
-                    {
-                        match += ( cyphertext[ idx ] == authcipher[ idx ] );
-                    }
+            authcipher[ 0 ] = bytes_to_int( auth_cipher->bits );
+            authcipher[ 1 ] = bytes_to_int( auth_cipher->bits + 4 );
+            authcipher[ 2 ] = bytes_to_int( auth_cipher->bits + 8 );
+            authcipher[ 3 ] = bytes_to_int( auth_cipher->bits + 12 );
 
-               if( match == 4 )
-                    {
-                        *key_to_find = iter.corrupted_key;
-                        atomicAdd( (unsigned long long int*) key_found_flag, 1 );
-                        //__trap();
-                    }
+            get_perm_pair( &starting_perm, 
+                           &ending_perm, 
+                           (uint64_t) tid, 
+                           (uint64_t) num_blocks * threads_per_block,
+                           mismatch,
+                           keys_per_thread,
+                           extra_keys
+                         );
 
-                match = 0;
+            uint256_iter iter ( *key_for_encryp,
+                                starting_perm,
+                                ending_perm
+                              );
 
-                // get next key
-                iter.next();
+            while( !iter.end() )
+                {
 
-                if( (total%ITERCOUNT)==0 && *key_found_flag )
-                    break;
+                    ++total;
+                    // encrypt
+                    aes_gpu::encrypt( userid,
+                                      cyphertext,
+                                      (uint*)(iter.corrupted_key.data),
+                                      &tabs
+                                    );
 
-            }
+                    // check for match! 
+                    for( idx = 0; idx < 4; ++idx )
+                        {
+                            match += ( cyphertext[ idx ] == authcipher[ idx ] );
+                        }
 
+                    if( match == 4 )
+                        {
+                            *key_to_find = iter.corrupted_key;
+                            if( EARLY_EXIT )
+                                atomicAdd( (unsigned long long int*) key_found_flag, 1 );
+                            //__trap();
+                        }
 
-        atomicAdd( (unsigned long long int*) iter_count, total );
+                    match = 0;
+
+                    // get next key
+                    iter.next();
+
+                    // exit early strategy
+                    if( EARLY_EXIT && (total%ITERCOUNT)==0 && *key_found_flag )
+                        break;
+
+                }
+
+            atomicAdd( (unsigned long long int*) iter_count, total );
+        }
     }
 
 }
