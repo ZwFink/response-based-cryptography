@@ -14,7 +14,7 @@ __device__ void get_perm_pair( uint256_t *starting_perm,
                                uint64_t num_threads,
                                const uint8_t mismatches,           
                                const std::uint64_t keys_per_thread,
-                               const std::uint16_t extra_keys
+                               const std::uint32_t extra_keys
                              );
 CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(uint16_t n, uint16_t k);
 
