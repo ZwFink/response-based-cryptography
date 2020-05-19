@@ -105,8 +105,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                 if( match == 4 )
                     {
                         *key_to_find = iter.corrupted_key;
-                        //if( EARLY_EXIT )
-                        //    atomicAdd( (unsigned long long int*) key_found_flag, 1 );
+                        if( EARLY_EXIT )
+                            atomicAdd( (unsigned long long int*) key_found_flag, 1 );
                         //__trap();
                     }
 
@@ -116,8 +116,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                 iter.next();
 
                 // exit early strategy
-                //if( EARLY_EXIT && (total%CHECKCOUNT)==0 && *key_found_flag )
-                //    break;
+                if( EARLY_EXIT && (total%ITERCOUNT)==0 && *key_found_flag )
+                    break;
 
             }
 

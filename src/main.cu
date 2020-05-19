@@ -59,26 +59,36 @@ int main(int argc, char * argv[])
       // initializations
     omp_set_num_threads( num_gpus );
     struct timeval start, end;
-    std::uint64_t total_keys    = get_bin_coef(UINT256_SIZE_IN_BITS,hamming_dist);
-    std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD; 
-    std::uint64_t num_blocks    = total_keys / ops_per_block;
-    ++num_blocks;
-    std::uint64_t total_threads   = num_blocks * THREADS_PER_BLOCK;
-    std::uint64_t keys_per_thread = total_keys / total_threads;
-    std::uint64_t last_thread_numkeys = keys_per_thread + total_keys
-                                        - keys_per_thread * total_threads;
-    std::uint32_t extra_keys = last_thread_numkeys - keys_per_thread;
-    //check_count = ceil(keys_per_thread * check_count);
-    //fprintf(stderr,"\nITERCOUNT = %f\n",check_count);
+    int dev=0, h=0;
+    std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD;
+    std::uint64_t total_keys[ hamming_dist ];
+    std::uint64_t num_blocks[ hamming_dist ];
+    std::uint64_t total_threads[ hamming_dist ];  
+    std::uint64_t keys_per_thread[ hamming_dist ];
+    std::uint64_t last_th_numkeys[ hamming_dist ];
+    std::uint32_t extra_keys[ hamming_dist ];
+                 //check_count = ceil(keys_per_thread * check_count);
+                 //fprintf(stderr,"\nITERCOUNT = %f\n",check_count);
         // multi-gpu calculations
     long long unsigned int total_iterations = 0;
-    int blocks_per_gpu = (num_blocks%num_gpus==0) ? (num_blocks/num_gpus) : (num_blocks/num_gpus)+1;
-    int offset         = total_threads / num_gpus; // assumes THREADS_PER_BLOCK % num_gpus == 0
-    int dev = 0;
+    int blocks_per_gpu[ hamming_dist ];
+    int offset[ hamming_dist ]; // assumes THREADS_PER_BLOCK % num_gpus == 0
+    #pragma omp parallel for private(h)
+    for( h=0; h<hamming_dist; h++ )
+    {
+        total_keys[h]      = get_bin_coef( UINT256_SIZE_IN_BITS, h+1 );
+        num_blocks[h]      = ( total_keys[h] / ops_per_block ) + 1;
+        total_threads[h]   = num_blocks[h] * THREADS_PER_BLOCK;
+        keys_per_thread[h] = total_keys[h] / total_threads[h];
+        last_th_numkeys[h] = keys_per_thread[h] + total_keys[h] - (keys_per_thread[h] * total_threads[h]);
+        extra_keys[h]      = last_th_numkeys[h] - keys_per_thread[h];
+        blocks_per_gpu[h]  = (num_blocks[h]%num_gpus==0) ? (num_blocks[h]/num_gpus) : (num_blocks[h]/num_gpus)+1;
+        offset[h]          = total_threads[h] / num_gpus;
+    }
         // host variables 
     uint256_t server_key( 0 );
     server_key.copy( client.key );
-    select_middle_key( &server_key, hamming_dist, total_threads, num_gpus );
+    select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus );
     uint256_t *host_server_key = &server_key;
     uint256_t *auth_key[ num_gpus ];
     std::uint64_t *total_iter_count[ num_gpus ];
@@ -91,9 +101,10 @@ int main(int argc, char * argv[])
     if( verbose ) 
     {
         print_prelim_info( client, server_key );
-        print_rbc_info( num_blocks, 
-                        keys_per_thread, total_keys, 
-                        last_thread_numkeys, extra_keys );
+        for( h=0; h<hamming_dist; h++ )
+            print_rbc_info( num_blocks[h], 
+                            keys_per_thread[h], total_keys[h], 
+                            last_th_numkeys[h], extra_keys[h], h+1 );
     }
 
       // turn on gpu
@@ -104,7 +115,8 @@ int main(int argc, char * argv[])
 
     gettimeofday(&start, NULL);
 
-      // set up devices
+      // allocate and set device variables
+    #pragma omp parallel for private(dev)
     for( int dev=0; dev<num_gpus; ++dev )
     {
         cudaSetDevice( dev );
@@ -132,34 +144,36 @@ int main(int argc, char * argv[])
     }
 
       // run rbc kernel 
-    for( int curr_hamming_dist = 1; curr_hamming_dist <= hamming_dist; ++curr_hamming_dist )
+    for( h=1; h<=hamming_dist; ++h )
     {
+        for( int i=0; i<num_gpus; ++i ) *total_iter_count[i]=0;
+
         #pragma omp parallel for private(dev)
         for( dev=0; dev<num_gpus; dev++ )
         {
             cudaSetDevice( dev );
 
-            kernel_rbc_engine<<<blocks_per_gpu,THREADS_PER_BLOCK>>>( dev_server_key[dev],
-                                                                     auth_key[dev],
-                                                                     curr_hamming_dist,
-                                                                     dev_plaintext[dev],
-                                                                     dev_cipher[dev],
-                                                                     num_blocks,
-                                                                     THREADS_PER_BLOCK,
-                                                                     keys_per_thread,
-                                                                     total_keys,
-                                                                     extra_keys,
-                                                                     total_iter_count[dev],
-                                                                     key_found_flag[dev],
-                                                                     offset,
-                                                                     dev
-                                                                   );
+            kernel_rbc_engine<<<blocks_per_gpu[h-1],THREADS_PER_BLOCK>>>( dev_server_key[dev],
+                                                                          auth_key[dev],
+                                                                          h,
+                                                                          dev_plaintext[dev],
+                                                                          dev_cipher[dev],
+                                                                          num_blocks[h-1],
+                                                                          THREADS_PER_BLOCK,
+                                                                          keys_per_thread[h-1],
+                                                                          total_keys[h-1],
+                                                                          extra_keys[h-1],
+                                                                          total_iter_count[dev],
+                                                                          key_found_flag[dev],
+                                                                          offset[h-1],
+                                                                          dev
+                                                                        );
             cudaDeviceSynchronize();
             
             if( EARLY_EXIT && *auth_key[dev] == client.key ) 
             {
                 for(int i=0; i<num_gpus; ++i) *key_found_flag[i]=1;
-                curr_hamming_dist = hamming_dist+1; // break from outer loop
+                h=hamming_dist+1; // break from outer loop
             }
         }
 
@@ -174,7 +188,7 @@ int main(int argc, char * argv[])
 
     if( verbose )
     {
-        printf("\nResulting Authentication Key:\n");
+        printf("\nResulting Authentication Keys:\n");
         for( int dev=0; dev<num_gpus; ++dev ) auth_key[dev]->dump();
     }
 
@@ -382,18 +396,19 @@ void print_prelim_info(ClientData client, uint256_t server_key)
     printf("\n\nClient Plain Text (shared):\n");
     printf("%s",client.plaintext);
     printf("\n----------------------------\n\n");
-
-    printf("\n----------------------------");
-    printf("\nBegin RBC");
-    printf("\n----------------------------");
 }
 
 void print_rbc_info(long unsigned int num_blocks,
                     long unsigned int keys_per_thread,
                     long long unsigned int total_keys,
                     long unsigned int last_thread_numkeys,
-                    int extra_keys)
+                    int extra_keys,
+                    int h)
 {
+    printf("\n----------------------------");
+    printf("\nRBC Kernel Information for Hamming Distance %d", h);
+    printf("\n----------------------------");
+
     printf("\n  Number of blocks: %lu",num_blocks);
     printf("\n  Number of threads per block: %d",THREADS_PER_BLOCK);
     printf("\n  Number of keys per thread: %lu",keys_per_thread);
@@ -403,7 +418,8 @@ void print_rbc_info(long unsigned int num_blocks,
     if( last_thread_numkeys != keys_per_thread )
     {
         printf("    Warning: num keys not divisible by num threads");
-        printf("\n    Extra keys = %d\n\n", extra_keys);
+        printf("\n    Extra keys = %d\n", extra_keys);
     }
+    printf("----------------------------\n");
 }
 

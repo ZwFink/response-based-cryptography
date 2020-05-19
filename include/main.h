@@ -49,7 +49,8 @@ void print_rbc_info(long unsigned int num_blocks,
                     long unsigned int keys_per_thread,
                     long long unsigned int total_keys,
                     long unsigned int last_thread_numkeys,
-                    int extra_keys);
+                    int extra_keys,
+                    int h);
 
 
 #endif // MAIN_HH_INCLUDED
