@@ -45,4 +45,39 @@ SUCCESS: The keys match!
 Loulergue's Machine
 
 
+1 GPU Time Trials (Exhaustive Search)
+
+Time to compute 8987138112 keys: 29.873773 (keys/second: 300837062.395835)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 30.063138 (keys/second: 298942116.820939)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 29.828147 (keys/second: 301297231.504190)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 30.356241 (keys/second: 296055697.805272)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 30.317047 (keys/second: 296438439.799232)
+SUCCESS: The keys match!
+
+2 GPUs Time Trials (Exhaustive Search)
+
+Time to compute 8987138112 keys: 16.490376 (keys/second: 544992916.595716)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 15.528249 (keys/second: 578760561.606141)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 16.275412 (keys/second: 552191128.064838)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 16.427164 (keys/second: 547090058.393524)
+SUCCESS: The keys match!
+
+Time to compute 8987138112 keys: 16.009490 (keys/second: 561363173.467737)
+SUCCESS: The keys match!
+
+-------------------------------------------------------------------------
 
