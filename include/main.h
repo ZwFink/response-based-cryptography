@@ -37,9 +37,9 @@ struct ClientData
 
 
 // utility functions
-ClientData make_client_data();
+void make_client_data( struct ClientData *ret, int num_fragments );
 void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n);
-void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks, int n_gpus );
+void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks, int n_gpus, int key_size_bits );
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
             unsigned char *iv, unsigned char *ciphertext);
 void handleErrors(void);

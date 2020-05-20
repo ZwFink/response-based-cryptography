@@ -18,7 +18,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    std::uint64_t *iter_count,
                                    int *key_found_flag,
                                    const uint64_t offset,
-                                   const int gpu_id
+                                   const int gpu_id,
+                                   const int key_size_bits
                                    //const int CHECKCOUNT
                                  )
 {
@@ -77,7 +78,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                        (uint64_t) num_blocks * threads_per_block,
                        mismatch,
                        keys_per_thread,
-                       extra_keys
+                       extra_keys,
+                       key_size_bits
                      );
 
         uint256_iter iter ( *key_for_encryp,

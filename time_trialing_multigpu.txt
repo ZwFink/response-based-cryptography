@@ -1,3 +1,78 @@
+Loulergue's Machine
+
+Single GPU Time Trials
+
+Time to compute 4462528416 keys: 15.495539 (keys/second: 287987943.885011)
+SUCCESS: The keys match!
+
+Time to compute 4439186688 keys: 15.697544 (keys/second: 282794982.960392)
+SUCCESS: The keys match!
+
+Time to compute 4459661888 keys: 15.493643 (keys/second: 287838172.597626)
+SUCCESS: The keys match!
+
+Time to compute 4458023872 keys: 15.365654 (keys/second: 290129132.935051)
+SUCCESS: The keys match!
+
+Time to compute 4454747840 keys: 15.732209 (keys/second: 283160987.754485)
+SUCCESS: The keys match!
+
+Multi GPU Time Trials
+
+Time to compute 4628245248 keys: 8.671697 (keys/second: 533718515.303291)
+SUCCESS: The keys match!
+
+Time to compute 4487783136 keys: 8.360533 (keys/second: 536781941.534110)
+SUCCESS: The keys match!
+
+Time to compute 4503754592 keys: 8.388107 (keys/second: 536921452.241847)
+SUCCESS: The keys match!
+
+Time to compute 4510716480 keys: 8.384114 (keys/second: 538007531.863236)
+SUCCESS: The keys match!
+
+Time to compute 4523820192 keys: 8.443715 (keys/second: 535761829.005361)
+SUCCESS: The keys match!
+
+-------------------------------------------------------------------------
+
+
+
+Single GPU Time Trials
+
+Time to compute 4554806944 keys: 16.238087 (keys/second: 280501449.708947)
+SUCCESS: The keys match!
+
+Time to compute 4562662464 keys: 16.387828 (keys/second: 278417766.161568)
+SUCCESS: The keys match!
+
+Time to compute 4561986016 keys: 15.992584 (keys/second: 285256342.314663)
+SUCCESS: The keys match!
+
+Time to compute 4550138720 keys: 16.809502 (keys/second: 270688490.355039)
+SUCCESS: The keys match!
+
+Time to compute 4544927008 keys: 16.140711 (keys/second: 281581586.337801)
+SUCCESS: The keys match!
+
+Multi GPU Time Trials
+
+Time to compute 4909070784 keys: 9.191168 (keys/second: 534107393.532574)
+SUCCESS: The keys match!
+
+Time to compute 4917789824 keys: 9.199397 (keys/second: 534577410.236780)
+SUCCESS: The keys match!
+
+Time to compute 5099619328 keys: 9.703949 (keys/second: 525520005.103077)
+SUCCESS: The keys match!
+
+Time to compute 5047220576 keys: 9.659918 (keys/second: 522491037.294519)
+SUCCESS: The keys match!
+
+Time to compute 4912883008 keys: 9.260206 (keys/second: 530537118.504707)
+SUCCESS: The keys match!
+
+
 -------------------------------------------------------------------------
 Gowanlock's Machine
 
@@ -37,47 +112,3 @@ SUCCESS: The keys match!
 
 Time to compute 4187751232 keys: 12.607911 (keys/second: 332152664.465985)
 SUCCESS: The keys match!
-
--------------------------------------------------------------------------
-
-
--------------------------------------------------------------------------
-Loulergue's Machine
-
-
-1 GPU Time Trials (Exhaustive Search)
-
-Time to compute 8987138112 keys: 29.873773 (keys/second: 300837062.395835)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 30.063138 (keys/second: 298942116.820939)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 29.828147 (keys/second: 301297231.504190)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 30.356241 (keys/second: 296055697.805272)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 30.317047 (keys/second: 296438439.799232)
-SUCCESS: The keys match!
-
-2 GPUs Time Trials (Exhaustive Search)
-
-Time to compute 8987138112 keys: 16.490376 (keys/second: 544992916.595716)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 15.528249 (keys/second: 578760561.606141)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 16.275412 (keys/second: 552191128.064838)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 16.427164 (keys/second: 547090058.393524)
-SUCCESS: The keys match!
-
-Time to compute 8987138112 keys: 16.009490 (keys/second: 561363173.467737)
-SUCCESS: The keys match!
-
--------------------------------------------------------------------------
-
