@@ -4,7 +4,6 @@ outfile="time_trialing_multigpu.txt"
 
 echo "" >> "$outfile"
 echo "Single GPU Time Trials" >> "$outfile"
-echo "" >> "$outfile"
 
 # 1 gpu
 for ((i=0; i<trials; i++)); do
@@ -13,7 +12,6 @@ done
 
 echo "" >> "$outfile"
 echo "Multi GPU Time Trials" >> "$outfile"
-echo "" >> "$outfile"
 
 # 2 gpus
 for ((i=0; i<trials; i++)); do
