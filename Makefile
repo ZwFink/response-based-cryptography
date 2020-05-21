@@ -75,7 +75,7 @@ AES_smem.o: $(AES_FILES) $(UINT_FILES)
 	$(NVCC) $(CCFLAGS) -DTTABLE=$(TT) -D$(MODE) -DUSE_SMEM -c -o $@ $<
 
 benchmark.o: main.cu main.h
-	$(NVCC) $(CCFLAGS) -DMAX_HAMMING_DIST=5 -c -o $@ $< 
+	$(NVCC) $(CCFLAGS) -DMAX_HAMMING_DIST=9 -c -o $@ $< 
 
 .PHONY: clean clobber debug
 
