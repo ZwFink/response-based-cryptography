@@ -28,12 +28,6 @@ int main(int argc, char * argv[])
         return -2;
     }
 
-    if( num_fragments > 8 || num_fragments < 1 || (UINT256_SIZE_IN_BYTES % num_fragments) != 0 )
-    {
-        fprintf(stderr,"Number of fragments (currently supported) must be in the set {1,2,4,8}");
-        return -3;
-    } 
-
 
     /* Make Client Data */
 
@@ -43,14 +37,40 @@ int main(int argc, char * argv[])
 
     /* Do RBC Authentication */
 
+      // initializations
     int key_size_bits = UINT256_SIZE_IN_BITS / num_fragments;
     long long unsigned int total_iterations = 0;
     omp_set_num_threads( num_gpus );
     struct timeval start[ num_fragments ], end[ num_fragments ];
-    
+         // keyspace delimination variables 
+    int dev=0, h=0, c=0;
+    std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD;
+    std::uint64_t total_keys[ hamming_dist ];
+    std::uint64_t num_blocks[ hamming_dist ];
+    std::uint64_t total_threads[ hamming_dist ];  
+    std::uint64_t keys_per_thread[ hamming_dist ];
+    std::uint64_t last_th_numkeys[ hamming_dist ];
+    std::uint32_t extra_keys[ hamming_dist ];
+         // multi-gpu calculation variables
+    int blocks_per_gpu[ hamming_dist ];
+    int offset[ hamming_dist ]; // assumes THREADS_PER_BLOCK % num_gpus == 0
+    #pragma omp parallel for private(h) num_threads(hamming_dist)
+    for( h=0; h<hamming_dist; h++ )
+    {
+        total_keys[h]      = get_bin_coef( key_size_bits, h+1 );
+        num_blocks[h]      = ( total_keys[h] / ops_per_block ) + 1;
+        total_threads[h]   = total_keys[h]<THREADS_PER_BLOCK ? total_keys[h] : num_blocks[h] * THREADS_PER_BLOCK;
+        keys_per_thread[h] = total_keys[h] / total_threads[h];
+        last_th_numkeys[h] = keys_per_thread[h] + total_keys[h] - (keys_per_thread[h] * total_threads[h]);
+        extra_keys[h]      = last_th_numkeys[h] - keys_per_thread[h];
+        blocks_per_gpu[h]  = (num_blocks[h]%num_gpus==0) ? (num_blocks[h]/num_gpus) : (num_blocks[h]/num_gpus)+1;
+        offset[h]          = total_threads[h] / num_gpus;
+    }
+
+      // rbc across each fragmentation key
     for( int f=0; f<num_fragments; f++ )
     {
-          // convert client data to currently supported structures
+         // convert client data to currently supported structures
         aes_per_round::message_128 tmp_cipher;
         uint host_server_pt[ 4 ] = {0,0,0,0};
         uint host_server_ct[ 4 ] = {0,0,0,0};
@@ -72,40 +92,31 @@ int main(int argc, char * argv[])
         host_server_ct[ 1 ] = bytes_to_int( tmp_cipher.bits + 4 );
         host_server_ct[ 2 ] = bytes_to_int( tmp_cipher.bits + 8 );
         host_server_ct[ 3 ] = bytes_to_int( tmp_cipher.bits + 12 );
-    
-          // initializations
-        int dev=0, h=0, i=0;
-        std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD;
-        std::uint64_t total_keys[ hamming_dist ];
-        std::uint64_t num_blocks[ hamming_dist ];
-        std::uint64_t total_threads[ hamming_dist ];  
-        std::uint64_t keys_per_thread[ hamming_dist ];
-        std::uint64_t last_th_numkeys[ hamming_dist ];
-        std::uint32_t extra_keys[ hamming_dist ];
-            // multi-gpu calculations
-        int blocks_per_gpu[ hamming_dist ];
-        int offset[ hamming_dist ]; // assumes THREADS_PER_BLOCK % num_gpus == 0
-        #pragma omp parallel for private(h)
-        for( h=0; h<hamming_dist; h++ )
-        {
-            total_keys[h]      = get_bin_coef( key_size_bits, h+1 );
-            num_blocks[h]      = ( total_keys[h] / ops_per_block ) + 1;
-            total_threads[h]   = num_blocks[h] * THREADS_PER_BLOCK;
-            keys_per_thread[h] = total_keys[h] / total_threads[h];
-            last_th_numkeys[h] = keys_per_thread[h] + total_keys[h] - (keys_per_thread[h] * total_threads[h]);
-            extra_keys[h]      = last_th_numkeys[h] - keys_per_thread[h];
-            blocks_per_gpu[h]  = (num_blocks[h]%num_gpus==0) ? (num_blocks[h]/num_gpus) : (num_blocks[h]/num_gpus)+1;
-            offset[h]          = total_threads[h] / num_gpus;
-        }
-            // host variables 
+
+         // host variables 
         uint256_t server_key( 0 );
         server_key.copy( client[f].key );
-        select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
+        if( num_fragments > 1 )
+        {
+            if( f==0 ) // to select upper bound all corruptions must be located in the first subkey
+                select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
+        }
+        else // otherwise we are in the non-fragmentation case
+        {
+            select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
+        }
+
+        if( server_key == client[f].key ) 
+        {
+            total_iterations++;
+            continue; // hamming distance is 0 for this fragmentation key
+        }
+        
         uint256_t *host_server_key = &server_key;
         uint256_t *auth_key[ num_gpus ];
         std::uint64_t *total_iter_count[ num_gpus ];
         int *key_found_flag[ num_gpus ];
-            // device variables
+         // device variables
         uint256_t *dev_server_key[ num_gpus ];
         uint * dev_server_pt[ num_gpus ];
         uint * dev_server_ct[ num_gpus ];
@@ -119,17 +130,17 @@ int main(int argc, char * argv[])
                                 last_th_numkeys[h], extra_keys[h], h+1 );
         }
 
-          // turn on gpu
+         // turn on gpu
         if( verbose ) printf("\n\nTurning on the GPUs...\n");
-        for( int dev=0; dev<num_gpus; ++dev ) warm_up_gpu( dev, verbose );
+        for( dev=0; dev<num_gpus; ++dev ) warm_up_gpu( dev, verbose );
         if( verbose ) printf("\n");
             
 
         gettimeofday(&start[f], NULL);
 
-          // allocate and set device variables
+         // allocate and set device variables
         #pragma omp parallel for private(dev)
-        for( int dev=0; dev<num_gpus; ++dev )
+        for( dev=0; dev<num_gpus; ++dev )
         {
             cudaSetDevice( dev );
             cudaMalloc( (void**) &dev_server_pt[dev], 4*sizeof( uint ) );
@@ -155,11 +166,11 @@ int main(int argc, char * argv[])
                 }
         }
 
-          // run rbc kernel 
+         // run rbc kernel 
         for( h=1; h<=hamming_dist; ++h )
         {
-            #pragma omp parallel for private(i)
-            for( i=0; i<num_gpus; ++i ) *total_iter_count[i]=0;
+            #pragma omp parallel for private(c)
+            for( c=0; c<num_gpus; ++c ) *total_iter_count[c]=0;
 
             #pragma omp parallel for private(dev)
             for( dev=0; dev<num_gpus; dev++ )
@@ -191,7 +202,11 @@ int main(int argc, char * argv[])
                 }
             }
 
-            for( int dev=0; dev<num_gpus; ++dev ) total_iterations += *total_iter_count[dev];
+            for( dev=0; dev<num_gpus; ++dev ) 
+            {
+                //fprintf(stderr,"\nDev = %d, total iterations = %llu\n",dev,*total_iter_count[dev]);
+                total_iterations += *total_iter_count[dev];
+            }
         }
 
         gettimeofday(&end[f], NULL);
@@ -200,11 +215,11 @@ int main(int argc, char * argv[])
         if( verbose )
         {
             printf("\nResulting Authentication Keys:\n");
-            for( int dev=0; dev<num_gpus; ++dev ) auth_key[dev]->dump();
+            for( dev=0; dev<num_gpus; ++dev ) auth_key[dev]->dump();
         }
 
         int success = 0;
-        for( int dev=0; dev<num_gpus; ++dev ) if( *auth_key[dev] == client[f].key ) success=1;
+        for( dev=0; dev<num_gpus; ++dev ) if( *auth_key[dev] == client[f].key ) success=1;
 
         if( success )
             {
@@ -219,9 +234,8 @@ int main(int argc, char * argv[])
 
 
     double elapsed = 0;
-    for( int f=0; f<num_fragments; f++)
-        elapsed += ((end[f].tv_sec*1000000.0 + end[f].tv_usec) -
-                   (start[f].tv_sec*1000000.0 + start[f].tv_usec)) / 1000000.00;
+    elapsed = ((end[0].tv_sec*1000000.0 + end[0].tv_usec) -
+               (start[0].tv_sec*1000000.0 + start[0].tv_usec)) / 1000000.00;
 
     printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n",total_iterations,elapsed,total_iterations*1.0/(elapsed));
 
