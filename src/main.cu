@@ -28,6 +28,12 @@ int main(int argc, char * argv[])
         return -2;
     }
 
+    if( num_fragments > 8 || num_fragments < 1 || (UINT256_SIZE_IN_BYTES % num_fragments) != 0 )
+    {
+        fprintf(stderr,"Number of fragments (currently supported) must be in the set {1,2,4,8}");
+        return -3;
+    } 
+
 
     /* Make Client Data */
 
