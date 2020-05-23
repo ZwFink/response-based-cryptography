@@ -43,7 +43,7 @@ int main(int argc, char * argv[])
     omp_set_num_threads( num_gpus );
     struct timeval start[ num_fragments ], end[ num_fragments ];
          // keyspace delimination variables 
-    int dev=0, h=0, c=0;
+    int dev=0, h=0, i=0;
     std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD;
     std::uint64_t total_keys[ hamming_dist ];
     std::uint64_t num_blocks[ hamming_dist ];
@@ -75,7 +75,7 @@ int main(int argc, char * argv[])
         uint host_server_pt[ 4 ] = {0,0,0,0};
         uint host_server_ct[ 4 ] = {0,0,0,0};
             // convert from big endian to little endian
-        for( int i = 0; i < 16; i +=4 )
+        for( i = 0; i < 16; i +=4 )
             {
                 tmp_cipher.bits[ i ] = (uint8_t) client[f].ciphertext[ i + 3 ];
                 tmp_cipher.bits[ i + 1 ] = (uint8_t) client[f].ciphertext[ i + 2 ];
@@ -132,6 +132,7 @@ int main(int argc, char * argv[])
 
          // turn on gpu
         if( verbose ) printf("\n\nTurning on the GPUs...\n");
+        #pragma omp parallel for private(dev)
         for( dev=0; dev<num_gpus; ++dev ) warm_up_gpu( dev, verbose );
         if( verbose ) printf("\n");
             
@@ -169,8 +170,8 @@ int main(int argc, char * argv[])
          // run rbc kernel 
         for( h=1; h<=hamming_dist; ++h )
         {
-            #pragma omp parallel for private(c)
-            for( c=0; c<num_gpus; ++c ) *total_iter_count[c]=0;
+            #pragma omp parallel for private(i)
+            for( i=0; i<num_gpus; ++i ) *total_iter_count[i]=0;
 
             #pragma omp parallel for private(dev)
             for( dev=0; dev<num_gpus; dev++ )
@@ -197,7 +198,8 @@ int main(int argc, char * argv[])
                 
                 if( EARLY_EXIT && *auth_key[dev] == client[f].key ) 
                 {
-                    for(int i=0; i<num_gpus; ++i) *key_found_flag[i]=1;
+                    #pragma omp parallel for private(i)
+                    for( i=0; i<num_gpus; ++i ) *key_found_flag[i]=1;
                     h=hamming_dist+1; // break from outer loop
                 }
             }
