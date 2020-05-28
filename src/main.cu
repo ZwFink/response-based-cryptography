@@ -171,11 +171,11 @@ int main(int argc, char * argv[])
                                                                         );
             cudaDeviceSynchronize();
             
-            if( EARLY_EXIT && *auth_key[dev] == client.key ) 
-            {
-                for(int i=0; i<num_gpus; ++i) *key_found_flag[i]=1;
-                h=hamming_dist+1; // break from outer loop
-            }
+            //if( EARLY_EXIT && *auth_key[dev] == client.key ) 
+            //{
+            //    for(int i=0; i<num_gpus; ++i) *key_found_flag[i]=1;
+            //    h=hamming_dist+1; // break from outer loop
+            //}
         }
 
         for( int dev=0; dev<num_gpus; ++dev ) total_iterations += *total_iter_count[dev];

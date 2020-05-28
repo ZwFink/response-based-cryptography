@@ -20,7 +20,7 @@ UTIL_FILES=perm_util.cu perm_util.h cuda_utils.h
 UTIL_MAIN_FILES=util_main.cu util_main.h cuda_utils.h
 AES_CPU_FILES=aes_cpu.cpp aes_cpu.h
 GENERAL_OBJECTS=aes_per_round.o sbox.o uint_iter.o uint.o util.o aes_cpu.o aes_util.o
-CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -DEARLY_EXIT=0 -DITERCOUNT=1 -DTHREADS_PER_BLOCK=$(NUM_THREADS) -DNUM_THREADS=$(NUM_THREADS) \
+CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -DEARLY_EXIT=1 -DITERCOUNT=1 -DTHREADS_PER_BLOCK=$(NUM_THREADS) -DNUM_THREADS=$(NUM_THREADS) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/ -DUSE_CONSTANT -DUSE_SMEM
 DEBUGFLAGS := -O0 -g --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/
@@ -75,7 +75,7 @@ AES_smem.o: $(AES_FILES) $(UINT_FILES)
 	$(NVCC) $(CCFLAGS) -DTTABLE=$(TT) -D$(MODE) -DUSE_SMEM -c -o $@ $<
 
 benchmark.o: main.cu main.h
-	$(NVCC) $(CCFLAGS) -DMAX_HAMMING_DIST=5 -c -o $@ $< 
+	$(NVCC) $(CCFLAGS) -DMAX_HAMMING_DIST=6 -c -o $@ $< 
 
 .PHONY: clean clobber debug
 
