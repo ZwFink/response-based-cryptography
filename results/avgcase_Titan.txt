@@ -1,0 +1,36 @@
+Creation Date: Fri May 29 9:14am
+--------------------------------
+
+Single GPU Time Trials
+
+Time to compute 4470718496 keys: 15.403366 (keys/second: 290242957.026406)
+SUCCESS: The keys match!
+
+Time to compute 4471537504 keys: 15.314925 (keys/second: 291972536.855388)
+SUCCESS: The keys match!
+
+Time to compute 4446148256 keys: 15.900013 (keys/second: 279631737.156441)
+SUCCESS: The keys match!
+
+Time to compute 4449424288 keys: 15.499031 (keys/second: 287077578.462808)
+SUCCESS: The keys match!
+
+Time to compute 4456385856 keys: 15.514646 (keys/second: 287237353.401425)
+SUCCESS: The keys match!
+
+Multi GPU Time Trials
+
+Time to compute 4518086784 keys: 8.522607 (keys/second: 530129663.845816)
+SUCCESS: The keys match!
+
+Time to compute 4440687584 keys: 8.125476 (keys/second: 546514146.863519)
+SUCCESS: The keys match!
+
+Time to compute 4733081664 keys: 8.711388 (keys/second: 543321186.474532)
+SUCCESS: The keys match!
+
+Time to compute 4434544160 keys: 8.193108 (keys/second: 541252984.825783)
+SUCCESS: The keys match!
+
+Time to compute 4731444608 keys: 8.709527 (keys/second: 543249318.591010)
+SUCCESS: The keys match!
