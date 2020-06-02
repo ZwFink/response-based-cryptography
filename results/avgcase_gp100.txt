@@ -1,0 +1,19 @@
+
+Single GPU Time Trials
+
+Single GPU Time Trials
+
+Time to compute 4187751232 keys: 12.638801 (keys/second: 331340863.108771)
+SUCCESS: The keys match!
+
+Time to compute 4187751232 keys: 12.583709 (keys/second: 332791487.152158)
+SUCCESS: The keys match!
+
+Time to compute 4187751232 keys: 12.673681 (keys/second: 330428959.984080)
+SUCCESS: The keys match!
+
+Time to compute 4187751232 keys: 12.620658 (keys/second: 331817186.710867)
+SUCCESS: The keys match!
+
+Time to compute 4187751232 keys: 12.599585 (keys/second: 332372156.067045)
+SUCCESS: The keys match!
