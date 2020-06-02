@@ -1,19 +1,22 @@
 #!/bin/bash
 trials=5
-outfile="time_trialing_multigpu.txt"
+outfile="avgcase_v100.txt"
 
 echo "" >> "$outfile"
-echo "Single GPU Time Trials" >> "$outfile"
+echo "4 v100 GPUs Early Exit Time Trialing" >> "$outfile"
 
-# 1 gpu
 for ((i=0; i<trials; i++)); do
     ./sbench 5 0 1 >> "$outfile"
 done
-
 echo "" >> "$outfile"
-echo "Multi GPU Time Trials" >> "$outfile"
 
-# 2 gpus
 for ((i=0; i<trials; i++)); do
     ./sbench 5 0 2 >> "$outfile"
 done
+echo "" >> "$outfile"
+
+for ((i=0; i<trials; i++)); do
+    ./sbench 5 0 4 >> "$outfile"
+done
+echo "" >> "$outfile"
+
