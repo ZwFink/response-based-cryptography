@@ -1,6 +1,7 @@
 FRAGMENTATION TIME TRIALING
 
 g=2
+
 SUCCESS: The keys match!
 
 Time to compute 11017633 keys: 0.318664 (keys/second: 34574451.459845)
@@ -48,7 +49,9 @@ Time to compute 5699195233 keys: 9.462053 (keys/second: 602321212.214728)
 SUCCESS: The keys match!
 
 Time to compute 5699195233 keys: 9.432810 (keys/second: 604188490.280203)
+
 g=4
+
 SUCCESS: The keys match!
 
 Time to compute 679123 keys: 0.127457 (keys/second: 5328251.881027)
@@ -128,7 +131,9 @@ Time to compute 5130659563 keys: 8.906263 (keys/second: 576073215.331728)
 SUCCESS: The keys match!
 
 Time to compute 5130659563 keys: 8.902179 (keys/second: 576337497.033030)
+
 g=8
+
 SUCCESS: The keys match!
 
 Time to compute 41455 keys: 0.132115 (keys/second: 313779.661658)
