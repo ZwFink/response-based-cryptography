@@ -1,0 +1,338 @@
+FRAGMENTATION TIME TRIALING
+
+g=2
+SUCCESS: The keys match!
+
+Time to compute 11017633 keys: 0.318664 (keys/second: 34574451.459845)
+SUCCESS: The keys match!
+
+Time to compute 11017633 keys: 0.319155 (keys/second: 34521260.829378)
+SUCCESS: The keys match!
+
+Time to compute 11017633 keys: 0.317325 (keys/second: 34720343.496415)
+SUCCESS: The keys match!
+
+Time to compute 11017633 keys: 0.318729 (keys/second: 34567400.518936)
+SUCCESS: The keys match!
+
+Time to compute 11017633 keys: 0.318785 (keys/second: 34561328.167887)
+
+SUCCESS: The keys match!
+
+Time to compute 275584033 keys: 0.815002 (keys/second: 338139088.002238)
+SUCCESS: The keys match!
+
+Time to compute 275584033 keys: 0.814857 (keys/second: 338199258.274765)
+SUCCESS: The keys match!
+
+Time to compute 275584033 keys: 0.814168 (keys/second: 338485463.688084)
+SUCCESS: The keys match!
+
+Time to compute 275584033 keys: 0.815496 (keys/second: 337934254.735768)
+SUCCESS: The keys match!
+
+Time to compute 275584033 keys: 0.814156 (keys/second: 338490452.689657)
+
+SUCCESS: The keys match!
+
+Time to compute 5699195233 keys: 9.439723 (keys/second: 603746024.433132)
+SUCCESS: The keys match!
+
+Time to compute 5699195233 keys: 9.471842 (keys/second: 601698722.698288)
+SUCCESS: The keys match!
+
+Time to compute 5699195233 keys: 9.463021 (keys/second: 602259599.022342)
+SUCCESS: The keys match!
+
+Time to compute 5699195233 keys: 9.462053 (keys/second: 602321212.214728)
+SUCCESS: The keys match!
+
+Time to compute 5699195233 keys: 9.432810 (keys/second: 604188490.280203)
+g=4
+SUCCESS: The keys match!
+
+Time to compute 679123 keys: 0.127457 (keys/second: 5328251.881027)
+SUCCESS: The keys match!
+
+Time to compute 679123 keys: 0.127415 (keys/second: 5330008.240788)
+SUCCESS: The keys match!
+
+Time to compute 679123 keys: 0.127433 (keys/second: 5329255.373412)
+SUCCESS: The keys match!
+
+Time to compute 679123 keys: 0.127669 (keys/second: 5319404.083998)
+SUCCESS: The keys match!
+
+Time to compute 679123 keys: 0.127136 (keys/second: 5341704.945885)
+
+SUCCESS: The keys match!
+
+Time to compute 8303635 keys: 0.355131 (keys/second: 23381892.878966)
+SUCCESS: The keys match!
+
+Time to compute 8303635 keys: 0.355379 (keys/second: 23365575.906286)
+SUCCESS: The keys match!
+
+Time to compute 8303635 keys: 0.354882 (keys/second: 23398298.589390)
+SUCCESS: The keys match!
+
+Time to compute 8303635 keys: 0.355256 (keys/second: 23373665.750895)
+SUCCESS: The keys match!
+
+Time to compute 8303635 keys: 0.354465 (keys/second: 23425824.834610)
+
+SUCCESS: The keys match!
+
+Time to compute 83278003 keys: 0.656630 (keys/second: 126826375.584423)
+SUCCESS: The keys match!
+
+Time to compute 83278003 keys: 0.657696 (keys/second: 126620814.175546)
+SUCCESS: The keys match!
+
+Time to compute 83278003 keys: 0.657187 (keys/second: 126718883.666293)
+SUCCESS: The keys match!
+
+Time to compute 83278003 keys: 0.656619 (keys/second: 126828500.241388)
+SUCCESS: The keys match!
+
+Time to compute 83278003 keys: 0.657069 (keys/second: 126741640.527859)
+
+SUCCESS: The keys match!
+
+Time to compute 704494195 keys: 1.711193 (keys/second: 411697684.013434)
+SUCCESS: The keys match!
+
+Time to compute 704494195 keys: 1.710547 (keys/second: 411853164.514041)
+SUCCESS: The keys match!
+
+Time to compute 704494195 keys: 1.710908 (keys/second: 411766263.878595)
+SUCCESS: The keys match!
+
+Time to compute 704494195 keys: 1.711680 (keys/second: 411580549.518602)
+SUCCESS: The keys match!
+
+Time to compute 704494195 keys: 1.711539 (keys/second: 411614456.346014)
+
+SUCCESS: The keys match!
+
+Time to compute 5130659563 keys: 8.903155 (keys/second: 576274316.576539)
+SUCCESS: The keys match!
+
+Time to compute 5130659563 keys: 8.896919 (keys/second: 576678236.926738)
+SUCCESS: The keys match!
+
+Time to compute 5130659563 keys: 8.907658 (keys/second: 575982998.336937)
+SUCCESS: The keys match!
+
+Time to compute 5130659563 keys: 8.906263 (keys/second: 576073215.331728)
+SUCCESS: The keys match!
+
+Time to compute 5130659563 keys: 8.902179 (keys/second: 576337497.033030)
+g=8
+SUCCESS: The keys match!
+
+Time to compute 41455 keys: 0.132115 (keys/second: 313779.661658)
+SUCCESS: The keys match!
+
+Time to compute 41455 keys: 0.131941 (keys/second: 314193.465261)
+SUCCESS: The keys match!
+
+Time to compute 41455 keys: 0.132080 (keys/second: 313862.810418)
+SUCCESS: The keys match!
+
+Time to compute 41455 keys: 0.132155 (keys/second: 313684.688434)
+SUCCESS: The keys match!
+
+Time to compute 41455 keys: 0.132248 (keys/second: 313464.097756)
+
+SUCCESS: The keys match!
+
+Time to compute 242831 keys: 0.182596 (keys/second: 1329881.267936)
+SUCCESS: The keys match!
+
+Time to compute 242831 keys: 0.182553 (keys/second: 1330194.518852)
+SUCCESS: The keys match!
+
+Time to compute 242831 keys: 0.182504 (keys/second: 1330551.659142)
+SUCCESS: The keys match!
+
+Time to compute 242831 keys: 0.182346 (keys/second: 1331704.561658)
+SUCCESS: The keys match!
+
+Time to compute 242831 keys: 0.182413 (keys/second: 1331215.428725)
+
+SUCCESS: The keys match!
+
+Time to compute 1149023 keys: 0.297244 (keys/second: 3865588.540055)
+SUCCESS: The keys match!
+
+Time to compute 1149023 keys: 0.297329 (keys/second: 3864483.450992)
+SUCCESS: The keys match!
+
+Time to compute 1149023 keys: 0.296647 (keys/second: 3873368.009789)
+SUCCESS: The keys match!
+
+Time to compute 1149023 keys: 0.297075 (keys/second: 3867787.595725)
+SUCCESS: The keys match!
+
+Time to compute 1149023 keys: 0.297292 (keys/second: 3864964.412093)
+
+SUCCESS: The keys match!
+
+Time to compute 4514879 keys: 0.471956 (keys/second: 9566313.385146)
+SUCCESS: The keys match!
+
+Time to compute 4514879 keys: 0.471555 (keys/second: 9574448.367635)
+SUCCESS: The keys match!
+
+Time to compute 4514879 keys: 0.470934 (keys/second: 9587073.772546)
+SUCCESS: The keys match!
+
+Time to compute 4514879 keys: 0.471088 (keys/second: 9583939.731006)
+SUCCESS: The keys match!
+
+Time to compute 4514879 keys: 0.472173 (keys/second: 9561916.924517)
+
+SUCCESS: The keys match!
+
+Time to compute 15033179 keys: 0.730947 (keys/second: 20566715.507417)
+SUCCESS: The keys match!
+
+Time to compute 15033179 keys: 0.731740 (keys/second: 20544426.982261)
+SUCCESS: The keys match!
+
+Time to compute 15033179 keys: 0.731814 (keys/second: 20542349.558768)
+SUCCESS: The keys match!
+
+Time to compute 15033179 keys: 0.730651 (keys/second: 20575047.457678)
+SUCCESS: The keys match!
+
+Time to compute 15033179 keys: 0.730675 (keys/second: 20574371.642659)
+
+SUCCESS: The keys match!
+
+Time to compute 43081979 keys: 1.066103 (keys/second: 40410709.846985)
+SUCCESS: The keys match!
+
+Time to compute 43081979 keys: 1.061597 (keys/second: 40582235.066602)
+SUCCESS: The keys match!
+
+Time to compute 43081979 keys: 1.064150 (keys/second: 40484874.312832)
+SUCCESS: The keys match!
+
+Time to compute 43081979 keys: 1.063540 (keys/second: 40508094.664987)
+SUCCESS: The keys match!
+
+Time to compute 43081979 keys: 1.066749 (keys/second: 40386237.999754)
+
+SUCCESS: The keys match!
+
+Time to compute 107594219 keys: 1.407676 (keys/second: 76433937.212825)
+SUCCESS: The keys match!
+
+Time to compute 107594219 keys: 1.407753 (keys/second: 76429756.498477)
+SUCCESS: The keys match!
+
+Time to compute 107594219 keys: 1.409755 (keys/second: 76321218.225862)
+SUCCESS: The keys match!
+
+Time to compute 107594219 keys: 1.410096 (keys/second: 76302761.655944)
+SUCCESS: The keys match!
+
+Time to compute 107594219 keys: 1.407937 (keys/second: 76419768.072009)
+
+SUCCESS: The keys match!
+
+Time to compute 236618699 keys: 1.837305 (keys/second: 128785748.147422)
+SUCCESS: The keys match!
+
+Time to compute 236618699 keys: 1.837688 (keys/second: 128758907.387979)
+SUCCESS: The keys match!
+
+Time to compute 236618699 keys: 1.833614 (keys/second: 129044989.294366)
+SUCCESS: The keys match!
+
+Time to compute 236618699 keys: 1.836176 (keys/second: 128864933.971471)
+SUCCESS: The keys match!
+
+Time to compute 236618699 keys: 1.836530 (keys/second: 128840094.634991)
+
+SUCCESS: The keys match!
+
+Time to compute 462411539 keys: 2.339712 (keys/second: 197636093.245664)
+SUCCESS: The keys match!
+
+Time to compute 462411539 keys: 2.339461 (keys/second: 197657297.557001)
+SUCCESS: The keys match!
+
+Time to compute 462411539 keys: 2.340883 (keys/second: 197537228.045998)
+SUCCESS: The keys match!
+
+Time to compute 462411539 keys: 2.340414 (keys/second: 197576812.905751)
+SUCCESS: The keys match!
+
+Time to compute 462411539 keys: 2.341275 (keys/second: 197504154.360338)
+
+SUCCESS: The keys match!
+
+Time to compute 809785139 keys: 3.033038 (keys/second: 266988128.404590)
+SUCCESS: The keys match!
+
+Time to compute 809785139 keys: 3.033140 (keys/second: 266979149.989780)
+SUCCESS: The keys match!
+
+Time to compute 809785139 keys: 3.031815 (keys/second: 267095828.406417)
+SUCCESS: The keys match!
+
+Time to compute 809785139 keys: 3.033213 (keys/second: 266972724.632263)
+SUCCESS: The keys match!
+
+Time to compute 809785139 keys: 3.033805 (keys/second: 266920629.045044)
+
+SUCCESS: The keys match!
+
+Time to compute 1281220739 keys: 3.879643 (keys/second: 330241916.330961)
+SUCCESS: The keys match!
+
+Time to compute 1281220739 keys: 3.882567 (keys/second: 329993207.844192)
+SUCCESS: The keys match!
+
+Time to compute 1281220739 keys: 3.882425 (keys/second: 330005277.371746)
+SUCCESS: The keys match!
+
+Time to compute 1281220739 keys: 3.883907 (keys/second: 329879355.762123)
+SUCCESS: The keys match!
+
+Time to compute 1281220739 keys: 3.881977 (keys/second: 330043361.668552)
+
+SUCCESS: The keys match!
+
+Time to compute 1846943459 keys: 4.943074 (keys/second: 373642688.537538)
+SUCCESS: The keys match!
+
+Time to compute 1846943459 keys: 4.939141 (keys/second: 373940217.337387)
+SUCCESS: The keys match!
+
+Time to compute 1846943459 keys: 4.942005 (keys/second: 373723510.801790)
+SUCCESS: The keys match!
+
+Time to compute 1846943459 keys: 4.941697 (keys/second: 373746803.780159)
+SUCCESS: The keys match!
+
+Time to compute 1846943459 keys: 4.940418 (keys/second: 373843561.212837)
+
+SUCCESS: The keys match!
+
+Time to compute 2448023849 keys: 6.051100 (keys/second: 404558485.068830)
+SUCCESS: The keys match!
+
+Time to compute 2448023849 keys: 6.050031 (keys/second: 404629967.846446)
+SUCCESS: The keys match!
+
+Time to compute 2448023849 keys: 6.055226 (keys/second: 404282820.988019)
+SUCCESS: The keys match!
+
+Time to compute 2448023849 keys: 6.055499 (keys/second: 404264594.709701)
+SUCCESS: The keys match!
+
+Time to compute 2448023849 keys: 6.056536 (keys/second: 404195376.532064)
