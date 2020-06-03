@@ -96,11 +96,16 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                   &tabs
                                 );
 
+
                 // check for match! 
                 for( idx = 0; idx < 4; ++idx )
                     {
                         match += ( cyphertext[ idx ] == auth_cipher[ idx ] );
                     }
+
+		// we need to do this to make sure every key is counted
+		if( EARLY_EXIT && !( threadIdx.x % 32 ) )
+			atomicAdd( (unsigned long long int*) iter_count, 32 );
 
                 if( match == 4 )
                     {
@@ -124,7 +129,10 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
             }
 
-        atomicAdd( (unsigned long long int*) iter_count, total );
+	if( !(EARLY_EXIT) )
+	{
+		atomicAdd( (unsigned long long int*) iter_count, total );
+	}
     }
 
 }
