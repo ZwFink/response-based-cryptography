@@ -6,6 +6,15 @@ echo "FRAGMENTATION TIME TRIALING" >> "$outfile"
 echo "" >> "$outfile"
 
 echo "g=2" >> "$outfile"
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 2 0 1 2 >> "$outfile"
+done
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 3 0 1 2 >> "$outfile"
+done
+echo "" >> "$outfile"
 for ((i=0; i<trials; i++)); do
     ./sbench 4 0 1 2 >> "$outfile"
 done
@@ -17,8 +26,22 @@ echo "" >> "$outfile"
 for ((i=0; i<trials; i++)); do
     ./sbench 6 0 1 2 >> "$outfile"
 done
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 7 0 1 2 >> "$outfile"
+done
 
+echo "" >> "$outfile"
 echo "g=4" >> "$outfile"
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 2 0 1 4 >> "$outfile"
+done
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 3 0 1 4 >> "$outfile"
+done
+echo "" >> "$outfile"
 for ((i=0; i<trials; i++)); do
     ./sbench 4 0 1 4 >> "$outfile"
 done
@@ -38,8 +61,22 @@ echo "" >> "$outfile"
 for ((i=0; i<trials; i++)); do
     ./sbench 8 0 1 4 >> "$outfile"
 done
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 9 0 1 4 >> "$outfile"
+done
 
+echo "" >> "$outfile"
 echo "g=8" >> "$outfile"
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 2 0 1 8 >> "$outfile"
+done
+echo "" >> "$outfile"
+for ((i=0; i<trials; i++)); do
+    ./sbench 3 0 1 8 >> "$outfile"
+done
+echo "" >> "$outfile"
 for ((i=0; i<trials; i++)); do
     ./sbench 4 0 1 8 >> "$outfile"
 done
