@@ -40,14 +40,6 @@ void warm_up_gpu( int device, int verbose );
 
 __host__ __device__ uint bytes_to_int( const std::uint8_t *bytes );
 
-//__device__ int validator( uint256_t *starting_perm,
-//                          uint256_t *ending_perm,
-//                          uint256_t *key_for_encryp,
-//                          uint256_t *key_to_find,
-//                          const aes_per_round::message_128 *user_id,
-//                          const aes_per_round::message_128 *auth_cipher 
-//                        );
-
 __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    uint256_t *key_to_find,
                                    const int mismatch,
@@ -59,10 +51,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::uint64_t num_keys,
                                    const std::uint32_t extra_keys,
                                    std::uint64_t *iter_count,
-                                   int *key_found_flag,
                                    const uint64_t offset,
-                                   const int gpu_id
-                                   //const int CHECKCOUNT
+                                   const uint64_t bound
                                  );
 
 #endif // MAIN_UTIL_HH_INCLUDED

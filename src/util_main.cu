@@ -16,13 +16,11 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::uint64_t num_keys,
                                    const std::uint32_t extra_keys,
                                    std::uint64_t *iter_count,
-                                   int *key_found_flag,
                                    const uint64_t offset,
-                                   const int gpu_id
-                                   //const int CHECKCOUNT
+                                   const uint64_t bound
                                  )
 {
-    unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x ) + ( gpu_id * offset );
+    unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x ) + offset;
 
     aes_tables tabs;
 
@@ -62,7 +60,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
     #endif 
 
-    if( tid < (gpu_id+1)*offset )
+    if( tid < bound )
     {
         uint256_t starting_perm, ending_perm;
         tabs.sbox = sbox;
@@ -96,7 +94,6 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                   &tabs
                                 );
 
-
                 // check for match! 
                 for( idx = 0; idx < 4; ++idx )
                     {
@@ -111,9 +108,6 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                     {
                         *key_to_find = iter.corrupted_key;
 
-                        //if( EARLY_EXIT )
-                        //    atomicAdd( (unsigned long long int*) key_found_flag, 1 );
-
                         if( EARLY_EXIT )
                             __trap();
                     }
@@ -123,16 +117,9 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                 // get next key
                 iter.next();
 
-                // exit early strategy
-                //if( EARLY_EXIT && (total%ITERCOUNT)==0 && *key_found_flag )
-                //    break;
-
             }
 
-	if( !(EARLY_EXIT) )
-	{
-		atomicAdd( (unsigned long long int*) iter_count, total );
-	}
+        atomicAdd( (unsigned long long int*) iter_count, total );
     }
 
 }
