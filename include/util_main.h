@@ -51,11 +51,9 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::uint64_t num_keys,
                                    const std::uint32_t extra_keys,
                                    std::uint64_t *iter_count,
-                                   int *key_found_flag,
                                    const uint64_t offset,
-                                   const int gpu_id,
+                                   const uint64_t bound,
                                    const int key_size_bits
-                                   //const int CHECKCOUNT
                                  );
 
 #endif // MAIN_UTIL_HH_INCLUDED

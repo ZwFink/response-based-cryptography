@@ -3,7 +3,8 @@
 #include <iostream>
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
-#define OPS_PER_THREAD 12800
+// #define OPS_PER_THREAD 1024 // Volta
+#define OPS_PER_THREAD 8192 // Titan
 
 
 int main(int argc, char * argv[])
@@ -59,7 +60,8 @@ int main(int argc, char * argv[])
     std::uint32_t extra_keys[ hamming_dist ];
          // multi-gpu calculation variables
     int blocks_per_gpu[ hamming_dist ];
-    int offset[ hamming_dist ]; // assumes THREADS_PER_BLOCK % num_gpus == 0
+    int offset[ hamming_dist ][ num_gpus ]; 
+    int uprbnd[ hamming_dist ][ num_gpus ];
     #pragma omp parallel for private(h) num_threads(hamming_dist)
     for( h=0; h<hamming_dist; h++ )
     {
@@ -70,7 +72,13 @@ int main(int argc, char * argv[])
         last_th_numkeys[h] = keys_per_thread[h] + total_keys[h] - (keys_per_thread[h] * total_threads[h]);
         extra_keys[h]      = last_th_numkeys[h] - keys_per_thread[h];
         blocks_per_gpu[h]  = (num_blocks[h]%num_gpus==0) ? (num_blocks[h]/num_gpus) : (num_blocks[h]/num_gpus)+1;
-        offset[h]          = total_threads[h] / num_gpus;
+        offset[h][0]       = 0;
+        uprbnd[h][0]       = (total_threads[h]/num_gpus) + (total_threads[h]%num_gpus);
+        for( int g=1; g<num_gpus; ++g ) 
+        {
+            offset[h][g] = uprbnd[h][0] + (g-1)*(total_threads[h]/num_gpus);
+            uprbnd[h][g] = offset[h][g] + (total_threads[h]/num_gpus);
+        }
     }
 
       // rbc across each fragmentation key
@@ -102,17 +110,9 @@ int main(int argc, char * argv[])
          // host variables 
         uint256_t server_key( 0 );
         server_key.copy( client[f].key );
-        if( num_fragments > 1 )
-        {
-            if( f==0 ) // to select upper bound all corruptions must be located in the first subkey
-                select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
-        }
-        else // otherwise we are in the non-fragmentation case
-        {
+        if( f==0 ) // for fragmentation choose upper bound; all corruptions in one of the sub-keys
             select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
-        }
-
-        if( server_key == client[f].key ) 
+        if( server_key == client[f].key )
         {
             total_iterations++;
             continue; // hamming distance is 0 for this fragmentation key
@@ -121,7 +121,6 @@ int main(int argc, char * argv[])
         uint256_t *host_server_key = &server_key;
         uint256_t *auth_key[ num_gpus ];
         std::uint64_t *total_iter_count[ num_gpus ];
-        int *key_found_flag[ num_gpus ];
          // device variables
         uint256_t *dev_server_key[ num_gpus ];
         uint * dev_server_pt[ num_gpus ];
@@ -156,8 +155,6 @@ int main(int argc, char * argv[])
             cudaMallocManaged( (void**) &total_iter_count[dev], sizeof( std::uint64_t ) );
             *total_iter_count[dev] = 0;
             cudaMallocManaged( (void**) &auth_key[dev], sizeof( uint256_t ) );
-            cudaMallocManaged( (void**) &key_found_flag[dev], sizeof( int ) );
-            *key_found_flag[dev] = 0;
 
             if( cuda_utils::HtoD( dev_server_pt[dev], &host_server_pt, 4*sizeof( uint ) ) != cudaSuccess )
                 {
@@ -195,26 +192,15 @@ int main(int argc, char * argv[])
                                                                               total_keys[h-1],
                                                                               extra_keys[h-1],
                                                                               total_iter_count[dev],
-                                                                              key_found_flag[dev],
-                                                                              offset[h-1],
-                                                                              dev,
+                                                                              offset[h-1][dev],
+                                                                              uprbnd[h-1][dev],
                                                                               key_size_bits
                                                                             );
+                                                                           
                 cudaDeviceSynchronize();
-                
-                if( EARLY_EXIT && *auth_key[dev] == client[f].key ) 
-                {
-                    #pragma omp parallel for private(i)
-                    for( i=0; i<num_gpus; ++i ) *key_found_flag[i]=1;
-                    h=hamming_dist+1; // break from outer loop
-                }
             }
 
-            for( dev=0; dev<num_gpus; ++dev ) 
-            {
-                //fprintf(stderr,"\nDev = %d, total iterations = %llu\n",dev,*total_iter_count[dev]);
-                total_iterations += *total_iter_count[dev];
-            }
+            for( dev=0; dev<num_gpus; ++dev ) total_iterations += *total_iter_count[dev];
         }
 
         gettimeofday(&end[f], NULL);
