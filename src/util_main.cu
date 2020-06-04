@@ -119,7 +119,10 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
             }
 
-        atomicAdd( (unsigned long long int*) iter_count, total );
+        if( !EARLY_EXIT)
+        {
+            atomicAdd( (unsigned long long int*) iter_count, total );
+        }
     }
 
 }
