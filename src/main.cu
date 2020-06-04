@@ -172,14 +172,7 @@ int main(int argc, char * argv[])
             cudaDeviceSynchronize();
         }
 
-        for( int dev=0; dev<num_gpus; ++dev ) 
-        {
-            total_iterations += *total_iter_count[dev];
-            //////////////
-            // developing
-            fprintf(stderr,"\nHd = %d, Dev = %d, KeysIterated = %Ld\n",h,dev,*total_iter_count[dev]);
-            //////////////
-        }
+        for( int dev=0; dev<num_gpus; ++dev ) total_iterations += *total_iter_count[dev];
     }
 
     gettimeofday(&end, NULL);
