@@ -8,8 +8,8 @@ vpath %.hpp lib
 
 NUM_THREADS=256
 EXECUTABLES=sbench # test_rbc gbench 
-#GENCODE = -gencode=arch=compute_70,code=sm_70
-GENCODE = -gencode=arch=compute_60,code=sm_60
+#GENCODE = -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_75,code=sm_75
+GENCODE = -gencode=arch=compute_70,code=sm_70
 AES_FILES=AES.cu AES.h BlockCipher.h AES_encrypt.cu 
 AES_PER_ROUND_FILES=aes_per_round.cu aes_per_round.h
 UINT_FILES=uint256_t.cu uint256_t.h 

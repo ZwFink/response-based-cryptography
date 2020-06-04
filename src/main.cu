@@ -3,7 +3,7 @@
 #include <iostream>
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
-#define OPS_PER_THREAD 8192
+#define OPS_PER_THREAD 1024
 
 
 int main(int argc, char * argv[])
