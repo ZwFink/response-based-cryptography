@@ -194,11 +194,6 @@ int main(int argc, char * argv[])
         for( int dev=0; dev<num_gpus; ++dev ) auth_key[dev]->dump();
     }
 
-    //////////////
-    // developing
-    printf("\nTotal keys we are supposed to iterate: %Ld\n",total_count_keys);
-    //////////////
-
     printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n",total_iterations,elapsed,total_iterations*1.0/(elapsed));
 
     int success = 0;
