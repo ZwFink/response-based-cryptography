@@ -111,7 +111,8 @@ int main(int argc, char * argv[])
         uint256_t server_key( 0 );
         server_key.copy( client[f].key );
         if( f==0 ) // for fragmentation choose upper bound; all corruptions in one of the sub-keys
-            select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
+            //select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
+            rand_flip_n_bits( &server_key, hamming_dist, key_size_bits );
         if( server_key == client[f].key )
         {
             total_iterations++;
@@ -330,26 +331,19 @@ void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks, 
     *server_key = *server_key ^ target_perm;
 }
 
-void rand_flip_n_bits(uint256_t *server_key, uint256_t *client_key, int n)
+void rand_flip_n_bits(uint256_t *server_key, int n, int key_size_bits)
 {
-    srand(238); // for randomly generating keys 
+    srand((unsigned) time(0)); // for randomly generating keys 
 
-    int hamming_dist = n;
-    int i=0;
+    uint64_t num_keys = get_bin_coef( key_size_bits, n );
+    uint64_t rand_ord = rand() % num_keys;
 
-    while( i<hamming_dist ) // loop until we flipped hamming_dist number of bits
-    { 
-        uint8_t bit_idx = rand() % UINT256_SIZE_IN_BITS;
-        uint8_t block = bit_idx / UINT256_SIZE_IN_BYTES;
+    // get our target perm
+    uint256_t target_perm( 0 );
+    decode_ordinal( &target_perm, rand_ord, n, key_size_bits );
 
-        server_key->set_bit( bit_idx ); // bitwise OR operation
-
-        // only increment if we successfully flipped the bit
-        if( server_key->at(block) != client_key->at(block) )
-            i++;
-        else
-            srand(239);
-    }
+    // randomly corrupt the server key
+    *server_key = *server_key ^ target_perm;
 }
 
 void handleErrors(void)
