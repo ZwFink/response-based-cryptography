@@ -311,7 +311,7 @@ void rand_flip_n_bits(uint256_t *server_key, int n, int key_size_bits)
 
     // get our target perm
     uint256_t target_perm( 0 );
-    decode_ordinal( &target_perm, rand_ord, n, key_size_bits );
+    decode_ordinal( &target_perm, rand_ord, n );
 
     // randomly corrupt the server key
     *server_key = *server_key ^ target_perm;
