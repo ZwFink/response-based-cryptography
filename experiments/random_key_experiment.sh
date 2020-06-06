@@ -1,20 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=test_frag  # the name of your job
-#SBATCH --output=/scratch/jaw566/test_frag.out #
-#SBATCH --error=/scratch/jaw566/test_frag.err #
-#SBATCH --time=00:60:00        # 2 min, shorter time, quicker start
-#SBATCH --mem=1000         #1 GiB memory requested
-#SBATCH --gres=gpu:tesla:4 #resource requirement the :4 is 4 GPUs
-#SBATCH --qos=gpu
-#SBATCH --constraint=v100 #this is the volta node
-#SBATCH --exclusive 
-#SBATCH --reservation=jaw566_183
-
-module load cuda/10.2
-module load gcc/6.2.0
-
-outfile="spread_analysis_fragmentation_4xVolta.txt"
+trials=50
+outfile="random_keygen_fragmentation_2xTitan.txt"
 
 #echo "------------" >> "$outfile"
 #echo "2 fragments" >> "$outfile"
@@ -43,14 +30,12 @@ echo "8 fragments" >> "$outfile"
 echo "------------" >> "$outfile"
 echo "" >> "$outfile"
 for((d=2; d<16; d++)); do
-    for((t=0; t<50; t++)); do
+    for((t=0; t<trials; t++)); do
         echo "" >> "$outfile"
         echo Hamming distance: "$d" >> "$outfile"
         echo "" >> "$outfile"
-        ./sbench "$d" 1 4 8 >> "$outfile"
+        ./sbench "$d" 0 2 8 >> "$outfile"
     done
 done
 
 
-# srun --gres=gpu:4 ./sbench 7 1 4 4
-# srun --gres=gpu:4 ./analyze_spread_fragmentation.sh
