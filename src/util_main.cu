@@ -17,7 +17,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                                    const std::uint32_t extra_keys,
                                    std::uint64_t *iter_count,
                                    const uint64_t offset,
-                                   const uint64_t bound
+                                   const uint64_t bound,
+                                   const int key_size_bits
                                  )
 {
     unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x ) + offset;
@@ -75,7 +76,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                        (uint64_t) num_blocks * threads_per_block,
                        mismatch,
                        keys_per_thread,
-                       extra_keys
+                       extra_keys,
+                       key_size_bits
                      );
 
         uint256_iter iter ( *key_for_encryp,
@@ -107,6 +109,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                 if( match == 4 )
                     {
                         *key_to_find = iter.corrupted_key;
+                        printf("\nFound it!\n");
 
                         if( EARLY_EXIT )
                             __trap();
@@ -119,10 +122,8 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
 
             }
 
-        if( !EARLY_EXIT)
-        {
+        if( !EARLY_EXIT )
             atomicAdd( (unsigned long long int*) iter_count, total );
-        }
     }
 
 }
