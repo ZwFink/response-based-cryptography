@@ -97,7 +97,6 @@ CUDA_CALLABLE_MEMBER uint64_t get_bin_coef(uint16_t n, uint16_t k)
         ret /= (i+1);  
     }
 
-
     return ret;  
 }  
 

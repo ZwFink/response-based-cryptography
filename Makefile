@@ -9,7 +9,7 @@ vpath %.hpp lib
 NUM_THREADS=256
 EXECUTABLES=sbench # test_rbc gbench 
 #GENCODE = -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_75,code=sm_75
-GENCODE = -gencode=arch=compute_60,code=sm_60
+GENCODE = -gencode=arch=compute_70,code=sm_70
 AES_FILES=AES.cu AES.h BlockCipher.h AES_encrypt.cu 
 AES_PER_ROUND_FILES=aes_per_round.cu aes_per_round.h
 UINT_FILES=uint256_t.cu uint256_t.h 
@@ -20,7 +20,7 @@ UTIL_FILES=perm_util.cu perm_util.h cuda_utils.h
 UTIL_MAIN_FILES=util_main.cu util_main.h cuda_utils.h
 AES_CPU_FILES=aes_cpu.cpp aes_cpu.h
 GENERAL_OBJECTS=aes_per_round.o sbox.o uint_iter.o uint.o util.o aes_cpu.o aes_util.o
-CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -DEARLY_EXIT=1 -DTHREADS_PER_BLOCK=$(NUM_THREADS) -DNUM_THREADS=$(NUM_THREADS) \
+CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -DITERCOUNT=1 -DRANDOM=0 -DEARLY_EXIT=1 -DTHREADS_PER_BLOCK=$(NUM_THREADS) -DNUM_THREADS=$(NUM_THREADS) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/ -DUSE_CONSTANT -DUSE_SMEM
 DEBUGFLAGS := -O0 -g --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/

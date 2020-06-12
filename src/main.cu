@@ -3,9 +3,26 @@
 #include <iostream>
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
- #define OPS_PER_THREAD 1024 // Volta
+#define OPS_PER_THREAD 1024 // Volta
 //#define OPS_PER_THREAD 8192 // Titan
 
+
+void gen_rand_ords( int * rands, int g, int d ) 
+{
+   int i=0, sum=0;
+
+   /* set the seed */
+   srand((unsigned) time( NULL ));
+  
+   for (i=g-1; i>0; --i) 
+   {
+      rands[i] = rand() % (d-sum);
+      //printf( "r[%d] = %d\n", i, rands[i]);
+      sum += rands[i];
+   }
+   rands[0] = d-sum;
+   //printf( "r[%d] = %d\n", 0, rands[0]);
+}
 
 int main(int argc, char * argv[])
 {
@@ -47,11 +64,12 @@ int main(int argc, char * argv[])
       // initializations
     int key_size_bits = UINT256_SIZE_IN_BITS / num_fragments;
     long long unsigned int total_iterations = 0;
-    omp_set_num_threads( num_gpus );
+    int num_keys_found = 0;
     double elapsed = 0;
     struct timeval start[ num_fragments ], end[ num_fragments ];
-    int num_bits_flipped_so_far = 0;
-    int rand_num_bits_to_flip = 0;
+    int randords[ num_fragments ]; 
+    gen_rand_ords(randords, num_fragments, hamming_dist);
+    omp_set_num_threads( num_gpus );
          // keyspace delimination variables 
     int dev=0, h=0, i=0;
     std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD;
@@ -84,22 +102,11 @@ int main(int argc, char * argv[])
         }
     }
 
-     // turn on gpu
+      // turn on gpu
     if( verbose ) printf("\n\nTurning on the GPUs...\n");
-    #pragma omp parallel for private(dev)
     for( dev=0; dev<num_gpus; ++dev ) warm_up_gpu( dev, verbose );
     if( verbose ) printf("\n");
-
-     // host variables
-    uint256_t *host_server_key[num_fragments];
-    uint256_t *auth_key[ num_gpus ][num_fragments];
-    std::uint64_t *total_iter_count[ num_gpus ][num_fragments];
-     // device variables
-    uint256_t *dev_server_key[ num_gpus ][num_fragments];
-    uint * dev_server_pt[ num_gpus ][num_fragments];
-    uint * dev_server_ct[ num_gpus ][num_fragments];
-    uint256_t server_key[num_fragments];
-
+         
       // rbc across each fragmentation key
     for( int f=0; f<num_fragments; f++ )
     {
@@ -125,52 +132,40 @@ int main(int argc, char * argv[])
         host_server_ct[ 1 ] = bytes_to_int( tmp_cipher.bits + 4 );
         host_server_ct[ 2 ] = bytes_to_int( tmp_cipher.bits + 8 );
         host_server_ct[ 3 ] = bytes_to_int( tmp_cipher.bits + 12 );
-
-         // host variables 
-        server_key[f].copy( client[f].key );
-        if( num_fragments==1 ) 
+         // host variables
+        uint256_t server_key( 0 );
+        server_key.copy( client[f].key );
+            // inject noise
+        if( RANDOM ) 
+            rand_flip_n_bits( &server_key, randords[f], key_size_bits );
+        else if( f==0 ) 
+            select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
+        if( server_key == client[f].key )
         {
-            rand_flip_n_bits( &server_key[f], hamming_dist, key_size_bits );
-        }
-        else
-        {
-            srand((unsigned) time(0));
-            int tmp = hamming_dist - num_bits_flipped_so_far;
-            int randi = rand();
-            rand_num_bits_to_flip = randi % tmp;
-
-            if( f==(num_fragments-1)  )
-            {
-                rand_flip_n_bits( &server_key[f], tmp, key_size_bits );
-            }
-            else if( (rand_num_bits_to_flip != 0) && (num_bits_flipped_so_far < hamming_dist) )
-            {
-                rand_flip_n_bits( &server_key[f], rand_num_bits_to_flip, key_size_bits );
-                num_bits_flipped_so_far = num_bits_flipped_so_far + rand_num_bits_to_flip;
-            }
-        }
-        //if( f==0 ) // for fragmentation choose upper bound; all corruptions in one of the sub-keys
-        //    //select_middle_key( &server_key, hamming_dist, total_threads[hamming_dist-1], num_gpus, key_size_bits );
-        //    rand_flip_n_bits( &server_key, hamming_dist, key_size_bits );
-        if( server_key[f] == client[f].key )
-        {
-            gettimeofday(&start[f], NULL);
-            gettimeofday(&end[f], NULL);
             total_iterations++;
+            num_keys_found++;
             continue; // hamming distance is 0 for this fragmentation key
         }
-        
-        host_server_key[f] = &server_key[f];
+        uint256_t *host_server_key = &server_key;
+        uint256_t *auth_key[ num_gpus ];
+            // these variables are for experimental evaluation
+        std::uint64_t *total_iter_count[ num_gpus ];
+        int *found_key_Flag;
+         // device variables
+        uint256_t *dev_server_key[ num_gpus ];
+        uint * dev_server_pt[ num_gpus ];
+        uint * dev_server_ct[ num_gpus ];
         
         if( verbose ) 
         {
-            print_prelim_info( client[f], server_key[f] );
+            print_prelim_info( client[f], server_key );
             for( h=0; h<hamming_dist; h++ )
                 print_rbc_info( num_blocks[h], 
                                 keys_per_thread[h], total_keys[h], 
                                 last_th_numkeys[h], extra_keys[h], h+1 );
         }
 
+           
 
         gettimeofday(&start[f], NULL);
 
@@ -179,91 +174,117 @@ int main(int argc, char * argv[])
         for( dev=0; dev<num_gpus; ++dev )
         {
             cudaSetDevice( dev );
-            cudaMalloc( (void**) &dev_server_pt[dev][f], 4*sizeof( uint ) );
-            cudaMalloc( (void**) &dev_server_ct[dev][f], 4*sizeof( uint ) );
-            cudaMalloc( (void**) &dev_server_key[dev][f], sizeof( uint256_t ) );
-            cudaMallocManaged( (void**) &total_iter_count[dev][f], sizeof( std::uint64_t ) );
-            *total_iter_count[dev][f] = 0;
-            cudaMallocManaged( (void**) &auth_key[dev][f], sizeof( uint256_t ) );
+            cudaMalloc( (void**) &dev_server_pt[dev], 4*sizeof( uint ) );
+            cudaMalloc( (void**) &dev_server_ct[dev], 4*sizeof( uint ) );
+            cudaMalloc( (void**) &dev_server_key[dev], sizeof( uint256_t ) );
+            cudaMallocManaged( (void**) &total_iter_count[dev], sizeof( std::uint64_t ) );
+            *total_iter_count[dev] = 0;
+            cudaMallocManaged( (void**) &auth_key[dev], sizeof( uint256_t ) );
+            cudaMallocManaged( (void**) &found_key_Flag, sizeof( int ) );
+            *found_key_Flag = 0;
 
-            if( cuda_utils::HtoD( dev_server_pt[dev][f], &host_server_pt, 4*sizeof( uint ) ) != cudaSuccess )
+            if( cuda_utils::HtoD( dev_server_pt[dev], &host_server_pt, 4*sizeof( uint ) ) != cudaSuccess )
                 {
                     std::cout << "Failure to transfer uid to device\n";
                 }
-            if( cuda_utils::HtoD( dev_server_ct[dev][f], &host_server_ct, 4*sizeof( uint ) ) != cudaSuccess )
+            if( cuda_utils::HtoD( dev_server_ct[dev], &host_server_ct, 4*sizeof( uint ) ) != cudaSuccess )
                 {
-                    std::cout << "Failure to transfer cipher to device\n";
+                    std::cout << "Failure to transfer client cipher to device\n";
                 }
-            if( cuda_utils::HtoD( dev_server_key[dev][f], &host_server_key[f], sizeof( uint256_t ) ) != cudaSuccess )
+            if( cuda_utils::HtoD( dev_server_key[dev], host_server_key, sizeof( uint256_t ) ) != cudaSuccess )
                 {
                     std::cout << "Failure to transfer corrupted_key to device\n";
                 }
         }
-        
-
 
          // run rbc kernel 
-        for( h=1; h<=hamming_dist; ++h )
+        h=1;
+        while( (!EARLY_EXIT && h<=hamming_dist) || (EARLY_EXIT && !(*found_key_Flag) && h<=hamming_dist) )
         {
             #pragma omp parallel for private(i)
-            for( i=0; i<num_gpus; ++i ) *total_iter_count[i][f]=0;
+            for( i=0; i<num_gpus; ++i ) *total_iter_count[i]=0;
 
             #pragma omp parallel for private(dev)
             for( dev=0; dev<num_gpus; dev++ )
             {
                 cudaSetDevice( dev );
 
-                kernel_rbc_engine<<<blocks_per_gpu[h-1],THREADS_PER_BLOCK>>>( dev_server_key[dev][f],
-                                                                              auth_key[dev][f],
+                kernel_rbc_engine<<<blocks_per_gpu[h-1],THREADS_PER_BLOCK>>>( dev_server_key[dev],
+                                                                              auth_key[dev],
                                                                               h,
-                                                                              dev_server_pt[dev][f],
-                                                                              dev_server_ct[dev][f],
+                                                                              dev_server_pt[dev],
+                                                                              dev_server_ct[dev],
                                                                               num_blocks[h-1],
                                                                               THREADS_PER_BLOCK,
                                                                               keys_per_thread[h-1],
                                                                               total_keys[h-1],
                                                                               extra_keys[h-1],
-                                                                              total_iter_count[dev][f],
+                                                                              total_iter_count[dev],
                                                                               offset[h-1][dev],
                                                                               uprbnd[h-1][dev],
-                                                                              key_size_bits
+                                                                              key_size_bits,
+                                                                              found_key_Flag
                                                                             );
                                                                            
                 cudaDeviceSynchronize();
-            }
 
-            for( dev=0; dev<num_gpus; ++dev ) total_iterations += *total_iter_count[dev][f];
+            }
+            //long long unsigned int sum = 0;
+            for( dev=0; dev<num_gpus; ++dev ) 
+            {
+                total_iterations += *total_iter_count[dev];
+                //sum += *total_iter_count[dev];
+            }
+            //printf("\nTheorectical = %Ld",total_keys[h-1]); 
+            //printf("\nActual = %Ld",sum); 
+
+            h++;
         }
 
         gettimeofday(&end[f], NULL);
-        fprintf(stderr,"\nHERER\n");
 
 
         if( verbose )
         {
             printf("\nResulting Authentication Keys:\n");
-            for( dev=0; dev<num_gpus; ++dev ) auth_key[dev][f]->dump();
+            for( dev=0; dev<num_gpus; ++dev ) auth_key[dev]->dump();
         }
 
         int success = 0;
-        for( dev=0; dev<num_gpus; ++dev ) if( *auth_key[dev][f] == client[f].key ) success=1;
+        for( dev=0; dev<num_gpus; ++dev ) if( *auth_key[dev] == client[f].key ) success=1;
 
         if( success )
             {
-                std::cout << "SUCCESS: The keys match!\n";
+                //std::cout << "SUCCESS: The keys match!\n";
+                num_keys_found++;
             }
         else
             {
                 std::cout << "ERROR: The keys do not match.\n";
             }
 
-              
-        elapsed += (((end[f].tv_sec*1000000.0 + end[f].tv_usec) -
-                   (start[f].tv_sec*1000000.0 + start[f].tv_usec)) / 1000000.00);
     } // end loop across fragments
 
 
-    printf("\nTime to compute %Ld keys: %f (keys/second: %f)\n",total_iterations,elapsed,total_iterations*1.0/(elapsed));
+    if( RANDOM )
+        {
+            for(int f=0; f<num_fragments; ++f)
+            {
+                if( randords[f] != 0 )
+                    elapsed += (((end[f].tv_sec*1000000.0 + end[f].tv_usec) -
+                                  (start[f].tv_sec*1000000.0 + start[f].tv_usec)) / 1000000.00);
+            }
+        }
+    else // average case (or upper bound) experiment
+        elapsed = (((end[0].tv_sec*1000000.0 + end[0].tv_usec) -
+                    (start[0].tv_sec*1000000.0 + start[0].tv_usec)) / 1000000.00);
+
+    if( num_keys_found == num_fragments ) 
+        {
+            std::cout << "\n\nSUCCESS: The client is authenticated!\n";
+        }
+
+    printf("Time to compute %Ld keys: %f (keys/second: %f)\n",total_iterations,elapsed,total_iterations*1.0/(elapsed));
 
     return 0;
 } 
