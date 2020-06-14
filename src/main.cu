@@ -3,8 +3,7 @@
 #include <iostream>
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
-#define OPS_PER_THREAD 4096 // gp100
-//#define OPS_PER_THREAD 8192 // titan
+#define OPS_PER_THREAD 8192 // titan, gp100
 //#define OPS_PER_THREAD 1024 // v100
 
 
