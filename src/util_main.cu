@@ -5,41 +5,78 @@
 #include "util.h"
 #include <stdio.h>
 
-__global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
-                                   uint256_t *key_to_find,
-                                   const int mismatch,
-                                   const uint *user_id,
-                                   const uint *auth_cipher,
-                                   const std::size_t num_blocks,
-                                   const std::size_t threads_per_block,
-                                   const std::size_t keys_per_thread,
-                                   const std::uint64_t num_keys,
-                                   const std::uint32_t extra_keys,
-                                   std::uint64_t *iter_count,
-                                   const uint64_t offset,
-                                   const uint64_t bound,
-                                   const int key_size_bits,
-                                   int *found_key_Flag
-                                 )
+__global__ void kernel_startend_perms( uint256_t *starting_perm,
+                                       uint256_t *ending_perm,
+                                       const int mismatch,
+                                       const std::size_t num_blocks,
+                                       const std::size_t threads_per_block,
+                                       const std::size_t keys_per_thread,
+                                       const std::uint32_t extra_keys,
+                                       const uint64_t offset,
+                                       const uint64_t bound,
+                                       const int key_size_bits,
+                                       int *found_key_Flag
+                                     )
 {
     unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x ) + offset;
 
-    aes_tables tabs;
+    (starting_perm + tid)->set_all(0);
+    (ending_perm + tid)->set_all(0);
 
-    #ifdef USE_SMEM
+    if( tid < bound && !(EARLY_EXIT && *found_key_Flag) )
+    {
+        get_perm_pair( starting_perm + tid, 
+                       ending_perm + tid, 
+                       (uint64_t) tid, 
+                       (uint64_t) num_blocks * threads_per_block,
+                       mismatch,
+                       keys_per_thread,
+                       extra_keys,
+                       key_size_bits
+                     );
+    }
+
+}
+
+__global__ void kernel_iterate_keyspace( uint256_t *key_for_encryp,
+                                         uint256_t *key_to_find,
+                                         const int mismatch,
+                                         const uint *user_id,
+                                         const uint *auth_cipher,
+                                         const std::size_t num_blocks,
+                                         const std::size_t threads_per_block,
+                                         const std::size_t keys_per_thread,
+                                         const std::uint64_t num_keys,
+                                         const std::uint32_t extra_keys,
+                                         std::uint64_t *iter_count,
+                                         const uint64_t offset,
+                                         const uint64_t bound,
+                                         const int key_size_bits,
+                                         int *found_key_Flag,
+                                         uint256_t *starting_perm,
+                                         uint256_t *ending_perm
+                                       )
+{
+    if( EARLY_EXIT && *found_key_Flag == 1 ) return;
+    
+    unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x ) + offset;
+
+    aes_tables tabs;
+    
+#ifdef USE_SMEM
     __shared__ std::uint8_t sbox[ SBOX_SIZE_IN_BYTES ];
     if( threadIdx.x < SBOX_SIZE_IN_BYTES )
         {
-            #if THREADS_PER_BLOCK == 128 
+#if THREADS_PER_BLOCK == 128 
 
             sbox[ 2 * threadIdx.x ] = Tsbox_256[ 2 * threadIdx.x ];
             sbox[ ( 2 * threadIdx.x ) + 1 ] = Tsbox_256[ ( 2 * threadIdx.x ) + 1 ];
 
-            #elif THREADS_PER_BLOCK == 256
+#elif THREADS_PER_BLOCK == 256
 
             sbox[ threadIdx.x ] = Tsbox_256[ threadIdx.x ];
 
-            #endif
+#endif
         }
     __shared__ uint Te0[256], Te1[256], Te2[256], Te3[256];
     load_smem(Te0, cTe0, Te1, cTe1, Te2, cTe2, Te3, cTe3);
@@ -51,7 +88,7 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     tabs.Te2 = Te2;
     tabs.Te3 = Te3;
 
-    #else
+#else
     // just get a reference to it
     uint8_t *sbox = Tsbox_256;
 
@@ -59,34 +96,25 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
     tabs.Te1 = cTe1;
     tabs.Te2 = cTe2;
     tabs.Te3 = cTe3;
+#endif 
 
-    #endif 
-
-    if( tid < bound )
+    if( tid < bound && !(EARLY_EXIT && *found_key_Flag) )
     {
-        uint256_t starting_perm, ending_perm;
         tabs.sbox = sbox;
         std::uint8_t idx = 0;
         std::uint8_t match = 0;
         int total = 0;
-        uint cyphertext[ 4 ];
+        uint cyphertext[ 4 ] = {0,0,0,0};
 
-        get_perm_pair( &starting_perm, 
-                       &ending_perm, 
-                       (uint64_t) tid, 
-                       (uint64_t) num_blocks * threads_per_block,
-                       mismatch,
-                       keys_per_thread,
-                       extra_keys,
-                       key_size_bits
-                     );
+        uint256_t * start_perm = starting_perm + tid;
+        uint256_t * end_perm   = ending_perm + tid;
 
         uint256_iter iter ( *key_for_encryp,
-                            starting_perm,
-                            ending_perm
+                            *start_perm,
+                            *end_perm
                           );
-
-        while( !iter.end() )
+        
+        while( !iter.end() && !(EARLY_EXIT && (total%ITERCOUNT)==0 && *found_key_Flag) )
             {
 
                 ++total;
@@ -103,10 +131,6 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                         match += ( cyphertext[ idx ] == auth_cipher[ idx ] );
                     }
 
-		// we need to do this to make sure every key is counted
-		if( EARLY_EXIT && !( threadIdx.x % 32 ) )
-			atomicAdd( (unsigned long long int*) iter_count, 32 );
-
                 if( match == 4 )
                     {
                         *key_to_find = iter.corrupted_key;
@@ -120,14 +144,10 @@ __global__ void kernel_rbc_engine( uint256_t *key_for_encryp,
                 // get next key
                 iter.next();
 
-            // early exit strategy
-            if( EARLY_EXIT && (total%ITERCOUNT)==0 && *found_key_Flag ) 
-                break;
-
             }
 
-        if( !EARLY_EXIT )
-            atomicAdd( (unsigned long long int*) iter_count, total );
+        atomicAdd( (unsigned long long int*) iter_count, total );
+        
     }
 
 }

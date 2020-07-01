@@ -3,26 +3,9 @@
 #include <iostream>
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
-#define OPS_PER_THREAD 1024 // Volta
-//#define OPS_PER_THREAD 8192 // Titan
+//#define OPS_PER_THREAD 1024 // Volta
+#define OPS_PER_THREAD 8192 // Titan
 
-
-void gen_rand_ords( int * rands, int g, int d ) 
-{
-   int i=0, sum=0;
-
-   /* set the seed */
-   srand((unsigned) time( NULL ));
-  
-   for (i=g-1; i>0; --i) 
-   {
-      rands[i] = rand() % (d-sum);
-      //printf( "r[%d] = %d\n", i, rands[i]);
-      sum += rands[i];
-   }
-   rands[0] = d-sum;
-   //printf( "r[%d] = %d\n", 0, rands[0]);
-}
 
 int main(int argc, char * argv[])
 {
@@ -61,17 +44,19 @@ int main(int argc, char * argv[])
 
     /* Do RBC Authentication */
 
-      // initializations
-    int key_size_bits = UINT256_SIZE_IN_BITS / num_fragments;
+         // iteration variables
+    int dev=0, h=0, i=0;
+         // counting and timing variables
     long long unsigned int total_iterations = 0;
     int num_keys_found = 0;
     double elapsed = 0;
+    omp_set_num_threads( num_gpus );
+         // subkey-dependent variables
+    int key_size_bits = UINT256_SIZE_IN_BITS / num_fragments;
     struct timeval start[ num_fragments ], end[ num_fragments ];
     int randords[ num_fragments ]; 
     gen_rand_ords(randords, num_fragments, hamming_dist);
-    omp_set_num_threads( num_gpus );
          // keyspace delimination variables 
-    int dev=0, h=0, i=0;
     std::uint32_t ops_per_block = THREADS_PER_BLOCK * OPS_PER_THREAD;
     std::uint64_t total_keys[ hamming_dist ];
     std::uint64_t num_blocks[ hamming_dist ];
@@ -79,11 +64,10 @@ int main(int argc, char * argv[])
     std::uint64_t keys_per_thread[ hamming_dist ];
     std::uint64_t last_th_numkeys[ hamming_dist ];
     std::uint32_t extra_keys[ hamming_dist ];
-         // multi-gpu calculation variables
+         // multigpu-dependent variables
     int blocks_per_gpu[ hamming_dist ];
     int offset[ hamming_dist ][ num_gpus ]; 
     int uprbnd[ hamming_dist ][ num_gpus ];
-    #pragma omp parallel for private(h) num_threads(hamming_dist)
     for( h=0; h<hamming_dist; h++ )
     {
         total_keys[h]      = get_bin_coef( key_size_bits, h+1 );
@@ -100,17 +84,18 @@ int main(int argc, char * argv[])
             offset[h][g] = uprbnd[h][0] + (g-1)*(total_threads[h]/num_gpus);
             uprbnd[h][g] = offset[h][g] + (total_threads[h]/num_gpus);
         }
+    
     }
 
-      // turn on gpu
+         // turn on gpu
     if( verbose ) printf("\n\nTurning on the GPUs...\n");
     for( dev=0; dev<num_gpus; ++dev ) warm_up_gpu( dev, verbose );
     if( verbose ) printf("\n");
          
-      // rbc across each fragmentation key
+         // rbc across each fragmentation key
     for( int f=0; f<num_fragments; f++ )
     {
-         // convert client data to currently supported structures
+            // convert client data to currently supported structures
         aes_per_round::message_128 tmp_cipher;
         uint host_server_pt[ 4 ] = {0,0,0,0};
         uint host_server_ct[ 4 ] = {0,0,0,0};
@@ -132,10 +117,10 @@ int main(int argc, char * argv[])
         host_server_ct[ 1 ] = bytes_to_int( tmp_cipher.bits + 4 );
         host_server_ct[ 2 ] = bytes_to_int( tmp_cipher.bits + 8 );
         host_server_ct[ 3 ] = bytes_to_int( tmp_cipher.bits + 12 );
-         // host variables
+            // host variables
         uint256_t server_key( 0 );
         server_key.copy( client[f].key );
-            // inject noise
+               // inject noise
         if( RANDOM ) 
             rand_flip_n_bits( &server_key, randords[f], key_size_bits );
         else if( f==0 ) 
@@ -148,13 +133,12 @@ int main(int argc, char * argv[])
         }
         uint256_t *host_server_key = &server_key;
         uint256_t *auth_key[ num_gpus ];
-            // these variables are for experimental evaluation
-        std::uint64_t *total_iter_count[ num_gpus ];
-        int *found_key_Flag;
-         // device variables
+            // device variables
         uint256_t *dev_server_key[ num_gpus ];
         uint * dev_server_pt[ num_gpus ];
         uint * dev_server_ct[ num_gpus ];
+        uint256_t * dev_starting_perm;
+        uint256_t * dev_ending_perm;
         
         if( verbose ) 
         {
@@ -164,12 +148,17 @@ int main(int argc, char * argv[])
                                 keys_per_thread[h], total_keys[h], 
                                 last_th_numkeys[h], extra_keys[h], h+1 );
         }
+            // shared host/device variables
+        std::uint64_t *total_iter_count[ num_gpus ];
+        int *found_key_Flag;
 
-           
-
+        
+            // start timer here since all prior work is handled more efficiently in practice
         gettimeofday(&start[f], NULL);
 
-         // allocate and set device variables
+            // allocate and set device variables
+        cudaMallocManaged( (void**) &dev_starting_perm, sizeof(uint256_t) * total_threads[h-1]);
+        cudaMallocManaged( (void**) &dev_ending_perm, sizeof(uint256_t) * total_threads[h-1]);
         #pragma omp parallel for private(dev)
         for( dev=0; dev<num_gpus; ++dev )
         {
@@ -197,11 +186,11 @@ int main(int argc, char * argv[])
                 }
         }
 
-         // run rbc kernel 
+            // run rbc kernels
         h=1;
         while( (!EARLY_EXIT && h<=hamming_dist) || (EARLY_EXIT && !(*found_key_Flag) && h<=hamming_dist) )
         {
-            #pragma omp parallel for private(i)
+
             for( i=0; i<num_gpus; ++i ) *total_iter_count[i]=0;
 
             #pragma omp parallel for private(dev)
@@ -209,34 +198,55 @@ int main(int argc, char * argv[])
             {
                 cudaSetDevice( dev );
 
-                kernel_rbc_engine<<<blocks_per_gpu[h-1],THREADS_PER_BLOCK>>>( dev_server_key[dev],
-                                                                              auth_key[dev],
-                                                                              h,
-                                                                              dev_server_pt[dev],
-                                                                              dev_server_ct[dev],
-                                                                              num_blocks[h-1],
-                                                                              THREADS_PER_BLOCK,
-                                                                              keys_per_thread[h-1],
-                                                                              total_keys[h-1],
-                                                                              extra_keys[h-1],
-                                                                              total_iter_count[dev],
-                                                                              offset[h-1][dev],
-                                                                              uprbnd[h-1][dev],
-                                                                              key_size_bits,
-                                                                              found_key_Flag
-                                                                            );
+                kernel_startend_perms <<< blocks_per_gpu[h-1],
+                                          THREADS_PER_BLOCK
+                                      >>>
+                                          ( dev_starting_perm,
+                                            dev_ending_perm,
+                                            h,
+                                            num_blocks[h-1],
+                                            THREADS_PER_BLOCK,
+                                            keys_per_thread[h-1],
+                                            extra_keys[h-1],
+                                            offset[h-1][dev],
+                                            uprbnd[h-1][dev],
+                                            key_size_bits,
+                                            found_key_Flag
+                                          );
+
+                cudaDeviceSynchronize();
+                
+                kernel_iterate_keyspace <<< blocks_per_gpu[h-1],
+                                            THREADS_PER_BLOCK
+                                        >>>
+                                            ( dev_server_key[dev],
+                                              auth_key[dev],
+                                              h,
+                                              dev_server_pt[dev],
+                                              dev_server_ct[dev],
+                                              num_blocks[h-1],
+                                              THREADS_PER_BLOCK,
+                                              keys_per_thread[h-1],
+                                              total_keys[h-1],
+                                              extra_keys[h-1],
+                                              total_iter_count[dev],
+                                              offset[h-1][dev],
+                                              uprbnd[h-1][dev],
+                                              key_size_bits,
+                                              found_key_Flag,
+                                              dev_starting_perm,
+                                              dev_ending_perm
+                                            );
                                                                            
                 cudaDeviceSynchronize();
 
             }
-            //long long unsigned int sum = 0;
+
             for( dev=0; dev<num_gpus; ++dev ) 
             {
                 total_iterations += *total_iter_count[dev];
-                //sum += *total_iter_count[dev];
+                fprintf(stderr,"\nHD=%d, TOTALITERS=%Ld\n",h,*total_iter_count[dev]);
             }
-            //printf("\nTheorectical = %Ld",total_keys[h-1]); 
-            //printf("\nActual = %Ld",sum); 
 
             h++;
         }
@@ -263,8 +273,18 @@ int main(int argc, char * argv[])
                 std::cout << "ERROR: The keys do not match.\n";
             }
 
-    } // end loop across fragments
+        cudaFree( dev_starting_perm );
+        cudaFree( dev_ending_perm );
+        for( dev=0; dev<num_gpus; ++dev )
+            {
+                cudaFree( total_iter_count[dev] );
+                cudaFree( auth_key[dev] );
+                cudaFree( dev_server_pt[dev] );
+                cudaFree( dev_server_ct[dev] );
+                cudaFree( dev_server_key[dev] );
+            }
 
+    } // end loop across fragments
 
     if( RANDOM )
         {
@@ -288,6 +308,21 @@ int main(int argc, char * argv[])
 
     return 0;
 } 
+
+void gen_rand_ords( int * rands, int g, int d ) 
+{
+   int i=0, sum=0;
+
+   /* set the seed */
+   srand((unsigned) time( NULL ));
+  
+   for (i=g-1; i>0; --i) 
+   {
+      rands[i] = rand() % (d-sum);
+      sum += rands[i];
+   }
+   rands[0] = d-sum;
+}
 
 unsigned char flip_n_bits( unsigned char val, int n )
 {
@@ -389,6 +424,7 @@ void rand_flip_n_bits(uint256_t *server_key, int n, int key_size_bits)
 
     uint64_t num_keys = get_bin_coef( key_size_bits, n );
     uint64_t rand_ord = rand() % num_keys;
+    printf("\nOrdinal = %d\n",rand_ord);
 
     // get our target perm
     uint256_t target_perm( 0 );
