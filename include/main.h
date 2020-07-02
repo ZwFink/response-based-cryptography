@@ -38,6 +38,7 @@ struct ClientData
 
 // utility functions
 void make_client_data( struct ClientData *ret, int num_fragments );
+void gen_rand_ords( int * rands, int g, int d );
 void rand_flip_n_bits(uint256_t *server_key, int n, int key_size_bits);
 void select_middle_key( uint256_t *server_key, int hamming_dist, int num_ranks, int n_gpus, int key_size_bits );
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,

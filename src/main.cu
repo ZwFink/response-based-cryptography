@@ -3,26 +3,9 @@
 #include <iostream>
 
 #define ROTL8(x,shift) ((uint8_t) ((x) << (shift)) | ((x) >> (8 - (shift))))
-#define OPS_PER_THREAD 1024 // Volta
-//#define OPS_PER_THREAD 8192 // Titan
+//#define OPS_PER_THREAD 1024 // Volta
+#define OPS_PER_THREAD 8192 // Titan
 
-
-void gen_rand_ords( int * rands, int g, int d ) 
-{
-   int i=0, sum=0;
-
-   /* set the seed */
-   srand((unsigned) time( NULL ));
-  
-   for (i=g-1; i>0; --i) 
-   {
-      rands[i] = rand() % (d-sum);
-      //printf( "r[%d] = %d\n", i, rands[i]);
-      sum += rands[i];
-   }
-   rands[0] = d-sum;
-   //printf( "r[%d] = %d\n", 0, rands[0]);
-}
 
 int main(int argc, char * argv[])
 {
@@ -83,7 +66,7 @@ int main(int argc, char * argv[])
     int blocks_per_gpu[ hamming_dist ];
     int offset[ hamming_dist ][ num_gpus ]; 
     int uprbnd[ hamming_dist ][ num_gpus ];
-    #pragma omp parallel for private(h) num_threads(hamming_dist)
+    //#pragma omp parallel for private(h) num_threads(hamming_dist)
     for( h=0; h<hamming_dist; h++ )
     {
         total_keys[h]      = get_bin_coef( key_size_bits, h+1 );
@@ -201,13 +184,14 @@ int main(int argc, char * argv[])
         h=1;
         while( (!EARLY_EXIT && h<=hamming_dist) || (EARLY_EXIT && !(*found_key_Flag) && h<=hamming_dist) )
         {
-            #pragma omp parallel for private(i)
             for( i=0; i<num_gpus; ++i ) *total_iter_count[i]=0;
 
             #pragma omp parallel for private(dev)
             for( dev=0; dev<num_gpus; dev++ )
             {
                 cudaSetDevice( dev );
+
+                //cudaFuncSetCacheConfig(kernel_rbc_engine, cudaFuncCachePreferL1);
 
                 kernel_rbc_engine<<<blocks_per_gpu[h-1],THREADS_PER_BLOCK>>>( dev_server_key[dev],
                                                                               auth_key[dev],
@@ -229,14 +213,8 @@ int main(int argc, char * argv[])
                 cudaDeviceSynchronize();
 
             }
-            //long long unsigned int sum = 0;
-            for( dev=0; dev<num_gpus; ++dev ) 
-            {
-                total_iterations += *total_iter_count[dev];
-                //sum += *total_iter_count[dev];
-            }
-            //printf("\nTheorectical = %Ld",total_keys[h-1]); 
-            //printf("\nActual = %Ld",sum); 
+
+            for( dev=0; dev<num_gpus; ++dev ) total_iterations += *total_iter_count[dev];
 
             h++;
         }
@@ -261,6 +239,15 @@ int main(int argc, char * argv[])
         else
             {
                 std::cout << "ERROR: The keys do not match.\n";
+            }
+
+        for( dev=0; dev<num_gpus; ++dev )
+            {
+                cudaFree( total_iter_count[dev] );
+                cudaFree( auth_key[dev] );
+                cudaFree( dev_server_pt[dev] );
+                cudaFree( dev_server_ct[dev] );
+                cudaFree( dev_server_key[dev] );
             }
 
     } // end loop across fragments
@@ -288,6 +275,21 @@ int main(int argc, char * argv[])
 
     return 0;
 } 
+
+void gen_rand_ords( int * rands, int g, int d ) 
+{
+   int i=0, sum=0;
+
+   /* set the seed */
+   srand((unsigned) time( NULL ));
+  
+   for (i=g-1; i>0; --i) 
+   {
+      rands[i] = rand() % (d-sum);
+      sum += rands[i];
+   }
+   rands[0] = d-sum;
+}
 
 unsigned char flip_n_bits( unsigned char val, int n )
 {
@@ -389,6 +391,7 @@ void rand_flip_n_bits(uint256_t *server_key, int n, int key_size_bits)
 
     uint64_t num_keys = get_bin_coef( key_size_bits, n );
     uint64_t rand_ord = rand() % num_keys;
+    printf("\nOrdinal = %Ld\n",rand_ord);
 
     // get our target perm
     uint256_t target_perm( 0 );
