@@ -20,9 +20,6 @@ __global__ void kernel_startend_perms( uint256_t *starting_perm,
 {
     unsigned int tid = threadIdx.x + ( blockIdx.x * blockDim.x ) + offset;
 
-    (starting_perm + tid)->set_all(0);
-    (ending_perm + tid)->set_all(0);
-
     if( tid < bound && !(EARLY_EXIT && *found_key_Flag) )
     {
         get_perm_pair( starting_perm + tid, 
@@ -106,12 +103,9 @@ __global__ void kernel_iterate_keyspace( uint256_t *key_for_encryp,
         int total = 0;
         uint cyphertext[ 4 ] = {0,0,0,0};
 
-        uint256_t * start_perm = starting_perm + tid;
-        uint256_t * end_perm   = ending_perm + tid;
-
         uint256_iter iter ( *key_for_encryp,
-                            *start_perm,
-                            *end_perm
+                            *(starting_perm + tid),
+                            *(ending_perm + tid)
                           );
         
         while( !iter.end() && !(EARLY_EXIT && (total%ITERCOUNT)==0 && *found_key_Flag) )

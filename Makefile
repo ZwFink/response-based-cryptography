@@ -20,7 +20,7 @@ UTIL_FILES=perm_util.cu perm_util.h cuda_utils.h
 UTIL_MAIN_FILES=util_main.cu util_main.h cuda_utils.h
 AES_CPU_FILES=aes_cpu.cpp aes_cpu.h
 GENERAL_OBJECTS=objs/aes_per_round.o objs/sbox.o objs/uint_iter.o objs/uint.o objs/util.o objs/aes_cpu.o objs/aes_util.o
-CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -DITERCOUNT=1 -DRANDOM=1 -DEARLY_EXIT=1 -DTHREADS_PER_BLOCK=$(NUM_THREADS) -DNUM_THREADS=$(NUM_THREADS) \
+CCFLAGS := -O3 --ptxas-options=-v -Xptxas -dlcm=ca $(GENCODE) -DITERCOUNT=1 -DRANDOM=1 -DEARLY_EXIT=0 -DTHREADS_PER_BLOCK=$(NUM_THREADS) -DNUM_THREADS=$(NUM_THREADS) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/ -DUSE_CONSTANT -DUSE_SMEM
 #CCFLAGS := -O3 -Xptxas -dlcm=ca $(GENCODE) -DITERCOUNT=1 -DRANDOM=0 -DEARLY_EXIT=0 -DTHREADS_PER_BLOCK=$(NUM_THREADS) -DNUM_THREADS=$(NUM_THREADS) \
 -Xcompiler -fPIC -rdc=true -Xcompiler -fopenmp -std=c++11 -Iinclude/ -Itabs/ -DUSE_CONSTANT -DUSE_SMEM

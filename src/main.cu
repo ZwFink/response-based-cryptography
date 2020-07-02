@@ -137,8 +137,8 @@ int main(int argc, char * argv[])
         uint256_t *dev_server_key[ num_gpus ];
         uint * dev_server_pt[ num_gpus ];
         uint * dev_server_ct[ num_gpus ];
-        uint256_t * dev_starting_perm;
-        uint256_t * dev_ending_perm;
+        uint256_t * dev_starting_perm[hamming_dist];
+        uint256_t * dev_ending_perm[hamming_dist];
         
         if( verbose ) 
         {
@@ -157,8 +157,11 @@ int main(int argc, char * argv[])
         gettimeofday(&start[f], NULL);
 
             // allocate and set device variables
-        cudaMallocManaged( (void**) &dev_starting_perm, sizeof(uint256_t) * total_threads[h-1]);
-        cudaMallocManaged( (void**) &dev_ending_perm, sizeof(uint256_t) * total_threads[h-1]);
+        for( h=0; h<hamming_dist; h++ )
+        {
+            cudaMallocManaged( (void**) &dev_starting_perm[h], sizeof(uint256_t) * total_threads[h]);
+            cudaMallocManaged( (void**) &dev_ending_perm[h], sizeof(uint256_t) * total_threads[h]);
+        }
         #pragma omp parallel for private(dev)
         for( dev=0; dev<num_gpus; ++dev )
         {
@@ -198,11 +201,13 @@ int main(int argc, char * argv[])
             {
                 cudaSetDevice( dev );
 
+                cudaFuncSetCacheConfig(kernel_startend_perms, cudaFuncCachePreferL1);
+
                 kernel_startend_perms <<< blocks_per_gpu[h-1],
                                           THREADS_PER_BLOCK
                                       >>>
-                                          ( dev_starting_perm,
-                                            dev_ending_perm,
+                                          ( dev_starting_perm[h-1],
+                                            dev_ending_perm[h-1],
                                             h,
                                             num_blocks[h-1],
                                             THREADS_PER_BLOCK,
@@ -215,6 +220,7 @@ int main(int argc, char * argv[])
                                           );
 
                 cudaDeviceSynchronize();
+                cudaFuncSetCacheConfig(kernel_iterate_keyspace, cudaFuncCachePreferL1);
                 
                 kernel_iterate_keyspace <<< blocks_per_gpu[h-1],
                                             THREADS_PER_BLOCK
@@ -234,8 +240,8 @@ int main(int argc, char * argv[])
                                               uprbnd[h-1][dev],
                                               key_size_bits,
                                               found_key_Flag,
-                                              dev_starting_perm,
-                                              dev_ending_perm
+                                              dev_starting_perm[h-1],
+                                              dev_ending_perm[h-1]
                                             );
                                                                            
                 cudaDeviceSynchronize();
