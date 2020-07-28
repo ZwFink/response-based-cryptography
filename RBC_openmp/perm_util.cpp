@@ -69,7 +69,7 @@ void get_perm_pair( uint256_t *starting_perm,
         } 
         else
         {
-           strt_ordinal = ( keys_per_thread * tid ) + 1;
+           strt_ordinal = ( keys_per_thread + 1 ) * tid;
 
            decode_ordinal(starting_perm, strt_ordinal, mismatches);
         }

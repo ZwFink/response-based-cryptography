@@ -1,4 +1,27 @@
-//example from https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
+/*
+Description: This is the driver program for experimenting with the RBC scheme. This program
+             takes as input a hamming distance and verbose argument. Client data and Server data
+             are produced in this program to simulate the RBC scheme. Hence, no PUF-images are used.
+             To begin, client data is created by using a hard-coded plaintext and randomly selected 
+             256-bit private key, K_c, to produce a ciphertext, C_c. To simulate a server-side private 
+             key, K_s, we copy the client's private key, K_c, and corrupt it by flipping h number of bits. 
+             This corruption process can be done randomly or in a selective manner such that the 
+             middle key in the keyspace is selected (this is useful for testing an early exit strategy).
+             Corrupting K_s by h number of bits ensures that K_s is a hamming distance h away from K_c,
+             and this simulates noise in the client-side PUF image. 
+            
+             Note that the client's private key, K_c, would not be known to server in practice, 
+             and we only use it in this program for simulating a server private key that is exactly 
+             a hamming distance h away from K_c.
+
+             Then, a search for the client's private key K_c, is conducted by iterating the keyspaces 
+             of size (256 choose 1), ..., (256 choose h). Keyspaces, denoted as P_h, consist of all 
+             256-bit strings that are a hamming distance, h, away from the starting key, K_s. 
+             Starting with the server-side corrupted key, K_s, each thread is assigned a subset of the 
+             current keyspace to iterate over. This assignment process induces a partition on P_h
+             so that for any two threads, their subsets are disjoint and the union of all 
+             subsets is equal to P_h.  
+*/
 
 #include "opensslAES.h"
 
@@ -173,8 +196,8 @@ void print_rbc_info(int mismatches,
 {
     printf("\n  Hamming Distance: %d",mismatches);
     printf("\n  Keys to Iterate = %Ld",num_keys);
-    //printf("\n  Keys Per Thread = %Ld",keys_per_thread);
-    //printf("\n  Extra Keys = %lu",extra_keys);
+    printf("\n  Keys Per Thread = %Ld",keys_per_thread);
+    printf("\n  Extra Keys = %lu",extra_keys);
 }
 
 void print_prelim_info(ClientData client, uint256_t server_key)
@@ -305,6 +328,7 @@ void handleErrors(void)
     abort();
 }
 
+//example from https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
             unsigned char *iv, unsigned char *ciphertext)
 {
